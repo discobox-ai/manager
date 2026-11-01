@@ -36,7 +36,10 @@ naming what replaced it.
 
 ## Pushing to discobox-ai/manager (this repository)
 
-Only with the owner's go-ahead, and rebased on the remote first:
+Every change to this repository is committed and pushed to `main` as soon as
+it's made; the owner gave that go-ahead standing (2026-11-01). Workers install
+their skills from the pushed `main`, so nothing here may stay local. One
+commit per change, rebased on the remote first:
 
 ```sh
 H='!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f'
@@ -44,6 +47,9 @@ git -c credential.helper= -c credential.helper="$H" fetch https://github.com/dis
 git rebase FETCH_HEAD
 git -c credential.helper= -c credential.helper="$H" push https://github.com/discobox-ai/manager.git HEAD:main
 ```
+
+Then check nothing is left: `git status --porcelain` is empty and `HEAD`
+equals the remote `main` (`git ls-remote https://github.com/discobox-ai/manager.git main`).
 
 Changes to the product repositories never go this way: only a worker's PR
 does.

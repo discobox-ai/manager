@@ -12,6 +12,9 @@ repos:
     defaultBranch: main
   - name: discobox-ai/manager
     defaultBranch: main
+  # Added by the owner 2026-11-01. defaultBranch assumed; check when gh is authenticated.
+  - name: discobox-ai/review
+    defaultBranch: main
 
 workers:
   # Workers up at once, triage and delivery together. The owner set six for

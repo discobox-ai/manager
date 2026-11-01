@@ -13,9 +13,11 @@ Enable, once per box (instances survive restarts; `discobox-monitor status`
 lists them):
 
 ```sh
-# One per watched repository. head= follows workers' PR checks; branch= keeps CI to the default branch.
+# One per repository in manager.yaml `repos`. head= follows workers' PR checks; branch= keeps CI to the default branch.
 discobox-monitor enable github-repo --name gh-discobox -o repo=discobox-ai/discobox -o head='discobox/*' -o branch=main
 discobox-monitor enable github-repo --name gh-vm       -o repo=discobox-ai/vm       -o head='discobox/*' -o branch=main
+discobox-monitor enable github-repo --name gh-manager  -o repo=discobox-ai/manager  -o head='discobox/*' -o branch=main
+discobox-monitor enable github-repo --name gh-review   -o repo=discobox-ai/review   -o head='discobox/*' -o branch=main
 # Workers: idle/busy, state, credential requests (discobox#427).
 discobox-monitor enable discobox-box --name workers -o tag=manager=<this box id>
 # Disk.

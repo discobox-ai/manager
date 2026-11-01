@@ -121,10 +121,9 @@ target becomes real and nothing needs to poll.
 
 ## Open questions for the owner
 
-- Should triage verdicts at `priority/medium` and below go straight to
-  `status/ready`, or wait for the owner's priority? (`docs/gates.md` assumes
-  small bugs and chores go straight to ready.)
+- ~~Should triage verdicts at `priority/medium` and below go straight to
+  `status/ready`?~~ Yes (2026-11-01); `docs/gates.md` updated.
 - Do initiatives become milestones (`docs/labels.md`), or stay as tracker
   issues like #42?
-- Which repositories does the manager watch? `manager.yaml` lists discobox,
-  vm and this one.
+- ~~Which repositories does the manager watch?~~ discobox, vm, manager and
+  review (2026-11-01); `manager.yaml` and the `watch` skill updated.

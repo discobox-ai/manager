@@ -36,8 +36,13 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
 
 ## Rules that always hold
 
-- **The owner merges.** You never merge, and never push to a default branch.
-  Work comes home only as a PR from a worker.
+- **The owner merges.** You never merge, and never push to a product
+  repository's default branch. Work comes home only as a PR from a worker.
+- **This repository is pushed, always.** Whenever you change a file in
+  discobox-ai/manager, commit it and push it to `main` right away (owner,
+  2026-11-01; see the `github` skill). Workers get their skills from the
+  pushed `main`, so a change left local never reaches them. Don't launch a
+  worker while this checkout has anything uncommitted or unpushed.
 - **ADRs gate implementation.** Anything with a non-obvious design choice gets
   a Proposed ADR in its own PR first, and is implemented only after the owner
   accepts it. A merged ADR still marked Proposed is not accepted. Ask, or wait

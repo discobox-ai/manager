@@ -15,6 +15,10 @@ eval "$(discobox-access env)"; unset DISCOBOX_TOKEN     # GitHub (GH_TOKEN) and 
 
 ## Launch
 
+First make sure this checkout is committed and pushed (`github` skill, Pushing
+to discobox-ai/manager): `--skills` installs from the pushed `main`, not from
+local files.
+
 ```sh
 discobox run -d --skills discobox-ai/manager//worker-skills \
   https://github.com/<repo>@<defaultBranch> \
