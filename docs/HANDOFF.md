@@ -123,7 +123,7 @@ target becomes real and nothing needs to poll.
 
 - ~~Should triage verdicts at `priority/medium` and below go straight to
   `status/ready`?~~ Yes (2026-11-01); `docs/gates.md` updated.
-- Do initiatives become milestones (`docs/labels.md`), or stay as tracker
-  issues like #42?
+- ~~Do initiatives become milestones, or stay as tracker issues like #42?~~
+  Tracking issues (2026-11-01); `docs/labels.md` updated.
 - ~~Which repositories does the manager watch?~~ discobox, vm, manager and
   review (2026-11-01); `manager.yaml` and the `watch` skill updated.

@@ -29,8 +29,12 @@ the migration.
 
 ## Initiatives
 
-A multi-issue effort (like discobox#42, disco-vm) is a milestone, not a
-tracker issue with a long body. The milestone's description links its ADRs.
+A multi-issue effort (like discobox#42, disco-vm) is a tracking issue, not a
+milestone (owner, 2026-11-01): one issue can span repositories, and its
+comments carry the direction the owner sets. Its body lists the effort's
+issues (as a task list, so GitHub shows progress) and links its ADRs; a
+direction change is a comment on it. Each issue in the effort says
+`Part of <repo>#<N>`.
 
 ## Linkage
 
