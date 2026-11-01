@@ -1,0 +1,25 @@
+# Gates: what the manager does alone, and what goes to the owner
+
+The manager acts alone on everything mechanical and reversible. Anything that
+sets direction, trust or what ships goes to the owner, as a row on the table.
+
+| Event | The manager does alone | Goes to the owner |
+|---|---|---|
+| New issue, no `status/*` label | Starts a triage worker (`triage-issue`) | – |
+| Triage verdict | Applies the labels the verdict proposes. A small, clear bug or chore with priority below high goes to `status/ready` | Features, design or direction choices, and anything at `priority/high` or `priority/critical` become `status/needs-decision` |
+| `status/ready` and a free slot | Starts a worker: `propose-adr` if the design is non-obvious and no accepted ADR covers it, else `deliver-issue`. Sets `status/in-progress` | – |
+| An ADR PR is green | – | Accept or reject. Merging it is not acceptance; the owner says "accept", then a worker marks it Accepted in a PR of its own |
+| An implementation PR is green | Sets `status/in-review` | Review and merge |
+| A PR conflicts with its base | Has its worker rebase (`rebase-pr`) | – |
+| A PR's CI fails and its worker is stopped | Starts the worker again on `fix-ci` | "Look at it" if the worker says it can't make it green |
+| Main's CI fails | Re-runs once if it looks like a flake (unrelated to the commit). Otherwise, or if it fails twice, files an issue and starts a `fix-ci` worker | – |
+| A PR merges | Closes its issue if it's still open, retires the worker | – |
+| A worker asks for a credential | Approves it when it is exactly its skill's ask, within the manager's delegations | Anything else |
+| A worker stops on a question | – | A "box needs input" row; the owner answers in the box |
+| A worker shows a mechanical prompt (login expired, the first-run permission dialog) | Answers it (see `workers`) | – |
+| Disk below `disk.minFreeGiB` | Starts no workers; has idle workers free their build caches | Only if it can't recover |
+| A finished worker | Tags it `to-delete` and stops it | Listed for deletion |
+
+Rank table rows by how much each unblocks downstream (critical path first), then
+by how hard the decision is to reverse (trust roots and stored credentials rank
+high).

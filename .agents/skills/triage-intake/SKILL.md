@@ -1,0 +1,30 @@
+---
+name: triage-intake
+description: How the manager handles incoming work — a new issue, an issue the owner points at, or a request in conversation. Use when an issue appears with no status label, or the owner asks for something to be done.
+---
+
+# Intake
+
+## A new issue in a watched repository (no `status/*` label)
+
+1. Start a triage worker:
+   `-p 'Triage issue #N in <repo>.'` (job `triage`, skill `triage-issue`).
+2. When it finishes, its verdict is a comment on the issue: proposed
+   `type/*`, `area/*` and `priority/*`, a rewritten body if it was thin, and
+   whether it needs an ADR or a decision.
+3. Apply the verdict by `docs/gates.md`: `status/ready`, `status/triaged`
+   or `status/needs-decision`. Retire the triage box.
+
+## The owner asks for something in conversation
+
+- If it's a change to a product repository, **file an issue** (Today / Wanted /
+  Done when), then treat it as `status/ready` (the owner asked). Start the
+  worker. Don't make the change yourself.
+- If it's a question about the state of things, answer from GitHub and the
+  workers, not from memory.
+- If it changes the process, the change goes into this repository. Edit
+  AGENTS.md or a skill, then push with the owner's go-ahead (`github`).
+
+## The owner says an issue is blocking or urgent
+
+Set `priority/critical`, and give it the next slot ahead of everything.

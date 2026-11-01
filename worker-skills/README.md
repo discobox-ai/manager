@@ -1,0 +1,48 @@
+# Worker skills
+
+Every worker discobox gets these, installed by the manager with
+`discobox run --skills discobox-ai/manager//worker-skills`. A worker does one
+job and ends in a defined state. The manager reads that state; nobody has to
+read the worker's terminal to know where it stands.
+
+## The contract every job keeps
+
+- **One job per box**, named in its prompt: triage, ADR, deliver, fix, rebase.
+  A box never takes a second issue.
+- **Work comes home as a PR** from `discobox/issue-<N>` (or a named branch for
+  an ADR), never a push to a default branch.
+- **The issue is the brief.** Read it first. If it is thin, the manager should
+  have triaged it first. Say so and stop rather than guessing.
+- **End by tagging your own box** (`~/.discobox/meta.json` tags, or
+  `discobox tag` when available) with exactly one of:
+  - `ready`: done; the PR (or the verdict comment) is in place and green;
+  - `blocked`: can't proceed; the reason is a comment on the issue or PR;
+  - `needs-input`: a decision only the owner can make. The question is open
+    in your terminal, and summarized in a comment on the issue.
+- **Ask for credentials with the request your skill names**, no wider. The
+  manager approves an exact match automatically; anything else waits for the
+  owner.
+- **Keep disk in check.** One Docker build at a time, `docker builder prune -a -f`
+  when done building, no dev image watcher you don't need.
+
+## Jobs
+
+| Job | Skill | Ends when |
+|---|---|---|
+| Triage | `triage-issue` | A verdict comment on the issue: type, area, priority, ADR needed or not, and whether it needs the owner |
+| ADR | `propose-adr` | A Proposed ADR in its own PR, green. No implementation |
+| Deliver | `deliver-issue` | The implementation PR is green and mergeable. Stays to answer review until merged |
+| Fix CI | `fix-ci` | The fix is a PR, green (or the PR it fixes is green again) |
+| Rebase | `rebase-pr` | The PR is rebased on its base, conflicts resolved keeping both sides, green |
+
+`develop`, `commit`, `open-pr`, `verify` and `test-fix` are the building blocks
+those jobs use.
+
+## Provenance
+
+`deliver-issue`, `triage-issue`, `develop`, `commit`, `open-pr`, `verify` and
+`test-fix` were copied from discobox-ai/skills at 5676735 (2026-11-01). They
+still assume the old process in places: plain `triaged` and `needs-decision`
+labels, `orchestrate-issues` as the lead, AskUserQuestion for design choices.
+Adapting them to this contract and `docs/labels.md` is open work; see
+`docs/HANDOFF.md`.

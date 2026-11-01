@@ -1,0 +1,33 @@
+# The manager's configuration. The only per-deployment settings; everything
+# else is in AGENTS.md and the skills.
+
+owner: darren@obot.ai
+
+# Repositories the manager watches and works in. `defaultBranch` is what
+# workers branch from and PRs target.
+repos:
+  - name: discobox-ai/discobox
+    defaultBranch: main
+  - name: discobox-ai/vm
+    defaultBranch: main
+  - name: discobox-ai/manager
+    defaultBranch: main
+
+workers:
+  # Workers up at once, triage and delivery together. The owner set six for
+  # this host (2026-10-08); lower it when disk is tight.
+  max: 6
+  # discobox server workers are created on. Inside a discobox the devShell may
+  # point the CLI at a nested dev server; always pass this explicitly.
+  server: https://api.discobox.internal
+  # Where workers get their skills.
+  skills: discobox-ai/manager//worker-skills
+
+disk:
+  # Below this, stop starting workers and have idle ones free build caches.
+  minFreeGiB: 60
+
+# Secrets the owner delegated to the manager to approve worker requests from.
+# Approve with `discobox secret request approve <id> --secret <name>`.
+delegations:
+  - github
