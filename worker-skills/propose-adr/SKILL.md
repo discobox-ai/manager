@@ -1,6 +1,8 @@
 ---
 name: propose-adr
 description: Draft an Architecture Decision Record as Proposed for one issue, in its own PR, and stop once that PR is green — no implementation. Use when a worker is launched with "ADR only" or to propose the design for an issue.
+metadata:
+  discobox.role: github-deliver
 ---
 
 # Propose an ADR

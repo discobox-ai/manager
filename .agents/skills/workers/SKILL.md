@@ -19,9 +19,16 @@ First make sure this checkout is committed and pushed (`github` skill, Pushing
 to discobox-ai/manager): `--skills` installs from the pushed `main`, not from
 local files.
 
-Run it from this repository's root, binding GitHub with the job's role
-(`roles/README.md`): `github-triage` for triage, `github-deliver` for
-deliver, ADR, fix-ci and rebase, `github-submit` for an ad-hoc box.
+Run it from this repository's root, binding GitHub with the role the job's
+skill names in its frontmatter, `metadata.discobox.role` (`roles/README.md`).
+Read it each time rather than remembering it; a skill's role changes with
+the skill:
+
+```sh
+sed -n '/^---$/,/^---$/p' worker-skills/<skill>/SKILL.md | sed -n 's/^ *discobox\.role: *//p'
+```
+
+An ad-hoc box takes `submit`'s role.
 
 ```sh
 discobox run -d --skills discobox-ai/manager//worker-skills \

@@ -2,6 +2,8 @@
 name: submit
 description: Bring the work of an ad-hoc session into the process — take stock with the owner, file or find its issue, settle any design choice as an ADR, then either carry the code on to a PR in this box, park it on a pushed branch, or keep only the design. Use when the owner types "submit" (or /submit) in an ad-hoc box, or the manager types it on the owner's behalf.
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write, Agent, Skill, Monitor, AskUserQuestion
+metadata:
+  discobox.role: github-submit
 ---
 
 # Submit an ad-hoc session

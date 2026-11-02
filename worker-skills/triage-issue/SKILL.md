@@ -3,6 +3,7 @@ name: triage-issue
 description: Triage one discobox GitHub issue — read it, find the code it concerns, reproduce it against the running `task dev` loop, write a failing test and post it on the issue, classify it by kind, area, platform, priority, and size, label it, tag this discobox to match, and end on a one-line verdict saying whether it is ready to deliver. It never fixes anything; delivery is `deliver-issue`, in this same box, when told to. Use when a discobox is launched or told to triage an issue, or the user wants an issue triaged, reproduced, labeled, or classified.
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write, Agent, SendMessage, Skill, Monitor, AskUserQuestion
 metadata:
+  discobox.role: github-triage
   argument-hint: "<issue-number>"
 ---
 

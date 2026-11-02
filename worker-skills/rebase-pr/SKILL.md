@@ -1,6 +1,8 @@
 ---
 name: rebase-pr
 description: Rebase an open PR's branch onto its base after the base moved and the PR conflicts, keeping both sides' changes, and get it green again. Use when the manager asks a worker to rebase its PR.
+metadata:
+  discobox.role: github-deliver
 ---
 
 # Rebase a PR

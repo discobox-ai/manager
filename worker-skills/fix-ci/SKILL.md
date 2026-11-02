@@ -1,6 +1,8 @@
 ---
 name: fix-ci
 description: Make a red CI green — a PR's or the default branch's — by finding and fixing the cause, delivered as a PR. Use when a worker is launched to fix failing CI or a flaky test.
+metadata:
+  discobox.role: github-deliver
 ---
 
 # Fix CI

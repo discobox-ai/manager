@@ -20,6 +20,10 @@ read the worker's terminal to know where it stands.
   - `blocked`: can't proceed; the reason is a comment on the issue or PR;
   - `needs-input`: a decision only the owner can make. The question is open
     in your terminal, and summarized in a comment on the issue.
+- **A job skill names its role** in its frontmatter, `metadata.discobox.role`.
+  The manager binds that role at launch. When a skill starts making a call its
+  role doesn't allow, change the role file (or the skill's role) in the same
+  commit.
 - **You start with what you need.** GitHub is bound at launch from your
   job's role (`roles/` in discobox-ai/manager), so don't ask for it up front.
   If you hit a one-off the role doesn't cover, ask for just that route with

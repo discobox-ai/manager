@@ -3,6 +3,7 @@ name: deliver-issue
 description: Take one assigned discobox issue from implementation to a merged pull request — implement it, review it with discobox-review, verify it at runtime, commit, open a PR from discobox/issue-<N>, drive CI green, then keep the PR mergeable and answer comments until a human merges it. Use when a discobox is launched to deliver an issue, or the user wants an issue taken all the way to a PR and kept there.
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write, Agent, SendMessage, Skill, Monitor, AskUserQuestion
 metadata:
+  discobox.role: github-deliver
   argument-hint: "<issue-number>"
 ---
 

@@ -7,6 +7,10 @@ bound. The file name is the role's name. A worker is bound its role when the
 manager launches it, so it never has to ask for GitHub, and nothing it does
 can reach past the role.
 
+A job skill names its role in its frontmatter, `metadata.discobox.role`,
+and that's what the manager binds. The table below is a summary; the skills
+are the source.
+
 | Role | Bound to | Allows |
 |---|---|---|
 | `github-triage` | `triage-issue` workers | Read the repository and search issues; comment on issues |
