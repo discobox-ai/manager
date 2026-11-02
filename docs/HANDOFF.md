@@ -91,6 +91,14 @@ target becomes real and nothing needs to poll.
 
 ## First tasks for this repository
 
+Where they stand (2026-11-02): 1 is done (discobox-ai/manager, private). 2 is
+done (`README.md`, Running the manager; access comes from `roles/`). 5 is
+done except moving watchers into `.discobox/monitors/` (`watch` skill has the
+real options). 3 is partly done: credentials are roles bound at launch and
+`develop` is gone, but the copied skills still name discobox-ai/discobox and
+use AskUserQuestion. 4 and 6 are open.
+
+
 1. **Publish it.** The owner creates `discobox-ai/manager`, and this draft is
    pushed as its first commit (see the `github` skill).
 2. **Settle how the manager's own box is made:**
