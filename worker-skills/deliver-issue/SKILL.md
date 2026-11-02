@@ -38,9 +38,10 @@ Nobody may be watching your screen to answer.
 - **GitHub is bound at launch.** It's in `GH_TOKEN`, by the manager's role
   file `roles/github-deliver.json` in discobox-ai/manager: those routes and no others.
   Check `discobox-access list` shows it. If it doesn't, tag the box `blocked`,
-  say so, and stop. Don't ask for GitHub with `discobox-access request`. A step
-  refused with a `route:` reason (`discobox-access audit --blocked`) is outside
-  the role: stop and say so rather than working around it.
+  say so, and stop. A step refused with a `route:` reason (`discobox-access
+  audit --blocked`) is outside the role. Never work around it. If it's a
+  one-off the job truly needs, ask for just that route with `discobox-access
+  request`, saying why in the justification; the owner decides.
 - **Tag this box** `issue=<N>`, merged into the tags already there, so the
   user's `discobox ls --tag issue=<N>` finds it (`open-pr` adds `pr=` in §5):
 

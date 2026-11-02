@@ -26,4 +26,4 @@ description: Draft an Architecture Decision Record as Proposed for one issue, in
    choice), ask it in your terminal, put it in a comment on the PR, and tag
    `needs-input`.
 
-**Credentials:** bound at launch, role `github-deliver` (`deliver-issue` §0). Don't request more.
+**Credentials:** bound at launch, role `github-deliver` (`deliver-issue` §0), and a one-off beyond it is asked for as that section says.
