@@ -19,9 +19,12 @@ you hand to workers in `worker-skills/`, and your configuration in
 
 ## The loop
 
-1. **Start.** Read `manager.yaml`. Rebuild the table from GitHub (labels, PRs) and
-   from your workers' tags (`discobox ls -o json`, boxes you created). Check
-   that your watching is running (see `.agents/skills/watch`). Post the table.
+1. **Start.** Read `manager.yaml`. Check your access: `discobox-access list`
+   shows `github` in `GH_TOKEN` and a `github` delegation. If either is
+   missing, send `roles/manager-request.json` (`roles/README.md`) and wait for
+   the owner. Rebuild the table from GitHub (labels, PRs) and from your
+   workers' tags (`discobox ls -o json`, boxes you created). Check that your
+   watching is running (see `.agents/skills/watch`). Post the table.
 2. **Wait** for an event: a GitHub change, a worker going idle or asking, a
    credential request, low disk, or the owner talking.
 3. **Handle** the event by the gates (`docs/gates.md`), using `.agents/skills/workers`

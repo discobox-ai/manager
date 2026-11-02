@@ -15,11 +15,3 @@ manager, rebuilds the whole table from three places:
 
 Anything else (a local list of watched PRs, a "last seen" file) is a cache. Losing
 it must cost nothing but a rebuild.
-
-## Today's gap
-
-The monitors this depends on are still landing: discobox#414 (github-repo as a
-Go built-in, with PR checks by head branch, an Actions branch filter and a
-conflict event) and discobox#427 (skills declaring monitors, update in place,
-`test --since`, and a `discobox-box` monitor for workers). Until they land,
-`reference/orchestrate.sh` shows how the old lead polled. See `docs/HANDOFF.md`.
