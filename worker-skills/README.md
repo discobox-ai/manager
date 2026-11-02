@@ -37,13 +37,15 @@ read the worker's terminal to know where it stands.
 | Submit | `submit` | An ad-hoc box's work is an issue with a submit comment, and then either carried on as `deliver-issue`, parked on a pushed branch, or kept as design only |
 | Rebase | `rebase-pr` | The PR is rebased on its base, conflicts resolved keeping both sides, green |
 
-`develop`, `commit`, `open-pr`, `verify` and `test-fix` are the building blocks
-those jobs use.
+`commit`, `open-pr`, `verify` and `test-fix` are the building blocks those
+jobs use. They also rely on `discobox-review`, which every box has; workers
+can assume it is there.
 
 ## Provenance
 
-`deliver-issue`, `triage-issue`, `develop`, `commit`, `open-pr`, `verify` and
-`test-fix` were copied from discobox-ai/skills at 5676735 (2026-11-01). They
+`deliver-issue`, `triage-issue`, `commit`, `open-pr`, `verify` and `test-fix`
+were copied from discobox-ai/skills at 5676735 (2026-11-01); `develop` was
+copied too and removed on 2026-11-02, superseded by `submit`. They
 still assume the old process in places: plain `triaged` and `needs-decision`
 labels, `orchestrate-issues` as the lead, AskUserQuestion for design choices.
 Adapting them to this contract and `docs/labels.md` is open work; see

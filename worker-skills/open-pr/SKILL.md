@@ -30,7 +30,7 @@ remote — possibly a mirror — and `discobox` is the pool; in a discobox creat
 before ADR 26-10-10-545, `origin` is the pool and `upstream` is that remote.
 Check `git remote -v`, and do not push to any of them by name: every GitHub call
 goes through a GitHub credential, with the URL spelled out. `deliver-issue` and
-`develop` ask for their own up front; check `discobox-access list` and
+`submit` ask for their own up front; check `discobox-access list` and
 request one only when no credential in `GH_TOKEN` is sent to `github.com`
 and `api.github.com`:
 
