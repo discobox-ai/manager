@@ -1,0 +1,131 @@
+{
+  "name": "github",
+  "envVar": "GH_TOKEN",
+  "policies": [
+    {
+      "file": "roles/github-manager.json",
+      "args": {
+        "owner": "discobox-ai",
+        "repo": "discobox"
+      }
+    },
+    {
+      "file": "roles/github-manager.json",
+      "args": {
+        "owner": "discobox-ai",
+        "repo": "vm"
+      }
+    },
+    {
+      "file": "roles/github-manager.json",
+      "args": {
+        "owner": "discobox-ai",
+        "repo": "manager"
+      }
+    },
+    {
+      "file": "roles/github-manager.json",
+      "args": {
+        "owner": "discobox-ai",
+        "repo": "review"
+      }
+    },
+    {
+      "file": "roles/github-push.json",
+      "args": {
+        "owner": "discobox-ai",
+        "repo": "manager"
+      }
+    }
+  ],
+  "delegate": {
+    "policies": [
+      {
+        "file": "roles/github-deliver.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "discobox"
+        }
+      },
+      {
+        "file": "roles/github-deliver.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "vm"
+        }
+      },
+      {
+        "file": "roles/github-deliver.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "manager"
+        }
+      },
+      {
+        "file": "roles/github-deliver.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "review"
+        }
+      },
+      {
+        "file": "roles/github-submit.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "discobox"
+        }
+      },
+      {
+        "file": "roles/github-submit.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "vm"
+        }
+      },
+      {
+        "file": "roles/github-submit.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "manager"
+        }
+      },
+      {
+        "file": "roles/github-submit.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "review"
+        }
+      },
+      {
+        "file": "roles/github-triage.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "discobox"
+        }
+      },
+      {
+        "file": "roles/github-triage.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "vm"
+        }
+      },
+      {
+        "file": "roles/github-triage.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "manager"
+        }
+      },
+      {
+        "file": "roles/github-triage.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "review"
+        }
+      }
+    ]
+  },
+  "justification": "Manage issues and labels in discobox-ai/discobox, discobox-ai/vm, discobox-ai/manager, discobox-ai/review and push my own repository discobox-ai/manager; delegate the worker roles (github-deliver, github-submit, github-triage) so I can bind each worker its job's role at launch.",
+  "wait": true
+}

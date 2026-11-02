@@ -43,17 +43,21 @@ reaches new boxes once it's pushed.
 
 ## The manager's own access
 
-A box can give its workers only what it was delegated. `roles/request.py`
-asks for everything the manager needs in one `discobox-access request` (ADR
-26-11-02-022), naming the role files and their arguments:
+A box can give its workers only what it was delegated. The manager asks for
+everything it needs in one request, `roles/manager-request.json`, sent from
+this repository's root (ADR 26-11-02-022 in discobox-ai/discobox):
 
-- **Use part**, in `GH_TOKEN`: each of `manager.yaml`'s `github.selfRoles`
-  for every repository, plus `pushRole` for discobox-ai/manager.
-- **Delegate part:** every role a job skill names (`metadata.discobox.role`),
-  for every repository in `manager.yaml`. Whatever role a worker is bound at
-  launch falls inside it.
+```sh
+discobox-access request --json < roles/manager-request.json
+```
 
-The owner approves or denies each part on one screen. An approved part
-replaces the manager's binding of that kind, so a request always states the
-whole access. Ask again whenever a role file, a skill's role or the
-repository list changes. `--print` shows the request without sending it.
+- **Use part** (`policies`), in `GH_TOKEN`: `github-manager` for every
+  repository in `manager.yaml`, and `github-push` for discobox-ai/manager.
+- **Delegate part** (`delegate.policies`): every role a job skill names
+  (`metadata.discobox.role`), for every repository in `manager.yaml`.
+
+The owner approves or denies each part on one screen. **An approved part
+replaces the manager's binding of that kind**, so the file must always list
+the whole access: a repository or role left out is access lost. Whenever a
+repository is added to `manager.yaml`, or a skill's `discobox.role` changes,
+update this file in the same commit and ask again.
