@@ -39,6 +39,8 @@ direction change is a comment on it. Each issue in the effort says
 ## Linkage
 
 - A worker box is tagged `issue=<repo>#<N>` and `job=<triage|adr|deliver|fix|rebase>`.
+  An ad-hoc box is tagged `repo=<repo>` and `job=adhoc` until `submit` gives it
+  an `issue`.
 - An implementation PR says `Closes #N`; an ADR PR says `Part of #N`.
 - Issues are written as `## Today` / `## Wanted` / `## Done when`, citing files
   and ADRs, so a worker can start from the issue alone.

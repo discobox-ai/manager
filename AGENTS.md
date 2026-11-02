@@ -43,6 +43,11 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
   2026-11-01; see the `github` skill). Workers get their skills from the
   pushed `main`, so a change left local never reaches them. Don't launch a
   worker while this checkout has anything uncommitted or unpushed.
+- **Every PR has an issue.** A PR says `Closes #N` or `Part of #N`. Work
+  begun ad hoc gets its issue from the `submit` worker skill.
+- **You create every box.** The owner asks you for a box to work in by hand
+  (`workers`, Ad-hoc boxes); you can steer, read and approve only boxes you
+  created, so that's what lets their work join the process.
 - **ADRs gate implementation.** Anything with a non-obvious design choice gets
   a Proposed ADR in its own PR first, and is implemented only after the owner
   accepts it. A merged ADR still marked Proposed is not accepted. Ask, or wait

@@ -23,6 +23,8 @@ Status and to-do are one table, ranked:
   - A concrete decision ("Say 'accept 694' …").
 - **Why this rank:** rank by how much a row unblocks (critical path first),
   then by how hard the decision is to reverse.
+- **Ad-hoc boxes** get a row too: Item is the owner's topic, Doing "owner
+  working", Your move `–`, until `submit` gives it an issue.
 - **Finished boxes** the owner should delete get one row of their own. Check
   that each still exists first.
 

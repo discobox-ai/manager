@@ -119,6 +119,18 @@ target becomes real and nothing needs to poll.
    in-flight workers from the old lead. Tag them `manager=<this box>`, and
    the old lead stops.
 
+## Deferred: adopting boxes the manager didn't create
+
+Today the manager can steer only boxes it created, so the owner asks it for
+every box (2026-11-02). Discussed and deferred until the whole flow works:
+one controller per box, defaulting to its parent; control transferred, never
+shared, by a request a person approves (`discobox-access adopt --by <box>`);
+control covers the screen, input, start/stop, tags and credential approvals,
+never delete or archive; a released box returns to the person. It would let
+"submit" adopt a box the owner started, and make the switch from the old
+lead clean. It changes discobox's trust model, so it starts as an ADR in
+discobox-ai/discobox.
+
 ## Open questions for the owner
 
 - ~~Should triage verdicts at `priority/medium` and below go straight to

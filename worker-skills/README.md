@@ -8,7 +8,8 @@ read the worker's terminal to know where it stands.
 ## The contract every job keeps
 
 - **One job per box**, named in its prompt: triage, ADR, deliver, fix, rebase.
-  A box never takes a second issue.
+  A box never takes a second issue. An ad-hoc box (`job=adhoc`) has no job
+  until the owner says "submit"; `submit` gives it one issue.
 - **Work comes home as a PR** from `discobox/issue-<N>` (or a named branch for
   an ADR), never a push to a default branch.
 - **The issue is the brief.** Read it first. If it is thin, the manager should
@@ -33,6 +34,7 @@ read the worker's terminal to know where it stands.
 | ADR | `propose-adr` | A Proposed ADR in its own PR, green. No implementation |
 | Deliver | `deliver-issue` | The implementation PR is green and mergeable. Stays to answer review until merged |
 | Fix CI | `fix-ci` | The fix is a PR, green (or the PR it fixes is green again) |
+| Submit | `submit` | An ad-hoc box's work is an issue with a submit comment, and then either carried on as `deliver-issue`, parked on a pushed branch, or kept as design only |
 | Rebase | `rebase-pr` | The PR is rebased on its base, conflicts resolved keeping both sides, green |
 
 `develop`, `commit`, `open-pr`, `verify` and `test-fix` are the building blocks

@@ -25,6 +25,13 @@ description: How the manager handles incoming work — a new issue, an issue the
 - If it changes the process, the change goes into this repository. Edit
   AGENTS.md or a skill, then push with the owner's go-ahead (`github`).
 
+## The owner wants to work on something by hand
+
+Start an ad-hoc box for them (`workers`, Ad-hoc boxes). Nothing is filed yet.
+When they say "submit" (in the box, or "submit box X" to you), the box's
+`submit` skill files the issue and says what happens to the code; apply its
+comment by `docs/gates.md`.
+
 ## The owner says an issue is blocking or urgent
 
 Set `priority/critical`, and give it the next slot ahead of everything.
