@@ -30,8 +30,13 @@ disk:
   # Below this, stop starting workers and have idle ones free build caches.
   minFreeGiB: 60
 
-# Secrets the owner delegated to the manager, for binding to its workers at
-# launch. github is delegated as roles/github-submit.json for every repository
-# above (roles/README.md), which covers every worker role.
-delegations:
-  - github
+# GitHub access, as roles (roles/README.md). Ask for both with
+# `roles/request.py delegate` and `roles/request.py self`.
+github:
+  # The manager's own use: these roles for every repository in repos, and
+  # pushRole for this repository (manager) alone.
+  selfRoles: [github-manager]
+  pushRole: github-push
+  # What it delegates to workers is not listed here: it is every role a job
+  # skill names (metadata.discobox.role in worker-skills/*/SKILL.md), for every
+  # repository in repos.

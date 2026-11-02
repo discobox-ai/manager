@@ -41,32 +41,25 @@ so the manager's delegation (below) must cover every worker role in every
 watched repository. Editing a file here changes no existing binding; it
 reaches new boxes once it's pushed.
 
-## Setting up the manager's box (the owner, once)
+## The manager's own access
 
-The manager needs two bindings of `github`: one it uses itself, and one it
-delegates to its workers. `github-submit` covers `github-deliver` and
-`github-triage`, so one policy per repository is the whole delegation. For
-each repository in `manager.yaml`:
+A box can give its workers only what it was delegated, so the manager asks
+for two things, each built from the role files by `roles/request.py`:
 
-```sh
-M=<manager box>
-# Delegated to workers: submit ⊇ deliver ⊇ triage.
-discobox secret bind github $M --delegate --for 1mo \
-  --policy roles/github-submit.json --policy-arg owner=discobox-ai --policy-arg repo=discobox \
-  --policy roles/github-submit.json --policy-arg owner=discobox-ai --policy-arg repo=vm \
-  --policy roles/github-submit.json --policy-arg owner=discobox-ai --policy-arg repo=manager \
-  --policy roles/github-submit.json --policy-arg owner=discobox-ai --policy-arg repo=review
-# Used by the manager.
-discobox secret bind github $M --as GH_TOKEN --for 1mo \
-  --policy roles/github-manager.json --policy-arg owner=discobox-ai --policy-arg repo=discobox \
-  --policy roles/github-manager.json --policy-arg owner=discobox-ai --policy-arg repo=vm \
-  --policy roles/github-manager.json --policy-arg owner=discobox-ai --policy-arg repo=manager \
-  --policy roles/github-manager.json --policy-arg owner=discobox-ai --policy-arg repo=review \
-  --policy roles/github-push.json    --policy-arg owner=discobox-ai --policy-arg repo=manager
-```
+- **`roles/request.py delegate`**: a delegation of every role a job skill
+  names (`metadata.discobox.role`), for every repository in `manager.yaml`.
+  Whatever role a worker is bound at launch is inside it.
+- **`roles/request.py self`**: the manager's own use, in `GH_TOKEN`: each of
+  `manager.yaml`'s `github.selfRoles` for every repository, plus `pushRole`
+  for discobox-ai/manager.
+
+Each sends a `discobox-access request` and waits for the owner to approve it
+in the discobox window. `--print` shows the request without sending it.
+Ask again whenever a role file, a skill's role, or the repository list
+changes. A worker bound a route the delegation lacks is refused at launch.
 
 Not yet tried: whether one box can hold a delegate binding and a use binding
-of the same secret side by side. If the server keeps one binding per secret,
-merge them into a single `--delegate --as GH_TOKEN` binding with every policy
-above. The manager could then also push to product repositories, which
-AGENTS.md forbids, but no route would stop it.
+of the same secret side by side. If approving one replaces the other, they
+have to become one request with both sets of routes. The manager could then
+also push to product repositories, which AGENTS.md forbids, but no route
+would stop it.
