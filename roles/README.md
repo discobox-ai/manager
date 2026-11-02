@@ -43,23 +43,17 @@ reaches new boxes once it's pushed.
 
 ## The manager's own access
 
-A box can give its workers only what it was delegated, so the manager asks
-for two things, each built from the role files by `roles/request.py`:
+A box can give its workers only what it was delegated. `roles/request.py`
+asks for everything the manager needs in one `discobox-access request` (ADR
+26-11-02-022), naming the role files and their arguments:
 
-- **`roles/request.py delegate`**: a delegation of every role a job skill
-  names (`metadata.discobox.role`), for every repository in `manager.yaml`.
-  Whatever role a worker is bound at launch is inside it.
-- **`roles/request.py self`**: the manager's own use, in `GH_TOKEN`: each of
-  `manager.yaml`'s `github.selfRoles` for every repository, plus `pushRole`
-  for discobox-ai/manager.
+- **Use part**, in `GH_TOKEN`: each of `manager.yaml`'s `github.selfRoles`
+  for every repository, plus `pushRole` for discobox-ai/manager.
+- **Delegate part:** every role a job skill names (`metadata.discobox.role`),
+  for every repository in `manager.yaml`. Whatever role a worker is bound at
+  launch falls inside it.
 
-Each sends a `discobox-access request` and waits for the owner to approve it
-in the discobox window. `--print` shows the request without sending it.
-Ask again whenever a role file, a skill's role, or the repository list
-changes. A worker bound a route the delegation lacks is refused at launch.
-
-Not yet tried: whether one box can hold a delegate binding and a use binding
-of the same secret side by side. If approving one replaces the other, they
-have to become one request with both sets of routes. The manager could then
-also push to product repositories, which AGENTS.md forbids, but no route
-would stop it.
+The owner approves or denies each part on one screen. An approved part
+replaces the manager's binding of that kind, so a request always states the
+whole access. Ask again whenever a role file, a skill's role or the
+repository list changes. `--print` shows the request without sending it.

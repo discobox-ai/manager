@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
-"""Ask for the manager's GitHub access, built from the role files.
+"""Ask for the manager's GitHub access in one request, from the role files.
 
-  roles/request.py delegate [--print]   every worker role, for every watched repository,
-                                        as a delegation the manager binds to its workers
-  roles/request.py self [--print]       the manager's own roles (manager.yaml github:),
-                                        in GH_TOKEN
+  roles/request.py [--print]
 
-Role files are credential policies (roles/README.md). discobox-access takes
-routes, not policy files, so this resolves ${owner}/${repo} for each
-repository in manager.yaml and turns every route into the route-string form.
---print shows the request instead of sending it. Run from anywhere; paths are
-relative to this repository.
+One `discobox-access request` (ADR 26-11-02-022) with two parts, each naming
+role files with their arguments:
+
+- use, in GH_TOKEN: manager.yaml's github.selfRoles for every repository,
+  plus github.pushRole for discobox-ai/manager;
+- delegate: every role a job skill names (metadata.discobox.role), for every
+  repository, so the manager can bind any worker its role.
+
+The owner approves or denies the two parts on one screen; an approved part
+replaces the manager's binding of that kind. --print shows the request
+without sending it. Ask again whenever a role, a skill's role or the
+repository list changes.
 """
 import glob, json, os, re, subprocess, sys
 
@@ -40,54 +44,30 @@ def worker_roles():
     return sorted(roles)
 
 
-def routes(role, repo):
-    owner, name = repo.split("/", 1)
-    policy = json.load(open(os.path.join(ROOT, "roles", role + ".json")))
-    args = {"owner": owner, "repo": name}
-    out = []
-    for r in policy["routes"]:
-        s = ",".join(r["hosts"])
-        paths = [re.sub(r"\$\{(\w+)\}", lambda m: args[m.group(1)], p) for p in r.get("paths", [])]
-        if paths:
-            s += paths[0] + "".join("," + p for p in paths[1:])
-        if r.get("methods"):
-            s = ",".join(r["methods"]) + " " + s
-        if "graphql" in r:
-            g = r["graphql"]
-            s += " graphql=" + ",".join(g.get("operations", ["*"]))
-            if g.get("fields"):
-                s += ":" + ",".join(g["fields"])
-        if "mcp" in r:
-            s += " mcp=" + ",".join(r["mcp"]["tools"])
-        if r.get("blocked"):
-            s += "=blocked"
-        out.append(s)
+def policies(pairs):
+    out, seen = [], set()
+    for role, repo in pairs:
+        owner, name = repo.split("/", 1)
+        key = (role, owner, name)
+        if key not in seen:
+            seen.add(key)
+            out.append({"file": os.path.join(ROOT, "roles", role + ".json"), "args": {"owner": owner, "repo": name}})
     return out
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ("delegate", "self"):
-        sys.exit(__doc__)
-    mode, show = sys.argv[1], "--print" in sys.argv[2:]
+    show = "--print" in sys.argv[1:]
     repos, self_roles, push_role = manager_yaml()
-    pairs = []
-    if mode == "delegate":
-        roles = worker_roles()
-        pairs = [(role, repo) for role in roles for repo in repos]
-        req = {"name": "github", "purpose": "delegate",
-               "justification": "Give my worker discoboxes GitHub when I create them, each bound only its job's role "
-                                f"({', '.join(roles)}), in {', '.join(repos)}."}
-    else:
-        pairs = [(role, repo) for role in self_roles for repo in repos] + [(push_role, SELF_REPO)]
-        req = {"name": "github", "envVar": "GH_TOKEN",
-               "justification": f"Manage issues and labels in {', '.join(repos)}, and push my own repository {SELF_REPO}."}
-    seen, rs = set(), []
-    for role, repo in pairs:
-        for r in routes(role, repo):
-            if r not in seen:
-                seen.add(r); rs.append(r)
-    req["routes"] = rs
-    req["wait"] = True
+    workers = worker_roles()
+    req = {
+        "name": "github",
+        "envVar": "GH_TOKEN",
+        "policies": policies([(r, repo) for r in self_roles for repo in repos] + [(push_role, SELF_REPO)]),
+        "delegate": {"policies": policies([(r, repo) for r in workers for repo in repos])},
+        "justification": f"Manage issues and labels in {', '.join(repos)} and push my own repository {SELF_REPO}; "
+                         f"delegate the worker roles ({', '.join(workers)}) so I can bind each worker its job's role at launch.",
+        "wait": True,
+    }
     if show:
         print(json.dumps(req, indent=2))
         return
