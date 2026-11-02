@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "description": "Delivery worker (deliver-issue, propose-adr, fix-ci, rebase-pr): push branches, open and update its PR, reply to review, re-run failed CI. No merge, no labels, no closing issues.",
+  "parameters": {
+    "owner": {
+      "type": "pathSegment"
+    },
+    "repo": {
+      "type": "pathSegment"
+    }
+  },
+  "routes": [
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}",
+        "/repos/${owner}/${repo}/**"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "paths": [
+        "/search/issues"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "paths": [
+        "/graphql"
+      ],
+      "graphql": {
+        "operations": [
+          "query"
+        ]
+      }
+    },
+    {
+      "hosts": [
+        "github.com"
+      ],
+      "paths": [
+        "/${owner}/${repo}.git/**",
+        "/${owner}/${repo}/**"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}/issues/*/comments"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}/pulls"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "PATCH"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}/pulls/*"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}/pulls/*/comments/*/replies"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "paths": [
+        "/graphql"
+      ],
+      "graphql": {
+        "operations": [
+          "mutation"
+        ],
+        "fields": [
+          "markPullRequestReadyForReview"
+        ]
+      }
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}/actions/runs/*/rerun-failed-jobs"
+      ]
+    }
+  ]
+}

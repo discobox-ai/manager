@@ -21,4 +21,4 @@ description: Make a red CI green — a PR's or the default branch's — by findi
    reproduction that showed it.
 6. Drive it green, tag `ready`.
 
-**Credentials:** the same GitHub request as `deliver-issue`.
+**Credentials:** bound at launch, role `github-deliver` (`deliver-issue` §0). Don't request more.

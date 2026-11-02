@@ -36,39 +36,12 @@ you propose them in §5's comment, and it applies them.
 - **One submit per box.** An `issue` tag already set means this box has been
   submitted. Re-running is fine only to carry on what that issue says; never
   file a second issue from the same box.
-- **Ask for GitHub now, in one request**, unless `discobox-access list`
-  already shows `GH_TOKEN` sent to `github.com`. Fill in `<repo>` and change
-  nothing else: the manager approves only this exact ask, and it covers every
-  path in §4 so nobody is asked again mid-run:
-
-  ```bash
-  discobox-access request --json <<'EOF'
-  {
-    "name": "github",
-    "envVar": "GH_TOKEN",
-    "routes": [
-      "github.com/<repo>.git/**,/<repo>/**",
-      "GET api.github.com/repos/<repo>/**",
-      "GET api.github.com/search/issues",
-      "api.github.com/graphql graphql=query",
-      "api.github.com/graphql graphql=mutation:markPullRequestReadyForReview",
-      "POST api.github.com/repos/<repo>/issues",
-      "POST api.github.com/repos/<repo>/issues/*/comments",
-      "POST api.github.com/repos/<repo>/pulls",
-      "PATCH api.github.com/repos/<repo>/pulls/*",
-      "POST api.github.com/repos/<repo>/pulls/*/comments/*/replies",
-      "POST api.github.com/repos/<repo>/actions/runs/*/rerun-failed-jobs"
-    ],
-    "justification": "I am filing the owner's ad-hoc work in <repo> as an issue, pushing it on branch discobox/issue-<N>, and if asked carrying it to a pull request into the default branch. I will not push any other branch, merge, close, relabel, or touch workflows or secrets.",
-    "grantTTLSeconds": 259200,
-    "wait": true
-  }
-  EOF
-  ```
-
-  Run it in the background and keep its request ID (`discobox-access wait
-  --json request <id>` resumes it). A `route:` refusal (`discobox-access audit
-  --blocked`) means the step is outside what was approved: stop and say so.
+- **GitHub is bound at launch.** It's in `GH_TOKEN`, by the manager's role
+  file `roles/github-submit.json` in discobox-ai/manager: those routes and no others.
+  Check `discobox-access list` shows it. If it doesn't, tag the box `blocked`,
+  say so, and stop. Don't ask for GitHub with `discobox-access request`. A step
+  refused with a `route:` reason (`discobox-access audit --blocked`) is outside
+  the role: stop and say so rather than working around it.
 - **Hold the box up** while you work: `touch -d '+2 hours'
   /run/discobox/keepalive/submit`; `rm` it when you finish.
 

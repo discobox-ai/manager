@@ -15,3 +15,5 @@ description: Rebase an open PR's branch onto its base after the base moved and t
    branch:
    `git push --force-with-lease=refs/heads/<branch>:<its current head on GitHub> <url> HEAD:refs/heads/<branch>`.
 5. Drive CI green, tag `ready`.
+
+**Credentials:** bound at launch, role `github-deliver` (`deliver-issue` §0). Don't request more.

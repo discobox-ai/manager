@@ -20,9 +20,9 @@ read the worker's terminal to know where it stands.
   - `blocked`: can't proceed; the reason is a comment on the issue or PR;
   - `needs-input`: a decision only the owner can make. The question is open
     in your terminal, and summarized in a comment on the issue.
-- **Ask for credentials with the request your skill names**, no wider. The
-  manager approves an exact match automatically; anything else waits for the
-  owner.
+- **GitHub is bound at launch** from your job's role (`roles/` in
+  discobox-ai/manager). Don't ask for it. If a step needs more than the role
+  allows, stop and say so; the owner decides.
 - **Keep disk in check.** One Docker build at a time, `docker builder prune -a -f`
   when done building, no dev image watcher you don't need.
 

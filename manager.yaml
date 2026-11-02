@@ -30,7 +30,8 @@ disk:
   # Below this, stop starting workers and have idle ones free build caches.
   minFreeGiB: 60
 
-# Secrets the owner delegated to the manager to approve worker requests from.
-# Approve with `discobox secret request approve <id> --secret <name>`.
+# Secrets the owner delegated to the manager, for binding to its workers at
+# launch. github is delegated as roles/github-submit.json for every repository
+# above (roles/README.md), which covers every worker role.
 delegations:
   - github

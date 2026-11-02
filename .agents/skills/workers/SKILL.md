@@ -19,8 +19,13 @@ First make sure this checkout is committed and pushed (`github` skill, Pushing
 to discobox-ai/manager): `--skills` installs from the pushed `main`, not from
 local files.
 
+Run it from this repository's root, binding GitHub with the job's role
+(`roles/README.md`): `github-triage` for triage, `github-deliver` for
+deliver, ADR, fix-ci and rebase, `github-submit` for an ad-hoc box.
+
 ```sh
 discobox run -d --skills discobox-ai/manager//worker-skills \
+  --bind 'github:GH_TOKEN,policy=roles/<role>.json,owner=<owner>,repo=<name>' \
   https://github.com/<repo>@<defaultBranch> \
   -p 'Deliver issue #<N> in <repo>.'
 ```
@@ -47,6 +52,7 @@ owner's own work join the process.
 
 ```sh
 discobox run -d --skills discobox-ai/manager//worker-skills \
+  --bind 'github:GH_TOKEN,policy=roles/github-submit.json,owner=<owner>,repo=<name>' \
   https://github.com/<repo>@<defaultBranch> -p '<the owner's topic, or nothing>'
 discobox tag <id> repo=<repo> job=adhoc
 ```
@@ -94,23 +100,23 @@ dialog.
   mode?"): the owner's answer is "No, keep bypass permissions". Press Down,
   then Enter.
 
-## Approve credential requests
+## Credential requests
+
+Workers get GitHub from their role at launch and don't ask for it. So any
+request a worker makes is outside its role: put it on the table for the owner,
+with what it asked for and why, and don't approve it yourself. If the owner
+says to approve it:
 
 ```sh
 discobox secret request ls -o json            # .secretRequests[] with status pending
 discobox secret request approve <id> --secret github
 ```
 
-- Pass `--secret` whenever you hold more than one delegation.
 - The approve call can print `403 ... not in the sandbox role` while the
   approval succeeded. It's the CLI's follow-up GET of the binding. Re-read the
   request's `status` before calling it refused.
-- Approve automatically only a request that is exactly what its worker skill
-  asks for (the skill's request section): `triage-issue` §0, `deliver-issue`
-  §0 (also used by `propose-adr`, `fix-ci`, `rebase-pr`), and `submit` §0
-  for the box's own `repo` tag. A wider ask, such as another
-  repository or a mutation the skill doesn't name, goes on the table. Approving
-  it is fine when it is plainly within the job, but say so in your next table.
+- A role that keeps turning out too narrow is a change to its file in
+  `roles/`, committed and pushed, not a habit of approving.
 
 ## Retire
 

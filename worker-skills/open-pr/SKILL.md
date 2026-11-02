@@ -29,68 +29,13 @@ Inside a discobox there is no `gh` login. `origin` is the host checkout's own
 remote — possibly a mirror — and `discobox` is the pool; in a discobox created
 before ADR 26-10-10-545, `origin` is the pool and `upstream` is that remote.
 Check `git remote -v`, and do not push to any of them by name: every GitHub call
-goes through a GitHub credential, with the URL spelled out. `deliver-issue` and
-`submit` ask for their own up front; check `discobox-access list` and
-request one only when no credential in `GH_TOKEN` is sent to `github.com`
-and `api.github.com`:
+goes through a GitHub credential, with the URL spelled out. Your job's role file (`roles/github-deliver.json` or `github-submit.json`)
+is bound at launch; see the calling skill. Push `<branch>` and nothing else,
+and edit only this PR's body: a route can't say which branch a push writes,
+and `main`'s branch protection covers a push to `main`.
 
-```bash
-discobox-access request --json <<'EOF'
-{
-  "name": "github",
-  "envVar": "GH_TOKEN",
-  "routes": [
-    "github.com/discobox-ai/discobox.git/**,/discobox-ai/discobox/**",
-    "GET api.github.com/repos/discobox-ai/discobox/**",
-    "api.github.com/graphql graphql=query",
-    "api.github.com/graphql graphql=mutation:markPullRequestReadyForReview",
-    "POST api.github.com/repos/discobox-ai/discobox/pulls",
-    "PATCH api.github.com/repos/discobox-ai/discobox/pulls/*",
-    "POST api.github.com/repos/discobox-ai/discobox/pulls/*/comments/*/replies",
-    "POST api.github.com/repos/discobox-ai/discobox/issues/*/comments",
-    "POST api.github.com/repos/discobox-ai/discobox/actions/runs/*/rerun-failed-jobs"
-  ],
-  "justification": "the user asked me to open a pull request for my local commits in discobox-ai/discobox from branch <branch> into main and get its CI green. I will push only that branch, never force-push without a lease, merge or close anything, or touch labels, issues, workflows or secrets.",
-  "grantTTLSeconds": 14400,
-  "wait": true
-}
-EOF
-```
-
-Each route is one call this skill makes: git fetch and push of this
-repository (`info/refs`, `git-upload-pack`, `git-receive-pack`); `gh`'s reads,
-through REST `GET`s and GraphQL queries (`gh pr list`, `view`, `checks`); the
-PR opened and its body edited over REST, `POST …/pulls` and `PATCH
-…/pulls/<pr>`, because a REST route is held to this repository and GraphQL's
-`createPullRequest`/`updatePullRequest` act on any repository by node ID;
-`gh pr ready`'s `markPullRequestReadyForReview`, which has no REST form; and
-the REST comment, review-comment reply and `gh run rerun --failed`
-(`rerun-failed-jobs`). `gh pr create`, `gh pr edit` and `gh pr comment` run
-GraphQL mutations that are not routed, so they are refused: use the `gh api`
-forms in §2.
-
-What is approved is these routes, and the egress holds every request
-carrying the token to them. They stop merging (there is no merge route,
-REST or GraphQL), deleting a branch or ref through the API, dispatching a
-workflow, any host but `github.com` and `api.github.com`, and any REST or git
-write to another repository. They do not stop, and the approver should read
-it so: the GraphQL queries read every repository the token can see;
-`markPullRequestReadyForReview` works on any pull request the token can
-write, in any repository; the REST `PATCH` of a pull request can change its
-title, base or state — close it — as well as its body, since a route cannot
-read a REST body; the comment and reply routes reach every issue and pull
-request of this repository; and a git push writes whichever branch it names,
-a force-push or a delete included. Those are this skill's to keep — push
-`<branch>` and nothing else, edit only this PR's body — and `main`'s branch
-protection covers a push to `main`. A step refused with a `route:` reason
-(`discobox-access audit --blocked`) is outside what was approved: stop and
-say so rather than working around it.
-
-Name the branch in the justification (§1 picks it): the person approving reads
-it, and what a route cannot say is which branch a push writes, so pushing
-anything else is this run breaking its word; `main`'s branch protection
-covers a push to `main`. `GH_TOKEN` holds the credential's sentinel in every command
-started after it was granted; a shell started before that takes it up with
+`GH_TOKEN` holds the credential's sentinel; a shell started before it was
+bound takes it up with
 `eval "$(discobox-access env)"`. `gh` reads it as it is. Git takes it through a
 one-shot credential helper:
 

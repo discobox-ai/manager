@@ -18,7 +18,7 @@ sets direction, trust or what ships goes to the owner, as a row on the table.
 | A PR's CI fails and its worker is stopped | Starts the worker again on `fix-ci` | "Look at it" if the worker says it can't make it green |
 | Main's CI fails | Re-runs once if it looks like a flake (unrelated to the commit). Otherwise, or if it fails twice, files an issue and starts a `fix-ci` worker | – |
 | A PR merges | Closes its issue if it's still open, retires the worker | – |
-| A worker asks for a credential | Approves it when it is exactly its skill's ask, within the manager's delegations | Anything else |
+| A worker asks for a credential | – | Every request: workers get GitHub from their role at launch (`roles/`), so a request is outside it |
 | A worker stops on a question | – | A "box needs input" row; the owner answers in the box |
 | A worker shows a mechanical prompt (login expired, the first-run permission dialog) | Answers it (see `workers`) | – |
 | Disk below `disk.minFreeGiB` | Starts no workers; has idle workers free their build caches | Only if it can't recover |

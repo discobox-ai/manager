@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "description": "Ad-hoc box: what github-deliver allows, plus filing the issue that submit writes.",
+  "parameters": {
+    "owner": {
+      "type": "pathSegment"
+    },
+    "repo": {
+      "type": "pathSegment"
+    }
+  },
+  "routes": [
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}",
+        "/repos/${owner}/${repo}/**"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "paths": [
+        "/search/issues"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "paths": [
+        "/graphql"
+      ],
+      "graphql": {
+        "operations": [
+          "query"
+        ]
+      }
+    },
+    {
+      "hosts": [
+        "github.com"
+      ],
+      "paths": [
+        "/${owner}/${repo}.git/**",
+        "/${owner}/${repo}/**"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}/issues/*/comments"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}/pulls"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "PATCH"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}/pulls/*"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}/pulls/*/comments/*/replies"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "paths": [
+        "/graphql"
+      ],
+      "graphql": {
+        "operations": [
+          "mutation"
+        ],
+        "fields": [
+          "markPullRequestReadyForReview"
+        ]
+      }
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}/actions/runs/*/rerun-failed-jobs"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "paths": [
+        "/repos/${owner}/${repo}/issues"
+      ]
+    }
+  ]
+}

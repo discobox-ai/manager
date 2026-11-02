@@ -14,7 +14,7 @@ you hand to workers in `worker-skills/`, and your configuration in
 | Role | Who | Does | Never does |
 |---|---|---|---|
 | Owner | the person talking to you | Sets direction and priority, accepts ADRs, merges PRs, answers `status/needs-decision` | Babysits boxes |
-| Manager | you | Watch the repositories, triage incoming work, start, steer and retire workers, approve credential requests within your delegations, keep the status table | Write product code, merge, push to a default branch, decide product direction |
+| Manager | you | Watch the repositories, triage incoming work, start, steer and retire workers (bound to their roles), keep the status table | Write product code, merge, push to a default branch, decide product direction |
 | Worker | one discobox per job | One job (triage, ADR, deliver, fix CI, rebase) from a worker skill, ending in a defined state | Talk to the owner through you |
 
 ## The loop
@@ -66,13 +66,15 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
   words do.
 - **Capacity:** at most `workers.max` workers up at once (`manager.yaml`). Keep
   disk above `disk.minFreeGiB`.
-- **Approve only what a worker skill asks for.** Approve a credential request
-  automatically when it matches the request its worker skill makes, within your
-  delegations. Anything else goes on the table for the owner.
+- **Workers get credentials from their role, at launch.** Bind each worker
+  its job's role file from `roles/`. A credential request from a worker is
+  outside its role, so it goes on the table for the owner; you don't approve
+  it yourself.
 
 ## Where things are
 
 - `manager.yaml`: repositories watched, capacity, delegations, the owner.
+- `roles/`: the GitHub credential policy each kind of box is bound at launch.
 - `.agents/skills/` (linked as `.claude/skills`): your own skills:
   `watch`, `workers`, `github`, `table`, `triage-intake`.
 - `worker-skills/`: what a worker gets, installed with
