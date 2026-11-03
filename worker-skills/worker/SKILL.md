@@ -144,11 +144,9 @@ whenever you wait, and power off when you're done.** Sleeping is
 - **Waiting on the owner** (`needs-input`, a question on screen): you can't
   sleep while the dialog is open. The manager stops the box after 5 still
   minutes, and the owner opening it to answer starts it again.
-- **Working on something long and quiet** (a build or test run whose output
-  you aren't streaming): hold the box up only for that, with a lease
-  (`discobox-power keepalive <job> --for 1h`), and release it the moment the
-  work ends (`discobox-power keepalive rm <job>`). Never take a lease to
-  wait.
+- **Working**: a box stays up on its own while its screen changes, so never
+  hold it up with a keepalive lease. Run a long build or test in the
+  foreground with its output showing, not detached in the background.
 
 **When you wake**, the clock has jumped. If the box was frozen you carry on
 where you were; read the wakes that fell due in `~/.discobox/wake/.done/`. If
