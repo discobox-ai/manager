@@ -44,6 +44,8 @@ describe('artifact (vite build --mode artifact)', () => {
     assert.equal(await merge.getAttribute('href'), 'https://github.com/discobox-ai/vm/pull/38')
     assert.match((await merge.getAttribute('class')) ?? '', /\bbig\b/)
     assert.match(await page.locator('.when').innerText(), /synced 1 min ago/)
+    // The viewer puts the stylesheet in <body>, which the app renders over: it must survive.
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(243, 245, 248)')
   })
 
   it('shows a PR’s details from its synced document, sanitized', async (t) => {
