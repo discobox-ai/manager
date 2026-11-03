@@ -155,8 +155,8 @@ Status line: `submitted: <repo>#<N>, <outcome>`.
 
 Then:
 
-- **carry-on:** keep going as `deliver-issue`; its tags (`ready`, `blocked`,
-  `merged`) carry on from here, as they do for any delivering worker.
+- **carry-on:** keep going as `deliver-issue`; its tags and sleeping carry on
+  from here, as they do for any delivering worker.
 - **parked** or **design-only:** tag the box `ready` and stop. The manager
   retires the box.
 
