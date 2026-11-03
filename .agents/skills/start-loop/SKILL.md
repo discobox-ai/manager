@@ -81,7 +81,11 @@ Match them up by `repo` and `issue`. Then:
 - **An issue `status/in-progress` with no box of yours:** someone else's
   worker has it (another manager, or the owner). Row "worker not mine", and
   start nothing for it.
-- **A PR with no issue:** row "needs an issue".
+- **A community PR** (author not an owner, member or collaborator): no
+  issue named means comment and close it; an issue named means no row (it's
+  reference only), unless one of our PRs for that issue is open, in which
+  case comment and close it (`docs/gates.md`).
+- **A maintainer's PR with no issue:** row "needs an issue".
 - **A PR from a box of yours that merged, with its issue still open:** close
   the issue (`github` skill) and retire the box.
 - **A finished box** (`ready` with nothing left, `merged`, or `to-delete`):

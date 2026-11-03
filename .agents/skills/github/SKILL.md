@@ -48,6 +48,13 @@ gh api -X PATCH repos/<repo>/issues/<N> -f state=closed -f state_reason=complete
   > or the change, then open the PR again with `Closes #<issue>` in its
   > description.
 
+- **A community PR whose issue we've now opened a PR for:** comment, then
+  close it the same way:
+
+  > Thanks — this was used as a reference for #<our PR>, which implements
+  > #<issue> through our process. We don't merge community pull requests, so
+  > I'm closing this one.
+
   A community PR is one whose `author_association` is not `OWNER`, `MEMBER`
   or `COLLABORATOR` (`gh api repos/<repo>/pulls/<P> --jq
   .author_association`). It names an issue when its body or a commit says

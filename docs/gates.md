@@ -9,6 +9,8 @@ sets direction, trust or what ships goes to the owner, as a row on the table.
 | The owner says "submit box X" | Types `/submit` into it once it's idle | Its questions, answered in the box |
 | A submit comment lands on an issue (`submit` §5) | Applies its proposed labels and a status: *carry-on* → `status/in-progress`, the box becomes its worker; *parked* → `status/ready`, or `status/blocked` on a Proposed ADR, and the box is retired; *design-only* → `status/ready`, the box is retired. The owner's own work skips triage and the priority gate | A Proposed ADR it opened: accept or reject |
 | A community PR (author not an owner, member or collaborator) with no issue it closes or is part of | Comments that every PR must be linked to an issue, and closes it (`github` skill, Closing) | – |
+| A community PR that names an issue | Nothing to the PR itself: it's never merged, only a reference. The issue goes through triage and delivery as usual, and its worker reads the PR as reference (`deliver-issue` §0) | – |
+| Our PR opens for an issue a community PR also names | Comments on the community PR, naming ours, and closes it (`github` skill, Closing) | – |
 | A maintainer's PR with no issue | – | A "needs an issue" row. Don't file one for someone else's PR |
 | A watched repository isn't migrated (lacks the `status/*` and `type/*` labels, `labels.md`) | Starts no triage in it. Starts a `migrate-labels` worker for it | The plan, approved in the worker's box |
 | New issue, no `status/*` label, in a migrated repository | Starts a triage worker (`triage-issue`), at most `workers.triageMax` at once, highest `priority/*` first, then newest | – |
