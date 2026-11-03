@@ -172,11 +172,9 @@ describe('artifact (vite build --mode artifact)', () => {
     assert.equal(await contract.locator('pre.sig ins').innerText(), ', opts Options')
     assert.match(await page.getByRole('tab', { name: /Contract/ }).innerText(), /1/)
 
-    // Implementation: the body-only change too, with its body's diff on request.
+    // Implementation: the body-only change too, its body's diff under it.
     await page.getByRole('tab', { name: /Implementation/ }).click()
     let body = page.locator('.decl', { hasText: 'compress' })
-    await body.locator('.badge.body').waitFor()
-    await body.getByRole('button', { name: 'Show the body’s diff' }).click()
     await body.locator('tr.add', { hasText: 'lz4' }).waitFor()
     assert.equal(await body.locator('tr.add .ln').nth(1).innerText(), '30')
     assert.match(page.url(), /tab=implementation/)

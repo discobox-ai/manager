@@ -5,7 +5,12 @@ import type { DeclChangeDoc, DiffDoc, DiffErrorDoc, DiffFileDoc, DiffPartDoc } f
 import { githubOrg } from '../../app/shared/refs.ts'
 import { unifiedDiff } from '../../app/shared/sequence.ts'
 import type { AdrLinks } from '../docs.ts'
-import { getFileText, getMergeBase, getPullFiles, getPullHead, type PullFile } from '../github.ts'
+import { createHash } from 'node:crypto'
+import * as fs from 'node:fs/promises'
+import * as nodePath from 'node:path'
+
+import { diffCacheDir } from '../config.ts'
+import { getFileText, getFileTexts, getMergeBase, getPullFiles, getPullHead, type PullFile } from '../github.ts'
 import { declarations, languageFor, type Decl } from './declarations.ts'
 import { markdownDiff } from './markdown-diff.ts'
 
@@ -26,6 +31,9 @@ const GENERATED_HEADER = /^(\/\/|#) Code generated .* DO NOT EDIT\.$/m
 
 const MARKDOWN = /\.(md|markdown)$/i
 
+// Part of a built diff's cache key: bump it when what a build produces changes.
+const BUILD_VERSION = 2
+
 // File texts at a commit never change, and diffs of a given head and base don't either.
 let texts = new Map<string, Promise<string>>()
 let built = new Map<string, Promise<Built>>()
@@ -42,13 +50,66 @@ function remember<V>(map: Map<string, V>, key: string, value: V, max: number): V
   return value
 }
 
+function cacheFile(kind: 'texts' | 'built', key: string): string {
+  return nodePath.join(diffCacheDir, kind, createHash('sha256').update(key).digest('hex').slice(0, 40) + '.json')
+}
+
+async function readCache<T>(kind: 'texts' | 'built', key: string): Promise<T | null> {
+  try {
+    return JSON.parse(await fs.readFile(cacheFile(kind, key), 'utf8')) as T
+  } catch {
+    return null
+  }
+}
+
+async function writeCache(kind: 'texts' | 'built', key: string, value: unknown) {
+  let file = cacheFile(kind, key)
+  try {
+    await fs.mkdir(nodePath.dirname(file), { recursive: true })
+    let tmp = `${file}.${process.pid}.tmp`
+    await fs.writeFile(tmp, JSON.stringify(value))
+    await fs.rename(tmp, file)
+  } catch {
+    // A cache that can't be written only costs a fetch next time.
+  }
+}
+
 function textAt(fullName: string, path: string, sha: string): Promise<string> {
   let key = `${fullName}@${sha}:${path}`
   let hit = texts.get(key)
   if (hit) return hit
-  let value = getFileText(fullName, path, sha)
+  let value = (async () => {
+    let cached = await readCache<{ text: string }>('texts', key)
+    if (cached) return cached.text
+    let text = await getFileText(fullName, path, sha)
+    void writeCache('texts', key, { text })
+    return text
+  })()
   value.catch(() => texts.delete(key))
   return remember(texts, key, value, 2000)
+}
+
+/** Reads every version a build needs that isn't cached, in batches, before the per-file work. */
+async function prefetch(fullName: string, wanted: { path: string; sha: string }[]) {
+  let missing: { path: string; sha: string }[] = []
+  for (let w of wanted) {
+    let key = `${fullName}@${w.sha}:${w.path}`
+    if (texts.has(key)) continue
+    let cached = await readCache<{ text: string }>('texts', key)
+    if (cached) remember(texts, key, Promise.resolve(cached.text), 2000)
+    else missing.push(w)
+  }
+  if (!missing.length) return
+  let got = await getFileTexts(fullName, missing.map((m) => ({ path: m.path, ref: m.sha })))
+  await Promise.all(
+    missing.map(async (m, i) => {
+      let text = got[i]
+      if (text == null) return
+      let key = `${fullName}@${m.sha}:${m.path}`
+      remember(texts, key, Promise.resolve(text), 2000)
+      await writeCache('texts', key, { text })
+    }),
+  )
 }
 
 /** Runs fn over items, `limit` at a time. */
@@ -72,10 +133,16 @@ export async function diffFor(repo: string, n: number, adrLinks: AdrLinks): Prom
   let ref = { repo, fullName, number: n }
   try {
     let head = await getPullHead(ref)
-    let key = `${fullName}#${n}@${head.headSha}:${head.baseSha}:${adrLinks}`
+    let key = `v${BUILD_VERSION}:${fullName}#${n}@${head.headSha}:${head.baseSha}:${adrLinks}`
     let hit = built.get(key)
     if (!hit) {
-      hit = build(ref, head, adrLinks)
+      hit = (async () => {
+        let cached = await readCache<Built>('built', key)
+        if (cached) return cached
+        let fresh = await build(ref, head, adrLinks)
+        void writeCache('built', key, fresh)
+        return fresh
+      })()
       hit.catch(() => built.delete(key))
       remember(built, key, hit, 60)
     }
@@ -96,6 +163,15 @@ async function build(
     getMergeBase(ref.fullName, head.baseSha, head.headSha),
     getPullFiles(ref),
   ])
+  // Every version the per-file work will read, fetched together first.
+  let wanted: { path: string; sha: string }[] = []
+  for (let f of files) {
+    let readable = MARKDOWN.test(f.filename) || (languageFor(f.filename) && !GENERATED.some((re) => re.test(f.filename)))
+    if (!readable) continue
+    if (f.status !== 'added') wanted.push({ path: f.previousFilename ?? f.filename, sha: baseSha })
+    if (f.status !== 'removed') wanted.push({ path: f.filename, sha: head.headSha })
+  }
+  await prefetch(ref.fullName, wanted)
   let parsed = 0
   let parts: DiffPartDoc[] = []
   let docs: DiffFileDoc[] = await pool(files, FETCH_CONCURRENCY, async (f, i) => {

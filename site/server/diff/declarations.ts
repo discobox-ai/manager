@@ -15,7 +15,7 @@ export interface Decl {
   name: string
   /** The type a method or field belongs to. */
   container?: string
-  /** As written, comments and all. */
+  /** As written, without its comments. */
   signature: string
   /** Comments dropped and spacing removed but between words: what's compared. */
   signatureKey: string
@@ -118,7 +118,7 @@ class Collector {
     let sigEnd = body ? body.startIndex : d.sigEnd ? d.sigEnd.startIndex : to
     // A value's "=" belongs with the value: "var D map[string]int", not "... int =".
     let trimEq = (t: string) => t.trimEnd().replace(/\s*=$/, '')
-    let signature = trimEq((d.prefix ?? '') + this.source.slice(from, sigEnd))
+    let signature = trimEq((d.prefix ?? '') + this.display(d.start, from, sigEnd))
     let base = `${d.kind}:${d.container ? d.container + '.' : ''}${d.name}`
     let n = (this.#seen.get(base) ?? 0) + 1
     this.#seen.set(base, n)
@@ -135,6 +135,23 @@ class Collector {
       bodyLine: body ? body.startPosition.row + 1 : null,
       exported: d.exported,
     })
+  }
+
+  /** [from, to) as written, minus its comments and the lines they leave empty: what's shown. */
+  display(node: Node, from: number, to: number): string {
+    let text = ''
+    let at = from
+    for (let c of comments(node)) {
+      if (c.startIndex < at || c.endIndex > to) continue
+      text += this.source.slice(at, c.startIndex)
+      at = c.endIndex
+    }
+    text += this.source.slice(at, to)
+    return text
+      .split('\n')
+      .map((l) => l.trimEnd())
+      .filter((l) => l.trim() !== '')
+      .join('\n')
   }
 
   /** [from, to) with its comments removed and runs of whitespace made one space. */

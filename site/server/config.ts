@@ -21,6 +21,9 @@ export const chatRepliesPath = path.join(stateDir, 'chat-replies.jsonl')
 export const syncDir = expand(process.env.SYNC_DIR ?? path.join(stateDir, 'artifact-sync'))
 export const relayStatusPath = path.join(syncDir, 'relay.json')
 export const relayAlertsPath = path.join(syncDir, 'alerts.log')
+// File texts at a commit, and built diffs, cached on disk: they never change, and the site and the
+// sync both read them, across restarts.
+export const diffCacheDir = expand(process.env.DIFF_CACHE_DIR ?? path.join(stateDir, 'diff-cache'))
 
 export const port = Number.parseInt(process.env.PORT ?? '4400', 10)
 export const host = process.env.HOST ?? '0.0.0.0'

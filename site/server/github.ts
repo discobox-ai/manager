@@ -335,3 +335,44 @@ export async function getPullFiles(ref: Ref, pages = 3): Promise<{ files: PullFi
   }
   return { files, truncated: more }
 }
+
+/**
+ * Many files' texts at their refs in one GraphQL query per 40 (a read, though GraphQL is a POST),
+ * instead of a contents request each. null for a file GraphQL won't give in full (missing,
+ * binary or truncated); the caller falls back to getFileText for those.
+ */
+export async function getFileTexts(fullName: string, items: { path: string; ref: string }[]): Promise<(string | null)[]> {
+  let [owner, name] = fullName.split('/')
+  let out: (string | null)[] = new Array(items.length).fill(null)
+  let token = process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN
+  // Small queries, four at a time: one big query is as slow as its largest files together.
+  let chunks: number[] = []
+  for (let start = 0; start < items.length; start += 12) chunks.push(start)
+  let next = 0
+  let one = async (start: number) => {
+    let chunk = items.slice(start, start + 12)
+    let fields = chunk
+      .map((it, i) => `f${i}: object(expression: ${JSON.stringify(`${it.ref}:${it.path}`)}) { ... on Blob { isBinary isTruncated text } }`)
+      .join('\n')
+    let query = `query { repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(name)}) { ${fields} } }`
+    let headers: Record<string, string> = { 'Content-Type': 'application/json', 'User-Agent': 'discobox-manager-site' }
+    if (token) headers.Authorization = `Bearer ${token}`
+    try {
+      let res = await fetch(`${API}/graphql`, { method: 'POST', headers, body: JSON.stringify({ query }), signal: AbortSignal.timeout(30_000) })
+      if (!res.ok) return
+      let repo = (await res.json())?.data?.repository ?? {}
+      chunk.forEach((_, i) => {
+        let blob = repo[`f${i}`]
+        if (blob && !blob.isBinary && !blob.isTruncated && typeof blob.text === 'string') out[start + i] = blob.text
+      })
+    } catch {
+      // Left null: each falls back to its own contents request.
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(4, chunks.length) }, async () => {
+      while (next < chunks.length) await one(chunks[next++])
+    }),
+  )
+  return out
+}

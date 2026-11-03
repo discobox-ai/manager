@@ -48,6 +48,11 @@ of each file from GitHub. `declarations.ts` parses Go, TypeScript/TSX/JavaScript
 tree-sitter (`web-tree-sitter` and the grammars' own `.wasm` files, so nothing native builds):
 what comes before a declaration's body is its signature, and signatures are compared with
 comments and spacing ignored. Other languages, and generated files, appear under Lines only. A
+Both versions of every file are read in a few batched GraphQL queries (contents requests only
+for what GraphQL won't return in full), and file texts and built diffs are cached on disk in
+`~/.local/state/discobox-manager/diff-cache/`, shared by the site and the sync, so a PR is read
+from GitHub once. Contract and Implementation show only the code: each changed declaration as
+written, without its comments, by file, green where added and red where removed. A
 PR's diff is one small document (the file list and declaration changes) plus one part per file
 (its patch, rendered docs and body diffs), so each fits the artifact's database.
 

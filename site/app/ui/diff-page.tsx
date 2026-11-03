@@ -93,7 +93,7 @@ export function DiffPage(handle: Handle<{ id: string; tab: Tab; store: Store }>)
         </header>
         <div id="diff-panel" role="tabpanel" aria-labelledby={`tab-${tab}`} class="diff-panel">
           {state.status === 'loading' ? (
-            <p class="empty">Reading the PR’s diff…</p>
+            <p class="empty">Reading the PR’s diff… The first view of a PR reads its files from GitHub, which can take several seconds; after that it’s instant.</p>
           ) : state.status === 'missing' ? (
             <p class="empty">No diff for PR {label} yet. It arrives with the next sync, while the PR is open.</p>
           ) : 'error' in state.doc ? (
@@ -140,13 +140,8 @@ function blobHref(doc: DiffDoc, file: string, line?: number, sha = doc.headSha):
 }
 
 // --- Contract and Implementation ----------------------------------------------------------
-
-const STATUS_LABEL: Record<DeclChangeDoc['status'], string> = {
-  added: 'added',
-  removed: 'removed',
-  changed: 'changed',
-  moved: 'moved',
-}
+// Only the code: each changed declaration as written (no comments), by file, with what was added in
+// green and what was removed in red. Implementation adds each changed body's diff under it.
 
 function DeclsTab(
   handle: Handle<{
@@ -164,35 +159,11 @@ function DeclsTab(
     let files = doc.files
       .map((f, index) => ({ file: f, index, changes: (f.decls ?? []).filter(pick) }))
       .filter((f) => f.changes.length)
-    let all = files.flatMap((f) => f.changes)
-    let unparsed = doc.files.filter((f) => f.kind === 'code' && !f.decls)
-    let lineOnly = doc.files.filter((f) => f.kind === 'other')
-    let tally = (s: DeclChangeDoc['status']) => all.filter((c) => c.status === s).length
-    let bodyOnly = all.filter((c) => c.status !== 'added' && c.status !== 'removed' && !c.signatureChanged).length
+    let skipped = doc.files.filter((f) => f.kind !== 'docs' && !f.decls).length
     return (
       <>
         <div class="diff-summary">
-          <span>
-            {all.length ? (
-              <>
-                <strong>{all.length}</strong> {all.length === 1 ? 'declaration' : 'declarations'} in {files.length}{' '}
-                {files.length === 1 ? 'file' : 'files'}:{' '}
-                {[
-                  tally('added') && `${tally('added')} added`,
-                  tally('removed') && `${tally('removed')} removed`,
-                  all.filter((c) => c.signatureChanged && c.status !== 'added' && c.status !== 'removed').length &&
-                    `${all.filter((c) => c.signatureChanged && c.status !== 'added' && c.status !== 'removed').length} with a new signature`,
-                  bodies && bodyOnly && `${bodyOnly} with only a new body`,
-                ]
-                  .filter(Boolean)
-                  .join(', ')}
-              </>
-            ) : bodies ? (
-              'No declarations changed.'
-            ) : (
-              'No signatures changed: callers see the same contract.'
-            )}
-          </span>
+          {files.length ? null : <span>{bodies ? 'No declarations changed.' : 'No signatures changed.'}</span>}
           <label class="toggle">
             <input
               type="checkbox"
@@ -206,39 +177,14 @@ function DeclsTab(
         {files.map(({ file, index, changes }) => (
           <section key={file.filename} class="diff-file">
             <FileHeader doc={doc} file={file} />
-            <ul class="decls">
+            <div class="decls">
               {changes.map((c) => (
                 <DeclItem key={c.key} id={id} index={index} doc={doc} file={file} change={c} store={store} bodies={bodies} />
               ))}
-            </ul>
+            </div>
           </section>
         ))}
-        {unparsed.length || lineOnly.length ? (
-          <div class="diff-notes">
-            {unparsed.length ? (
-              <p>
-                <strong>Not read for declarations:</strong>{' '}
-                {unparsed.map((f, i) => (
-                  <span key={f.filename}>
-                    {i ? ', ' : ''}
-                    <span class="mono">{f.filename}</span> ({f.generated ? 'generated' : (f.note ?? 'not parsed').replace(/^Not parsed: /, '')})
-                  </span>
-                ))}
-              </p>
-            ) : null}
-            {lineOnly.length ? (
-              <p>
-                <strong>Under Lines only</strong> ({lineOnly.length}, no parser for their language):{' '}
-                {lineOnly.map((f, i) => (
-                  <span key={f.filename}>
-                    {i ? ', ' : ''}
-                    <span class="mono">{f.filename}</span>
-                  </span>
-                ))}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
+        {skipped ? <p class="diff-notes">{skipped} more {skipped === 1 ? 'file' : 'files'} not parsed (generated, or no parser for the language); see Lines.</p> : null}
       </>
     )
   }
@@ -262,41 +208,21 @@ function FileHeader(handle: Handle<{ doc: DiffDoc; file: DiffFileDoc }>) {
   }
 }
 
+/** One declaration: its code, colored by what changed; on Implementation, its body's diff below. */
 function DeclItem(
   handle: Handle<{ id: string; index: number; doc: DiffDoc; file: DiffFileDoc; change: DeclChangeDoc; store: Store; bodies: boolean }>,
 ) {
-  let showBody = false
   return () => {
     let { change: c, doc, file, id, index, store, bodies } = handle.props
-    let name = c.container ? `${c.container}.${c.name}` : c.name
-    let badge = c.status === 'changed' && !c.signatureChanged ? 'body' : STATUS_LABEL[c.status]
     let line = c.status === 'removed' ? blobHref(doc, file.filename, c.line, doc.baseSha) : blobHref(doc, file.filename, c.line)
     return (
-      <li class={`decl ${badge}`}>
-        <div class="decl-head">
-          <span class={`badge ${badge}`}>{badge}</span>
-          <span class="kind">{c.kind}</span>
-          <strong class="mono">{name}</strong>
-          {c.exported ? null : <span class="internal">internal</span>}
-          {c.movedFrom ? <span class="sub">from {c.movedFrom}</span> : null}
-          {c.status !== 'added' && c.status !== 'removed' && c.signatureChanged && c.bodyChanged ? <span class="sub">and its body</span> : null}
-          <a class="line" href={line} target="_blank" rel="noopener noreferrer">
-            L{c.line}
-          </a>
-        </div>
+      <div class={`decl ${c.status}`}>
+        <a class="line" href={line} target="_blank" rel="noopener noreferrer" title={`${c.kind} ${c.container ? c.container + '.' : ''}${c.name}, line ${c.line}${c.movedFrom ? `, moved from ${c.movedFrom}` : ''}`}>
+          {c.line}
+        </a>
         <Signature change={c} />
-        {bodies && c.hasBodyPatch ? (
-          <div class="body-diff">
-            <button type="button" class="link" aria-expanded={showBody} mix={on('click', () => {
-                showBody = !showBody
-                handle.update()
-              })}>
-              {showBody ? 'Hide' : 'Show'} the body’s diff
-            </button>
-            {showBody ? <Part id={id} index={index} store={store} view="body" declKey={c.key} /> : null}
-          </div>
-        ) : null}
-      </li>
+        {bodies && c.hasBodyPatch ? <Part id={id} index={index} store={store} view="body" declKey={c.key} /> : null}
+      </div>
     )
   }
 }
