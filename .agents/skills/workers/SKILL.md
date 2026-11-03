@@ -262,8 +262,24 @@ deletes boxes, often before you get to them; a 404 means it's already gone.
 
 ## Disk
 
-A worker's Docker build cache is not shared and can grow tens of GiB. When
-disk is low, have idle workers run `docker builder prune -a -f`, never
+**Trim caches first: they are usually the biggest use of disk** (owner,
+2026-11-03). `~/.cache` is a partition shared by the boxes on this host, and
+the Go build cache there grows without bound: on 2026-11-03
+`~/.cache/go-build` held 147 GiB, and trimming entries untouched for a day
+freed 100 GiB (60 → 160 GiB free) in seconds. When disk nears
+`disk.minFreeGiB`, before anything else:
+
+```sh
+du -sh ~/.cache/* | sort -h | tail                 # find the big ones
+find ~/.cache/go-build -type f -atime +1 -delete   # Go: entries unused for a day
+```
+
+It's a cache: a build that needs a removed entry rebuilds it, slower but
+correct. Prefer a time-bounded trim to wiping it, and do it while no worker
+is mid-build if you can. Other caches there (`golangci-lint`, `gopls`,
+`pnpm`) can be trimmed the same way.
+
+Then, if still short: a worker's own Docker build cache is not shared and can
+grow tens of GiB. Have idle workers run `docker builder prune -a -f`, never
 `docker image prune -a`. Have them stop any dev image watcher and keep to one
-Docker build at a time. Check Go caches too (`go clean -cache` once freed 80
-GiB in a lead).
+Docker build at a time.
