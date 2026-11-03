@@ -33,6 +33,14 @@ GH_SECRET=$(discobox-access list -json | jq -r '[.credentials[]
 Empty means none or more than one: launch nothing, and tell the owner which
 (`discobox-access list`). Never fall back to `github`.
 
+**Workers push to the bot's forks** (owner, 2026-11-03): the bot can't write
+to the product repositories. A role that pushes (`github-deliver`,
+`github-submit`) takes `forkOwner`, and the box gets a `fork` tag:
+
+```sh
+FORK=$(sed -n 's/^  forkOwner: *//p' manager.yaml)   # ibuildthecloud-bot
+```
+
 Run it from this repository's root, binding that secret with the role the job's
 skill names in its frontmatter, `metadata.discobox.role` (`roles/README.md`).
 Read it each time rather than remembering it; a skill's role changes with
@@ -57,7 +65,7 @@ H='!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f'
 export GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0= \
   GIT_CONFIG_KEY_1=credential.helper GIT_CONFIG_VALUE_1="$H"
 discobox run -d --skills discobox-ai/manager//worker-skills \
-  --bind "$GH_SECRET:GH_TOKEN,policy=roles/<role>.json,owner=<owner>,repo=<name>" \
+  --bind "$GH_SECRET:GH_TOKEN,policy=roles/<role>.json,owner=<owner>,repo=<name>${FORK:+,forkOwner=$FORK}" \
   https://github.com/<repo>@<defaultBranch> \
   -p 'Deliver issue #<N> in <repo>.'
 ```
@@ -69,7 +77,8 @@ discobox run -d --skills discobox-ai/manager//worker-skills \
 - **Name the job's limits in the prompt** when they differ from the skill:
   "ADR only: draft it as Proposed, stop when its PR is green".
 - **Tag the box right away**, before anything else:
-  `discobox tag <id> repo=<owner>/<name> issue=<N> job=<job> --description '<repo>#<N>: <title>'`.
+  `discobox tag <id> repo=<owner>/<name> issue=<N> job=<job> fork=$FORK --description '<repo>#<N>: <title>'`
+  (`fork` only for a role that pushes: deliver, ADR, fix, rebase, ad-hoc).
   The worker reads `repo` and `issue` from its tags (`worker` skill), and
   waits a little for them, then names the box for the issue and its title
   (`worker`, Name the box; `discobox tag` can't set a name). Then set the
@@ -89,9 +98,9 @@ owner's own work join the process.
 
 ```sh
 discobox run -d --skills discobox-ai/manager//worker-skills \
-  --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-submit.json,owner=<owner>,repo=<name>" \
+  --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-submit.json,owner=<owner>,repo=<name>,forkOwner=$FORK" \
   https://github.com/<repo>@<defaultBranch> -p '<the owner's topic, or nothing>'
-discobox tag <id> repo=<repo> job=adhoc
+discobox tag <id> repo=<repo> job=adhoc fork=$FORK
 ```
 
 Give the owner the box ID. On the table it is one row, Doing "owner

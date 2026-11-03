@@ -20,8 +20,9 @@ eval "$(discobox-access env)"   # github-repo reads GitHub with GH_TOKEN
 for r in discobox vm manager review; do
   # Every issue and PR: new issues to triage, PRs without an issue, comments, merges.
   discobox-monitor enable github-repo --name gh-$r      -o repo=discobox-ai/$r -o watch=issues,prs
-  # Workers' PRs with their checks and conflicts, and the default branch's CI.
-  discobox-monitor enable github-repo --name gh-$r-work -o repo=discobox-ai/$r -o head='discobox/*' -o branch=main
+  # Workers' PRs (from the bot's forks, so by author, not branch) with their
+  # checks and conflicts, and the default branch's CI.
+  discobox-monitor enable github-repo --name gh-$r-work -o repo=discobox-ai/$r -o author=ibuildthecloud-bot -o branch=main
 done
 # Workers: state, primary terminal busy/idle, secret requests.
 discobox-monitor enable discobox-box --name workers -o created-by=me

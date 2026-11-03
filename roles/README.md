@@ -36,7 +36,7 @@ secret when approving, so it isn't always `github`.
 
 ```sh
 discobox run -d --skills discobox-ai/manager//worker-skills \
-  --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-deliver.json,owner=discobox-ai,repo=discobox" \
+  --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-deliver.json,owner=discobox-ai,repo=discobox,forkOwner=ibuildthecloud-bot" \
   https://github.com/discobox-ai/discobox@main -p 'Deliver issue #432 in discobox-ai/discobox.'
 ```
 

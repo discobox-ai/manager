@@ -1,5 +1,5 @@
 {
-  "name": "github",
+  "name": "github-bot",
   "envVar": "GH_TOKEN",
   "policies": [
     {
@@ -44,56 +44,64 @@
         "file": "roles/github-deliver.json",
         "args": {
           "owner": "discobox-ai",
-          "repo": "discobox"
+          "repo": "discobox",
+          "forkOwner": "ibuildthecloud-bot"
         }
       },
       {
         "file": "roles/github-deliver.json",
         "args": {
           "owner": "discobox-ai",
-          "repo": "vm"
+          "repo": "vm",
+          "forkOwner": "ibuildthecloud-bot"
         }
       },
       {
         "file": "roles/github-deliver.json",
         "args": {
           "owner": "discobox-ai",
-          "repo": "manager"
+          "repo": "manager",
+          "forkOwner": "ibuildthecloud-bot"
         }
       },
       {
         "file": "roles/github-deliver.json",
         "args": {
           "owner": "discobox-ai",
-          "repo": "review"
+          "repo": "review",
+          "forkOwner": "ibuildthecloud-bot"
         }
       },
       {
         "file": "roles/github-submit.json",
         "args": {
           "owner": "discobox-ai",
-          "repo": "discobox"
+          "repo": "discobox",
+          "forkOwner": "ibuildthecloud-bot"
         }
       },
       {
         "file": "roles/github-submit.json",
         "args": {
           "owner": "discobox-ai",
-          "repo": "vm"
+          "repo": "vm",
+          "forkOwner": "ibuildthecloud-bot"
         }
       },
       {
         "file": "roles/github-submit.json",
         "args": {
           "owner": "discobox-ai",
-          "repo": "manager"
+          "repo": "manager",
+          "forkOwner": "ibuildthecloud-bot"
         }
       },
       {
         "file": "roles/github-submit.json",
         "args": {
           "owner": "discobox-ai",
-          "repo": "review"
+          "repo": "review",
+          "forkOwner": "ibuildthecloud-bot"
         }
       },
       {

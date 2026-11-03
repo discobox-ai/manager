@@ -129,11 +129,22 @@ job needs; don't ask for it.
   through a one-shot helper, with the URL spelled out:
 
   ```bash
-  GH_URL=https://github.com/$REPO
+  FORK=$(jq -r '.tags.fork // empty' ~/.discobox/meta.json)   # the bot account
+  UP_URL=https://github.com/$REPO                  # read only: fetch BASE from here
+  GH_URL=https://github.com/$FORK/${REPO#*/}       # yours: push your branch here
   git -c credential.helper= \
     -c credential.helper='!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
     push "$GH_URL" HEAD:refs/heads/<branch>
   ```
+- **You push to the bot's fork, never to `$REPO`** (owner, 2026-11-03): the
+  account you act as can't write to the repository. Your PR goes from the
+  fork into `$REPO`, its head `$FORK:<branch>`. If the fork doesn't exist yet,
+  make it once: `gh api -X POST repos/$REPO/forks`, then wait until `gh api
+  repos/$FORK/${REPO#*/}` answers. With no `fork` tag (an older box), tag
+  `blocked` and say so.
+- **You can't re-run CI** on the repository. To run it again (a suspected
+  flake), push the same change again: `git commit --amend --no-edit` and a
+  `--force-with-lease` push of your branch.
 - Write to GitHub with `gh api` (it sends JSON). A raw `curl -d` sends a form
   body, and the egress refuses it.
 - A step refused with a `route:` reason (`discobox-access audit --blocked`)

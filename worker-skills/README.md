@@ -15,7 +15,7 @@ how a repository builds, tests, runs and reviews is in its own `AGENTS.md`
 and skills (`verify-recipes`; `discobox-review` is in every box).
 
 - **One job per box**, named in its prompt. A box never takes a second issue.
-- **Work comes home as a PR** from `discobox/issue-<N>`, never a push to a
+- **Work comes home as a PR** from `discobox/issue-<N>` on the bot's fork, never a push to a
   default branch.
 - **The issue is the brief.** Thin means it should have been triaged first:
   say so and stop rather than guessing.

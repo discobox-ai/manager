@@ -1,11 +1,14 @@
 {
   "version": 1,
-  "description": "Delivery worker (deliver-issue, propose-adr, fix-ci, rebase-pr): push branches, open and update its PR, reply to review, re-run failed CI. No merge, no labels, no closing issues.",
+  "description": "Delivery worker (deliver-issue, propose-adr, fix-ci, rebase-pr): push branches, open and update its PR, reply to review, re-run failed CI. No merge, no labels, no closing issues. Pushes go to the bot's fork (forkOwner); PRs are opened from it into the repository.",
   "parameters": {
     "owner": {
       "type": "pathSegment"
     },
     "repo": {
+      "type": "pathSegment"
+    },
+    "forkOwner": {
       "type": "pathSegment"
     }
   },
@@ -53,6 +56,14 @@
       "paths": [
         "/${owner}/${repo}.git/**",
         "/${owner}/${repo}/**"
+      ]
+    },
+    {
+      "hosts": [
+        "github.com"
+      ],
+      "paths": [
+        "/${forkOwner}/${repo}.git/**"
       ]
     },
     {
@@ -120,10 +131,22 @@
         "api.github.com"
       ],
       "methods": [
+        "GET"
+      ],
+      "paths": [
+        "/repos/${forkOwner}/${repo}",
+        "/repos/${forkOwner}/${repo}/**"
+      ]
+    },
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "methods": [
         "POST"
       ],
       "paths": [
-        "/repos/${owner}/${repo}/actions/runs/*/rerun-failed-jobs"
+        "/repos/${owner}/${repo}/forks"
       ]
     }
   ]

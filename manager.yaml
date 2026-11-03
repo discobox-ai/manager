@@ -43,5 +43,11 @@ disk:
   # Below this, stop starting workers and have idle ones free build caches.
   minFreeGiB: 60
 
+# GitHub: the bot account the manager and its workers act as (owner,
+# 2026-11-03). It has Triage on the product repositories and Write on this one;
+# workers push to its forks and open PRs from them.
+github:
+  forkOwner: ibuildthecloud-bot
+
 # GitHub access: the manager asks for its own and its workers' in one request,
 # roles/manager-request.json (roles/README.md).

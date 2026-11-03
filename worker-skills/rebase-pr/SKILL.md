@@ -14,9 +14,10 @@ headRefName -q .headRefName`.
 Invoking this skill is authorization to force-push that one branch with a
 lease. Nothing else.
 
-1. Fetch the base and the branch from GitHub (never a local mirror):
-   `git fetch "$GH_URL" "$BASE" <branch>`, and check out the branch.
-2. `git rebase FETCH_HEAD` of the base. Resolve every conflict so **both
+1. Fetch the base from the repository and the branch from the fork (never a
+   local mirror): `git fetch "$UP_URL" "$BASE"` (keep its `FETCH_HEAD`), then
+   `git fetch "$GH_URL" <branch>`, and check out the branch.
+2. Rebase onto the base you fetched. Resolve every conflict so **both
    changes are kept**; never drop the base's change to make yours apply.
    Re-run generators instead of hand-merging generated files.
 3. Run the tests of what the conflicts touched, and the repository's checks.

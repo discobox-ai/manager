@@ -24,7 +24,7 @@ sets direction, trust or what ships goes to the owner, as a row on the table.
 | An implementation PR is green | Reads its Evidence against the PR and the issue (`github` skill, The process comment). Something missing or not matching: sends the worker back to do it. Otherwise posts the process comment and sets `status/in-review` | Review and merge, after the comment |
 | A PR conflicts with its base | Only if it's in the top 3 of the merge queue: wakes its worker to rebase. Further down, it waits its turn (`workers`, Rebases) | – |
 | A PR's CI fails and its worker is stopped | Starts the worker again on `fix-ci` | "Look at it" if the worker says it can't make it green |
-| Main's CI fails | Re-runs once if it looks like a flake (unrelated to the commit). Otherwise, or if it fails twice, files an issue and starts a `fix-ci` worker | – |
+| Main's CI fails | If it looks like a flake (unrelated to the commit), files a `type/flake` issue (`priority/high`, `status/ready`); the manager can't re-run CI (the bot has Triage). Otherwise files an issue and starts a `fix-ci` worker | – |
 | A PR merges | Closes its issue if it's still open, and retires its worker as it sleeps: tagged `to-delete`, stopped, never woken to do anything | Listed for deletion |
 | A worker asks for a credential | – | Every request: workers get GitHub from their role at launch (`roles/`), so a request is outside it |
 | A worker stops on a question | Makes sure the box is tagged `needs-input` and its issue is `status/needs-input`, setting them if the box didn't (`workers`, A question without its tag) | "Answer in the box"; the owner answers in the box |

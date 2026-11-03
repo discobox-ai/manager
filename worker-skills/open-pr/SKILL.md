@@ -12,8 +12,9 @@ Put the local commits on a GitHub branch, open a PR into `BASE`, and keep
 working until the PR's head commit passes every check. CI proves the change;
 a human reviews and merges it.
 
-`REPO`, `BASE`, `GH_URL` and the git credential helper come from the
-`worker` skill. Push one branch and nothing else, and edit only this PR.
+`REPO`, `BASE`, `FORK`, `UP_URL`, `GH_URL` and the git credential helper come
+from the `worker` skill. Push one branch to the fork and nothing else, and
+edit only this PR.
 
 Invoking this skill is authorization to push **one** branch, open a PR from
 it, push further commits to it, edit its body, mark it ready, and comment on
@@ -26,7 +27,7 @@ calling skill already has (`deliver-issue`).
 The work must be committed: `git status --short` shows nothing tracked, and
 anything else uncommitted is a question, not something to sweep in.
 
-Fetch `BASE` from GitHub (`git fetch "$GH_URL" "$BASE"`, with the helper) and
+Fetch `BASE` from the repository (`git fetch "$UP_URL" "$BASE"`, with the helper) and
 read what the PR would carry:
 
 ```bash
@@ -40,8 +41,7 @@ nothing to open. If `git merge-tree --write-tree FETCH_HEAD HEAD` reports a
 conflict, rebase onto `FETCH_HEAD` now (nothing is published yet) and re-run
 the tests the conflict touched.
 
-**Branch:** `discobox/issue-<N>` for an issue (the manager watches
-`discobox/*`). Check it's free: `git ls-remote "$GH_URL"
+**Branch:** `discobox/issue-<N>` for an issue, on the fork. Check it's free: `git ls-remote "$GH_URL"
 refs/heads/<branch>` returns nothing, or an ancestor of `HEAD` (this work's
 earlier push). Anything else is someone else's branch: stop and say so.
 
@@ -51,7 +51,7 @@ Push `HEAD:refs/heads/<branch>`, then find or open the PR:
 
 ```bash
 gh pr list --repo $REPO --head <branch> --state open --json number,url
-gh api -X POST repos/$REPO/pulls -f base=$BASE -f head=<branch> -F draft=true \
+gh api -X POST repos/$REPO/pulls -f base=$BASE -f head=$FORK:<branch> -F draft=true -F maintainer_can_modify=true \
   -f title="<conventional subject>" -F body=@<scratchpad>/pr-body.md --jq '.number, .html_url'
 ```
 
@@ -122,8 +122,9 @@ gh api repos/$REPO/actions/jobs/<job-id>/logs | sed 's/\x1b\[[0-9;]*m//g' > <scr
 1. **Is it this change?** Look at the latest runs on `BASE` (`gh run list
    --repo $REPO --branch $BASE --limit 5`). Failing there too means
    pre-existing: note it on the PR, and don't fix it here unless asked. A
-   suspected flake gets one re-run of the failed jobs (`gh run rerun <id>
-   --failed`), after checking `/proc/loadavg`; failing twice isn't a flake.
+   suspected flake gets one re-run, by pushing the same change again (`worker`,
+   GitHub: you can't re-run the repository's jobs), after checking
+   `/proc/loadavg`; failing twice isn't a flake.
 2. **Reproduce it locally** where you can, fix the cause, and run the
    narrowest check that covers it. One failure can hide the next: a green
    job after a fix isn't proof it was the last problem.
