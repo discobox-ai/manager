@@ -32,6 +32,11 @@ def load():
     d.setdefault("rows", [])
     d.setdefault("links", [])
     for r in d["rows"]:
+        # A bare PR number takes its issue's repository ("vm 49" → PR "vm 52").
+        iss, pr = str(r.get("issue", "-")), str(r.get("pr", "-"))
+        m = re.match(r"^([a-z][\w.-]*) \d+$", iss)
+        if m and re.match(r"^\d+$", pr):
+            r["pr"] = f"{m.group(1)} {pr}"
         k = r.get("key", "")
         if r.get("issue", "-") in ("-", "") and ISSUE_KEY.match(k) and not k.startswith("pr "):
             r["issue"] = k
