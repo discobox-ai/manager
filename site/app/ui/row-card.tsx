@@ -3,6 +3,8 @@ import type { Handle } from 'remix/component'
 import type { RowDoc } from '../shared/docs.ts'
 import { hasMove, parseRef, refUrl } from '../shared/refs.ts'
 import type { ActionView, Store } from '../store/index.ts'
+import { routes } from '../routes.ts'
+import { href } from '../routing.ts'
 import { ActionLine } from './actions.tsx'
 import { RowControls, type RefInfo } from './row-controls.tsx'
 
@@ -31,9 +33,12 @@ export function RowCard(handle: Handle<{ row: RowDoc; actions: ActionView[]; sto
                 </a>
               ) : null}
               {pr ? (
-                <a href={pr.href} target="_blank" rel="noopener noreferrer">
-                  PR {pr.label}
-                </a>
+                <>
+                  <a href={pr.href} target="_blank" rel="noopener noreferrer">
+                    PR {pr.label}
+                  </a>
+                  <a href={href(routes.diff.href({ repo: pr.repo, number: String(pr.number) }))}>diff</a>
+                </>
               ) : null}
               {row.agent && row.agent !== '-' ? <span class="mono box">{row.agent}</span> : null}
             </span>

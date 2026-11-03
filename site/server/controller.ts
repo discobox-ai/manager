@@ -6,6 +6,7 @@ import { api } from './api.ts'
 import { changes } from './changes.ts'
 import { githubOrg } from './config.ts'
 import { actionDoc, detailsDoc, doneDoc, metaDoc, rowDocs } from './docs.ts'
+import { diffFor } from './diff/index.ts'
 import { adrTitle, getFileText, listDir } from './github.ts'
 import { renderMarkdown } from './markdown.ts'
 import { readTable } from './table.ts'
@@ -40,6 +41,25 @@ export default createController(api, {
       if (!m) return Response.json({ error: 'Not found' }, { status: 404 })
       let doc: DetailsDoc = await detailsDoc(m[1], m[2] as 'pull' | 'issues', Number(m[3]), 'viewer')
       return Response.json(doc, { headers: { 'Cache-Control': 'private, max-age=30' } })
+    },
+
+    async diff({ params }) {
+      let m = params.id.match(DETAILS_ID)
+      if (!m || m[2] !== 'pull') return Response.json({ error: 'Not found' }, { status: 404 })
+      let built = await diffFor(m[1], Number(m[3]), 'viewer')
+      let doc = 'error' in built ? built : built.doc
+      return Response.json(doc, { headers: { 'Cache-Control': 'private, max-age=30' } })
+    },
+
+    async diffPart({ params }) {
+      let m = params.id.match(DETAILS_ID)
+      let index = Number(params.index)
+      if (!m || m[2] !== 'pull' || !Number.isInteger(index)) return Response.json({ error: 'Not found' }, { status: 404 })
+      let built = await diffFor(m[1], Number(m[3]), 'viewer')
+      if ('error' in built) return Response.json({ error: built.error }, { status: 502 })
+      let part = built.parts[index]
+      if (!part) return Response.json({ error: 'Not found' }, { status: 404 })
+      return Response.json(part, { headers: { 'Cache-Control': 'private, max-age=300' } })
     },
 
     events({ request }) {

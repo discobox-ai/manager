@@ -284,3 +284,54 @@ export async function pullIsOpen(ref: Ref, timeoutMs = 2500): Promise<boolean | 
     .catch(() => null)
   return Promise.race([state, timeout])
 }
+
+/** What the diff viewer needs of a PR to know whether its diff changed. */
+export interface PullHead {
+  title: string
+  url: string
+  headSha: string
+  baseSha: string
+  baseRef: string
+}
+
+export async function getPullHead(ref: Ref): Promise<PullHead> {
+  let { json: p } = await get(`/repos/${ref.fullName}/pulls/${ref.number}`)
+  return { title: p.title, url: p.html_url, headSha: p.head.sha, baseSha: p.base.sha, baseRef: p.base.ref }
+}
+
+/** Where head branched from base: GitHub's PR diff compares against this, not base's tip. */
+export async function getMergeBase(fullName: string, base: string, head: string): Promise<string> {
+  let { json } = await get(`/repos/${fullName}/compare/${base}...${head}?per_page=1`)
+  return String(json.merge_base_commit?.sha ?? base)
+}
+
+export interface PullFile {
+  filename: string
+  previousFilename?: string
+  status: string
+  additions: number
+  deletions: number
+  patch: string | null
+}
+
+/** A PR's changed files, up to 300 (three pages); `truncated` when there are more. */
+export async function getPullFiles(ref: Ref, pages = 3): Promise<{ files: PullFile[]; truncated: boolean }> {
+  let files: PullFile[] = []
+  let page = 1
+  let more = true
+  for (; more && page <= pages; page++) {
+    let { json, link } = await get(`/repos/${ref.fullName}/pulls/${ref.number}/files?per_page=100&page=${page}`)
+    for (let f of json as any[]) {
+      files.push({
+        filename: f.filename,
+        ...(f.previous_filename ? { previousFilename: f.previous_filename } : {}),
+        status: f.status,
+        additions: f.additions,
+        deletions: f.deletions,
+        patch: f.patch ?? null,
+      })
+    }
+    more = /rel="next"/.test(link ?? '')
+  }
+  return { files, truncated: more }
+}

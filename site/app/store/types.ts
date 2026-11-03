@@ -1,4 +1,4 @@
-import type { ActionDoc, ActionKind, AdrFileView, AdrIndexView, DetailsDoc, MetaDoc, RowDoc } from '../shared/docs.ts'
+import type { ActionDoc, ActionKind, AdrFileView, AdrIndexView, DetailsDoc, DiffDoc, DiffErrorDoc, DiffPartDoc, MetaDoc, RowDoc } from '../shared/docs.ts'
 
 /** A recorded action with what became of it. */
 export interface ActionView extends ActionDoc {
@@ -24,7 +24,13 @@ export interface BoardState {
   live: boolean
 }
 
-export type DetailsState = { status: 'loading' } | { status: 'missing' } | { status: 'ready'; doc: DetailsDoc }
+/** A document the view watches: still coming, not there (yet), or here. */
+export type Loadable<T> = { status: 'loading' } | { status: 'missing' } | { status: 'ready'; doc: T }
+
+export type DetailsState = Loadable<DetailsDoc>
+export type DiffState = Loadable<DiffDoc | DiffErrorDoc>
+/** A part that couldn't be read is "ready" with an error. */
+export type DiffPartState = Loadable<DiffPartDoc | { error: string }>
 
 /** What the owner asked for, before an id is given to it. */
 export interface ActionInput {
@@ -59,6 +65,9 @@ export interface Store {
   subscribe(listener: () => void): () => void
   /** Watches one issue's or PR's details (id: "vm~pull~38"). */
   details(id: string, listener: (state: DetailsState) => void): () => void
+  /** Watches one PR's diff (id: "vm~pull~38"), and one file's part of it (by file index). */
+  diff(id: string, listener: (state: DiffState) => void): () => void
+  diffPart(id: string, index: number, listener: (state: DiffPartState) => void): () => void
   /** false once a write was refused: the viewer can only look. */
   canRecord(): boolean
   /** Records an action for the manager; resolves with its id. Rejects with a readable message. */

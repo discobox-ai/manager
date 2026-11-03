@@ -1,6 +1,6 @@
 import type { ActionDoc, AdrFileView, AdrIndexView, DetailsDoc, DoneDoc } from '../shared/docs.ts'
 import { mergeActions } from './merge.ts'
-import type { ActionInput, BoardState, DetailsState, Store } from './types.ts'
+import type { ActionInput, BoardState, DetailsState, Loadable, Store } from './types.ts'
 
 /** GET /api/state (server/controller.ts) */
 interface StateResponse {
@@ -18,6 +18,31 @@ async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
 }
 
 /**
+ * One fetch per URL, shared by every view watching it and kept for a minute: a diff only changes
+ * with a new push, and the page is reopened to see one.
+ */
+function once<T>(cache: Map<string, { at: number; value: Promise<T> }>, url: string): Promise<T> {
+  let hit = cache.get(url)
+  if (hit && Date.now() - hit.at < 60_000) return hit.value
+  let value = getJson<T>(url)
+  cache.set(url, { at: Date.now(), value })
+  value.catch(() => cache.delete(url))
+  return value
+}
+
+function watchUrl<T>(cache: Map<string, { at: number; value: Promise<any> }>, url: string, listener: (s: Loadable<T | { error: string }>) => void, fail: (message: string) => T | { error: string }) {
+  let live = true
+  listener({ status: 'loading' })
+  once<T>(cache, url).then(
+    (doc) => live && listener({ status: 'ready', doc }),
+    (error) => live && listener({ status: 'ready', doc: fail(error.message) }),
+  )
+  return () => {
+    live = false
+  }
+}
+
+/**
  * The box: the server's JSON API, refreshed whenever its event stream says the table or the
  * actions files changed, and once a minute regardless.
  */
@@ -26,6 +51,7 @@ export function createBoxStore(): Store {
   let listeners = new Set<() => void>()
   let detailWatchers = new Map<string, Set<(s: DetailsState) => void>>()
   let detailDocs = new Map<string, DetailsDoc>()
+  let fetched = new Map<string, { at: number; value: Promise<any> }>()
 
   function set(patch: Partial<BoardState>) {
     state = { ...state, ...patch }
@@ -112,6 +138,13 @@ export function createBoxStore(): Store {
         set.delete(listener)
         if (!set.size) detailWatchers.delete(id)
       }
+    },
+    diff(id, listener) {
+      let [repo, , n] = id.split('~')
+      return watchUrl(fetched, `/api/diff/${encodeURIComponent(id)}`, listener as any, (error) => ({ kind: 'diff', repo, number: Number(n), error }))
+    },
+    diffPart(id, index, listener) {
+      return watchUrl(fetched, `/api/diff/${encodeURIComponent(id)}/${index}`, listener, (error) => ({ error }))
     },
     canRecord: () => true,
     async record(input: ActionInput) {

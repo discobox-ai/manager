@@ -1,6 +1,6 @@
 import type { ActionDoc, DetailsDoc, DoneDoc, MetaDoc, RowDoc } from '../shared/docs.ts'
 import { mergeActions } from './merge.ts'
-import type { ActionInput, BoardState, DetailsState, Notice, Store } from './types.ts'
+import type { ActionInput, BoardState, DetailsState, Loadable, Notice, Store } from './types.ts'
 
 // The parts of the artifact runtime's db and user capabilities this page uses (contract 0.2.96).
 interface DbError {
@@ -135,6 +135,27 @@ export function createArtifactStore(): Store {
     }, failed('finished actions'))
   }
 
+  /** Watches one document: loading until the database answers, missing until the sync sends it. */
+  function watchDoc<T>(path: string, listener: (s: Loadable<T>) => void, fail: (message: string) => T): () => void {
+    let unsubscribe: (() => void) | null = null
+    let cancelled = false
+    listener({ status: 'loading' })
+    void connect().then((db) => {
+      if (!db || cancelled) return
+      unsubscribe = db.doc(path).onSnapshot(
+        (snap) => {
+          if (snap.exists) listener({ status: 'ready', doc: snap.data() as unknown as T })
+          else listener(snap.metadata.fromCache ? { status: 'loading' } : { status: 'missing' })
+        },
+        (e) => listener({ status: 'ready', doc: fail(`Couldn't read it (${e.code}).`) }),
+      )
+    })
+    return () => {
+      cancelled = true
+      unsubscribe?.()
+    }
+  }
+
   return {
     host: 'artifact',
     staleness: { field: 'syncedAt', afterMs: 45 * 60_000, title: "No sync from the manager's box in over 45 minutes" },
@@ -167,6 +188,13 @@ export function createArtifactStore(): Store {
         cancelled = true
         unsubscribe?.()
       }
+    },
+    diff(id, listener) {
+      let [repo, , n] = id.split('~')
+      return watchDoc(`diffs/${id}`, listener as any, (error) => ({ kind: 'diff', repo, number: Number(n), error }))
+    },
+    diffPart(id, index, listener) {
+      return watchDoc(`diffParts/${id}~${index}`, listener, (error) => ({ error }))
     },
     canRecord: () => writable,
     async record(input: ActionInput) {

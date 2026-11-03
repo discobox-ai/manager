@@ -16,6 +16,7 @@ import * as path from 'node:path'
 
 import { appendAction, buildAction, readActions, ActionError } from './server/actions.ts'
 import { actionsDonePath, stateDir, tablePath } from './server/config.ts'
+import { diffFor } from './server/diff/index.ts'
 import { detailsDoc, doneDoc, metaDoc, rowDocs, wantedDetails } from './server/docs.ts'
 import { hasMove, readTable, type Row } from './server/table.ts'
 import type { DetailsDoc } from './app/shared/docs.ts'
@@ -138,6 +139,22 @@ async function buildDocs(state: SyncState): Promise<{ docs: Map<string, Record<s
     }),
   )
   for (let row of await rowDocs(table, details)) docs.set(`rows/${docId(row.key)}`, row)
+
+  // The diff viewer's documents, for open PRs: one per PR, and one per file with its bulky views.
+  await Promise.all(
+    [...details].map(async ([id, d]) => {
+      if ('error' in d || d.kind !== 'pull' || d.state !== 'open' || d.merged) return
+      let built = await diffFor(d.repo, d.number, 'github')
+      if ('error' in built) {
+        docs.set(`diffs/${id}`, built)
+        return
+      }
+      docs.set(`diffs/${id}`, fit(built.doc))
+      built.parts.forEach((part, i) => {
+        if (part) docs.set(`diffParts/${id}~${i}`, fit(part))
+      })
+    }),
+  )
 
   for (let a of await readActions()) {
     let done = doneDoc(a)

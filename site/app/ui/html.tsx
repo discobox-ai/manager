@@ -40,7 +40,8 @@ export function sanitize(html: string): string {
         (tag === 'a' && (name === 'href' || name === 'title' || name === 'target' || name === 'class')) ||
         (tag === 'img' && (name === 'src' || name === 'alt' || name === 'width' || name === 'height')) ||
         ((tag === 'th' || tag === 'td') && name === 'align') ||
-        ((tag === 'code' || tag === 'pre' || tag === 'span') && name === 'class' && /^[\w\s-]*$/.test(a.value)) ||
+        (tag === 'td' && name === 'colspan' && /^\d{1,2}$/.test(a.value)) ||
+        ((tag === 'code' || tag === 'pre' || tag === 'span' || tag === 'div') && name === 'class' && /^[\w\s-]*$/.test(a.value)) ||
         (tag === 'input' && (name === 'type' || name === 'checked' || name === 'disabled')) ||
         (tag === 'details' && name === 'open')
       if (!keep) n.removeAttribute(a.name)

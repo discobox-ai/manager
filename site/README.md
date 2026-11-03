@@ -16,6 +16,27 @@ with Vite. The UI never knows which host it's on. It reads one set of documents
 | Buttons | `POST /api/actions`, appended to `actions.jsonl` | an `actions` document, carried to `actions.jsonl` by the sync |
 | Routes | real paths (`/adr/vm`) | the fragment (`#/adr/vm`); the viewer owns the URL |
 | ADR viewer | yes | links to GitHub instead (it can't reach GitHub) |
+| Diff viewer | `/api/diff/:id`, built on request | `diffs` and `diffParts` documents, for open PRs |
+
+## The diff viewer
+
+Each PR has a diff page (`/diff/:repo/:number`, the row's "diff" link) with four tabs:
+
+- **Contract**: declarations added, removed, or with a changed signature. A type's whole
+  definition is its signature, so a new struct field or interface method shows here.
+- **Docs**: the PR's markdown files rendered, with changed words marked and unchanged blocks
+  (and table rows) folded.
+- **Implementation**: the contract, plus every declaration whose body changed, each with its
+  body's diff.
+- **Lines**: GitHub's patch, with old and new line numbers.
+
+`server/diff/` builds it on the server from the merge base and the head, reading both versions
+of each file from GitHub. `declarations.ts` parses Go, TypeScript/TSX/JavaScript and Python with
+tree-sitter (`web-tree-sitter` and the grammars' own `.wasm` files, so nothing native builds):
+what comes before a declaration's body is its signature, and signatures are compared with
+comments and spacing ignored. Other languages, and generated files, appear under Lines only. A
+PR's diff is one small document (the file list and declaration changes) plus one part per file
+(its patch, rendered docs and body diffs), so each fits the artifact's database.
 
 ## Layout
 
@@ -24,7 +45,8 @@ with Vite. The UI never knows which host it's on. It reads one set of documents
   routes; `ui/` the components; `store/` the two data sources; `shared/` the types and helpers
   the server uses too; `routing.ts` the path or fragment routing.
 - `server/`: Node only. Reads the table, `actions.jsonl` and GitHub (read-only, with `GH_TOKEN`),
-  and builds the documents (`docs.ts`). `api.ts` and `controller.ts` are the JSON API.
+  and builds the documents (`docs.ts`; `diff/` for the diff viewer). `api.ts` and
+  `controller.ts` are the JSON API.
 - `server.ts`: the site's server. `sync.ts`: the artifact's sync (service `manager-sync`).
 - `test/`: end-to-end tests of both builds (`remix test`, Playwright). The artifact runs against a
   stand-in for claude.ai's `window.claude` (`test/fake-claude.ts`).
@@ -47,4 +69,6 @@ The tests need Playwright's Chromium once: `npx playwright install chromium-head
 3. Restart the `manager-site` service. `start.sh` rebuilds on start.
 4. Republish the artifact: the Artifact tool on `site/dist-artifact/artifact.html` with `url` set
    to the "Manager status" URL (the `table` skill), and no `capabilities`, so the stored `db` and
-   `user` grants carry forward.
+   `user` grants carry forward. A new collection needs its rule added: then pass the whole
+   `capabilities` set (the `table` skill lists it).
+5. A change to `server/` or `sync.ts` also needs `manager-sync` restarted.

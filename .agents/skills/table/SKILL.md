@@ -66,7 +66,8 @@ stops a box, and on each heartbeat.
 `site/` (Remix 3) serves the same table on port 4400, started at boot by
 `.discobox/services/manager-site`: "Your move" rows first, each issue and PR
 expandable to its body, checks, files and comments (read live from GitHub,
-read only). It also gives the owner buttons on each row: close or reject a
+read only), and a diff page per PR with Contract, Docs, Implementation and
+Lines tabs (`site/README.md`). It also gives the owner buttons on each row: close or reject a
 PR, close an issue, prioritize, or a free-text instruction. A button only
 records the action, as one line in
 `~/.local/state/discobox-manager/actions.jsonl`; the `site-actions` monitor
@@ -99,6 +100,9 @@ The site and the artifact are one app (`site/README.md`): `npm run build` in
 `site/app/` is pushed, restart `manager-site` (it rebuilds on start), then
 republish: the Artifact tool on that file with `url` set to the artifact's
 URL and no `capabilities`, so its database and user grants carry forward.
+Its stored rules, to restate in full if a collection is ever added: `rows`,
+`details`, `meta`, `actionsDone`, `diffs` and `diffParts` read `view`, write
+`admin`; `actions` read `view`, write `interact`; plus `user: {}`.
 
 The site keeps no state of its own and commits nothing: lose the box and
 `start-loop` rebuilds the table.

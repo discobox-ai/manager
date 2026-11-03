@@ -2,6 +2,8 @@ import type { Handle } from 'remix/component'
 
 import type { AdrDoc, Check, CommentDoc, DetailsDoc, IssueDoc, PullDoc } from '../shared/docs.ts'
 import type { DetailsState, Store } from '../store/index.ts'
+import { routes } from '../routes.ts'
+import { href } from '../routing.ts'
 import { Markdown } from './html.tsx'
 import { utc } from './time.ts'
 
@@ -112,7 +114,10 @@ function PullParts(handle: Handle<{ pull: PullDoc }>) {
         )}
         <h5>
           Files ({d.files.length}
-          {d.filesTruncated ? '+' : ''}) <span class="plus">+{d.additions}</span> <span class="minus">−{d.deletions}</span>
+          {d.filesTruncated ? '+' : ''}) <span class="plus">+{d.additions}</span> <span class="minus">−{d.deletions}</span>{' '}
+          <a class="diff-link" href={href(routes.diff.href({ repo: d.repo, number: String(d.number) }))}>
+            View diff →
+          </a>
         </h5>
         <ul class="list files">
           {d.files.map((f) => (

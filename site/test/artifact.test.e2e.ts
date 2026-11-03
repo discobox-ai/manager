@@ -23,6 +23,30 @@ const seed = {
     files: [{ filename: 'docs/adr/0007-snapshots.md', status: 'added', additions: 80, deletions: 0 }], filesTruncated: false,
     additions: 80, deletions: 0, adrs: [],
   },
+  // What the sync sends for an open PR's diff viewer: the PR's document and each file's part.
+  'diffs/vm~pull~38': {
+    kind: 'diff', repo: 'vm', number: 38, title: 'ADR 0007: snapshot format', url: 'https://github.com/discobox-ai/vm/pull/38',
+    baseSha: 'aaaaaaaaaaaaaaaa', headSha: '0123456789abcdef', filesTruncated: false,
+    files: [
+      {
+        filename: 'snap/snap.go', status: 'modified', additions: 3, deletions: 1, kind: 'code', language: 'go', hasPart: true,
+        decls: [
+          { key: 'func:Take', kind: 'func', name: 'Take', status: 'changed', signatureChanged: true, bodyChanged: false, before: 'func Take(id string) error', after: 'func Take(id string, opts Options) error', line: 12, exported: true },
+          { key: 'func:compress', kind: 'func', name: 'compress', status: 'changed', signatureChanged: false, bodyChanged: true, before: 'func compress(b []byte) []byte', after: 'func compress(b []byte) []byte', line: 30, exported: false, hasBodyPatch: true },
+        ],
+      },
+      { filename: 'docs/adr/0007-snapshots.md', status: 'added', additions: 80, deletions: 0, kind: 'docs', hasPart: true },
+    ],
+  },
+  'diffParts/vm~pull~38~0': {
+    headSha: '0123456789abcdef', filename: 'snap/snap.go',
+    patch: '@@ -12,2 +12,4 @@\n-func Take(id string) error {\n+func Take(id string, opts Options) error {\n+\t// qcow2\n+\treturn nil\n }',
+    bodyPatches: { 'func:compress': '@@ -30,1 +30,1 @@\n-\treturn zstd(b)\n+\treturn lz4(b)' },
+  },
+  'diffParts/vm~pull~38~1': {
+    headSha: '0123456789abcdef', filename: 'docs/adr/0007-snapshots.md',
+    docHtml: '<p>Snapshots use <del>raw</del><ins>qcow2</ins> images.</p><div class="md-skip">3 unchanged blocks</div><script>window.__pwned = true</script>',
+  },
 }
 
 /** The page as the Artifact tool publishes it: its skeleton, the runtime, then the file. */
@@ -109,5 +133,42 @@ describe('artifact (vite build --mode artifact)', () => {
     await frame.getByText('ADRs open on GitHub from here.').waitFor()
     await frame.getByRole('link', { name: 'Manager status' }).click()
     await frame.locator('article', { hasText: 'VM snapshots ADR' }).waitFor()
+  })
+
+  it('opens a PR’s diff from its row, with contract, docs, implementation and lines tabs', async (t) => {
+    let page = await t.serve(await serve(() => artifactPage()))
+    await page.goto('/')
+    await page.locator('article', { hasText: 'VM snapshots ADR' }).getByRole('link', { name: 'diff' }).click()
+    await page.getByRole('heading', { name: 'ADR 0007: snapshot format' }).waitFor()
+    assert.match(page.url(), /#\/diff\/vm\/38$/)
+
+    // Contract: only the signature change, merged word by word.
+    let contract = page.getByRole('tabpanel')
+    await contract.locator('.decl', { hasText: 'Take' }).waitFor()
+    assert.equal(await contract.locator('.decl').count(), 1)
+    assert.equal(await contract.locator('pre.sig ins').innerText(), ', opts Options')
+    assert.match(await page.getByRole('tab', { name: /Contract/ }).innerText(), /1/)
+
+    // Implementation: the body-only change too, with its body's diff on request.
+    await page.getByRole('tab', { name: /Implementation/ }).click()
+    let body = page.locator('.decl', { hasText: 'compress' })
+    await body.locator('.badge.body').waitFor()
+    await body.getByRole('button', { name: 'Show the body’s diff' }).click()
+    await body.locator('tr.add', { hasText: 'lz4' }).waitFor()
+    assert.equal(await body.locator('tr.add .ln').nth(1).innerText(), '30')
+    assert.match(page.url(), /tab=implementation/)
+
+    // Docs: the rendered markdown with its changes inline, sanitized.
+    await page.getByRole('tab', { name: /Docs/ }).click()
+    await page.locator('.doc-diff ins', { hasText: 'qcow2' }).waitFor()
+    await page.locator('.doc-diff .md-skip', { hasText: '3 unchanged blocks' }).waitFor()
+    assert.equal(await page.evaluate(() => (window as any).__pwned), undefined)
+
+    // Lines: GitHub's patch with old and new line numbers.
+    await page.getByRole('tab', { name: /Lines/ }).click()
+    let added = page.locator('section', { hasText: 'snap/snap.go' }).locator('tr.add').first()
+    await added.waitFor()
+    assert.equal(await added.locator('.ln').nth(1).innerText(), '12')
+    assert.match(await added.locator('.code').innerText(), /opts Options/)
   })
 })
