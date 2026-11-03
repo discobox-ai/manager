@@ -37,11 +37,15 @@ Under the table, a plain list of links, one per line:
 `- 426: https://github.com/discobox-ai/discobox/issues/426`. Never put links
 inline in the table; they crowd it in a terminal.
 
-**The side pane.** When the `manager-table` mod is loaded (the tool
-`mcp__manager-table__post_table` is listed), call it with the same rows, in
-rank order, and the link list every time you post the table. It draws the
-table in a side pane and puts the first "Your move" in the status line.
-Post the table in chat as well.
+**The side pane.** Every time you post the table, also write it to
+`~/.local/state/discobox-manager/table.json`: the same rows in rank order
+and the link list, as
+`{"postedAt": <epoch ms>, "rows": [{"item", "agent", "issue", "pr", "doing",
+"yourMove", "why"}], "links": ["426: https://…"]}`. Write a temporary file
+beside it and `mv` it into place, so a reader never sees half a file. The
+`manager-table` mod reads that file every few seconds, draws it in a side
+pane and puts the first "Your move" in the status line; the pane turns
+"Stale" when the file is 15 minutes old. Post the table in chat as well.
 
 **Re-post the table every time a row changes**, including a worker resuming
 after the owner answered it. When nothing changed, say so in a line rather
