@@ -11,7 +11,7 @@ description: How the manager handles incoming work — a new issue, an issue the
    labels, `docs/labels.md`). In one that isn't, every issue looks new: start
    no triage there, start a `migrate-labels` worker instead (`workers`). And
    only up to `workers.triageMax` triage workers at once, highest
-   `priority/*` first, then newest.
+   `priority/*` first (a flake first of all), then newest.
 1. Start a triage worker:
    `-p 'Triage issue #N in <repo>.'` (job `triage`, skill `triage-issue`).
 2. When it finishes, its verdict is a comment on the issue: proposed

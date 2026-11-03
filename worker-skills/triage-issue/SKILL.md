@@ -107,6 +107,9 @@ Propose labels from the scheme in discobox-ai/manager's `docs/labels.md`:
 | `priority/medium` | Broken with a workaround, or a clearly wanted enhancement |
 | `priority/low` | Polish, rare edge cases, nice-to-haves |
 
+A `type/flake` is at least `priority/high`, whatever else it touches: a flaky
+test breaks CI for every PR (owner, 2026-11-03).
+
 Then judge its **size** from what you know of the fix:
 
 - **small**: the cause is pinned to `file:line`, the fix is obvious from it,
