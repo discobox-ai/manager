@@ -279,7 +279,7 @@ pre.patch .h { color: var(--ink-soft); }
 
 <script>
 (() => {
-  const STALE_MS = 15 * 60 * 1000;
+  const STALE_MS = 45 * 60 * 1000;
   const ORG = "discobox-ai";
   const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -397,7 +397,7 @@ pre.patch .h { color: var(--ink-soft); }
     if (meta.postedAt) parts.push(el("span", { title: new Date(meta.postedAt).toISOString() }, `Table updated ${ago(now - meta.postedAt)} (${stamp(meta.postedAt)})`));
     if (meta.syncedAt) parts.push(" · ", el("span", { title: new Date(meta.syncedAt).toISOString() }, `synced ${ago(now - meta.syncedAt)}`));
     when.append(...parts);
-    if (!meta.syncedAt || now - meta.syncedAt > STALE_MS) when.append(el("span", { class: "stale", title: "No sync from the manager's box in over 15 minutes" }, "stale"));
+    if (!meta.syncedAt || now - meta.syncedAt > STALE_MS) when.append(el("span", { class: "stale", title: "No sync from the manager's box in over 45 minutes" }, "stale"));
     const n = rows.filter((r) => r.key !== "finished" && hasMove(r)).length;
     const pending = [...actions.values()].filter((a) => !done.has(a.id)).length;
     need.append(el("strong", {}, String(n)), ` ${n === 1 ? "row needs" : "rows need"} you · ${rows.length} rows`, pending ? ` · ${pending} pending for the manager` : "");

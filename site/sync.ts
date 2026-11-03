@@ -29,9 +29,9 @@ const statePath = path.join(syncDir, 'state.json')
 
 const CYCLE_MS = Number(process.env.SYNC_CYCLE_MS ?? 60_000)
 const FLUSH_MIN_MS = Number(process.env.SYNC_FLUSH_MIN_MS ?? 120_000)
-// meta/state carries syncedAt, which the page turns STALE after 15 minutes; resend it this often
+// meta/state carries syncedAt, which the page turns STALE after 45 minutes; resend it this often
 // even when nothing else changed, so a quiet table isn't mistaken for a dead sync.
-const HEARTBEAT_MS = Number(process.env.SYNC_HEARTBEAT_MS ?? 10 * 60_000)
+const HEARTBEAT_MS = Number(process.env.SYNC_HEARTBEAT_MS ?? 30 * 60_000)
 const INBOX_POLL_MS = 3_000
 const MAX_DOC_BYTES = 200_000
 const MAX_BATCH_WRITES = Number(process.env.SYNC_MAX_BATCH_WRITES ?? 50)
