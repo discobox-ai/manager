@@ -51,6 +51,9 @@ Monitor(
 
 - Handle each event by `docs/gates.md` as it arrives. `discobox-monitor read
   ID` gives its body.
+- A `pr.comment` or `issue.comment` from a worker whose title or body starts
+  `**Issue to file**` is a worker handing you an issue: file it (`github`,
+  Filing and editing issues).
 - Only one pop at a time: never run a bare `discobox-monitor pop` while the
   stream is up, or it takes events away from the stream.
 - The Monitor tool expires after 30 minutes. Re-arm it with the same

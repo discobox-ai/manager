@@ -155,6 +155,33 @@ job needs; don't ask for it.
 - What a route can't narrow is yours to keep: push only your own branch,
   edit only your own PR, comment only on your issue and PR.
 
+## New work you find: "Issue to file"
+
+You don't file issues, and you never ask for a credential to file one
+(owner, 2026-11-03): new issues come through the manager. When your job turns
+up work outside its scope (a bug, a follow-up, something the owner asked for
+in your box), post one comment on **your own issue** (or your PR, if you have
+no issue), in this form exactly:
+
+```markdown
+**Issue to file** in `<owner>/<repo>`
+
+### <title>
+
+## Today
+…
+## Wanted
+…
+## Done when
+…
+```
+
+then the footer. One comment per issue. The manager is watching your issue and
+PR; it files it, labels it, and replies on the same thread with the link.
+Don't wait for the reply: carry on with your job. If your job truly needs the
+number (to write `Part of #N`), read the replies later, or the manager types
+the link into your box.
+
 ## Comments
 
 Everything you post on GitHub ends with a footer naming this box: every

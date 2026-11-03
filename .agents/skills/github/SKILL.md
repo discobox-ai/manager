@@ -30,6 +30,14 @@ edits) ends with a footer naming this box, on its own line, last:
   decide or build; open questions marked open) / `## Done when`. A worker
   must be able to start from the issue alone.
 - `gh issue create --body-file F`, and `gh issue edit N --body-file F`.
+- **A worker's "Issue to file" comment** (`worker` skill; owner, 2026-11-03):
+  workers can't file issues, so they post the issue as a comment headed
+  `**Issue to file** in <repo>` on their own issue or PR. File it as written
+  (check `search/issues` for a duplicate first; link the duplicate instead
+  if there is one), with the footer, then reply on the worker's thread: `Filed
+  as <repo>#N.` Triage it like any new issue (`triage-intake`). If the worker
+  is stopped waiting on the number, type the link into its box. A worker
+  asking for a credential to file an issue gets pointed here instead.
 - Labels follow `docs/labels.md`. Changing an issue's `status/*` means
   removing the old one in the same call:
   `--remove-label status/ready --add-label status/in-progress`.
