@@ -48,7 +48,14 @@ An ad-hoc box takes `submit`'s role. A label migration
 `roles/manager-request.json`'s delegate part, for that repository, is refused
 at launch: add it there and ask again (`roles/README.md`).
 
+`discobox run` resolves the repository and `--skills` with this box's own
+git, which has no GitHub login: without the helper below every launch fails
+with `could not read Username for 'https://github.com'` (2026-11-03).
+
 ```sh
+H='!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f'
+export GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0= \
+  GIT_CONFIG_KEY_1=credential.helper GIT_CONFIG_VALUE_1="$H"
 discobox run -d --skills discobox-ai/manager//worker-skills \
   --bind "$GH_SECRET:GH_TOKEN,policy=roles/<role>.json,owner=<owner>,repo=<name>" \
   https://github.com/<repo>@<defaultBranch> \
