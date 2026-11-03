@@ -17,6 +17,11 @@ repos:
     defaultBranch: main
 
 workers:
+  # Intake paused (owner, 2026-11-03): start no new triage or delivery boxes;
+  # let work already in progress finish. Only issues the owner names here are
+  # started. Set to false (or remove) to resume.
+  paused: true
+  pausedExcept: ["discobox-ai/discobox#460"]
   # Workers running at once, triage and delivery together. A worker asleep
   # doesn't count. The owner set six for this host (2026-10-08); lower it when
   # disk is tight.

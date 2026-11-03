@@ -101,6 +101,11 @@ Post the table (`table` skill), with its link list.
 
 ## 6. First actions
 
+If `workers.paused` is true in `manager.yaml`, start no new boxes except for
+the issues in `workers.pausedExcept`. Work already in progress carries on as
+usual: rebases, CI fixes, answering its prompts, retiring it. Say on the table
+that intake is paused.
+
 Handle the events from §3, then work through the gates (`docs/gates.md`), in
 this order, within `workers.max` and `disk.minFreeGiB`:
 
