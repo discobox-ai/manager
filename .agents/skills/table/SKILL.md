@@ -51,8 +51,8 @@ scripts/table show
 ```
 
 Fields: `item agent issue pr doing move why`. `move` is "Your move", `–`
-when there's none. Links go under the table, one per issue or PR, never
-inline. The file is `~/.local/state/discobox-manager/table.json`; the
+when there's none. Issues, PRs and boxes are links in their rows (boxes as `discobox:///<id>`);
+there's no link list under the table (owner, 2026-11-03). The file is `~/.local/state/discobox-manager/table.json`; the
 command writes it atomically and stamps it, and the pane turns "Stale" when
 it's 15 minutes old.
 
