@@ -37,6 +37,12 @@ Under the table, a plain list of links, one per line:
 `- 426: https://github.com/discobox-ai/discobox/issues/426`. Never put links
 inline in the table; they crowd it in a terminal.
 
+**The side pane.** When the `manager-table` mod is loaded (the tool
+`mcp__manager-table__post_table` is listed), call it with the same rows, in
+rank order, and the link list every time you post the table. It draws the
+table in a side pane and puts the first "Your move" in the status line.
+Post the table in chat as well.
+
 **Re-post the table every time a row changes**, including a worker resuming
 after the owner answered it. When nothing changed, say so in a line rather
 than re-posting it.
