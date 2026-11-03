@@ -524,21 +524,17 @@ pre.sig del, .md del { background: var(--bad-wash); color: var(--bad); border-ra
 .resolve-confirm input { flex: 1 1 16rem; min-width: 0; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; padding: 5px 8px; font: inherit; }
 .resolve-confirm button.primary { background: var(--good); border-color: var(--good); color: #0b1a12; }
 
-/* ---- Contract and Implementation: just the code, colored by change ---- */
-.decls { display: grid; gap: 2px; grid-template-columns: minmax(0, 1fr); }
-:root .decl { display: grid; grid-template-columns: 3.2em minmax(0, 1fr); column-gap: 10px; padding: 3px 0; border: 0; background: none; }
-.decl > .line { grid-column: 1; text-align: right; color: var(--ink-soft); opacity: 0.55; font: 400 11px/1.75 var(--font-mono); text-decoration: none; padding-top: 6px; }
-.decl > .line:hover { opacity: 1; color: var(--accent); }
-.decl > pre.sig, .decl > .patch-wrap, .decl > p { grid-column: 2; }
-:root .decl pre.sig { background: none; padding: 6px 10px; border-radius: 3px; margin: 0; font: 12.5px/1.6 var(--font-mono); white-space: pre-wrap; tab-size: 4; }
-:root .decl pre.sig.ins-all { background: color-mix(in srgb, var(--good) 10%, transparent); color: var(--good); }
-:root .decl pre.sig.del-all { background: color-mix(in srgb, var(--bad) 10%, transparent); color: var(--bad); text-decoration: none; }
-:root .decl pre.sig ins { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); text-decoration: none; border-radius: 2px; }
-:root .decl pre.sig del { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); text-decoration: none; border-radius: 2px; }
-.decl > .patch-wrap { margin: 2px 0 8px; border: 0; background: none; }
-.decl .patch-table tr.hunk { display: none; }
-.decl .patch-table .ln { opacity: 0.5; }
-.diff-file .decls { margin-top: 4px; }
+/* ---- Contract and Implementation: just the code; the text is colored by change ---- */
+:root .decls { display: block; margin-top: 6px; }
+:root .decl { display: block; padding: 0; margin: 0; border: 0; background: none; }
+:root .decl pre.sig, :root .decl pre.code-diff {
+  background: none; padding: 0; margin: 0; border-radius: 0; font: 12.5px/1.6 var(--font-mono); white-space: pre-wrap; tab-size: 4; color: var(--ink);
+}
+:root .decl pre.sig.ins-all, :root .decl pre.sig ins, .code-diff .add { color: var(--good); background: none; text-decoration: none; }
+:root .decl pre.sig.del-all, :root .decl pre.sig del, .code-diff .del { color: var(--bad); background: none; text-decoration: none; }
+.code-diff .ctx { color: var(--ink-soft); }
+.code-diff .gap { color: var(--ink-soft); opacity: 0.6; }
+:root .decl pre.code-diff { padding-left: 2ch; }
 </style>
   </head>
   <body>

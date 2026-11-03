@@ -159,7 +159,8 @@ function DeclsTab(
     let files = doc.files
       .map((f, index) => ({ file: f, index, changes: (f.decls ?? []).filter(pick) }))
       .filter((f) => f.changes.length)
-    let skipped = doc.files.filter((f) => f.kind !== 'docs' && !f.decls).length
+    let skipped = doc.files.filter((f) => f.kind !== 'docs' && !f.decls && !f.test).length
+    let tests = doc.files.filter((f) => f.test).length
     return (
       <>
         <div class="diff-summary">
@@ -184,7 +185,17 @@ function DeclsTab(
             </div>
           </section>
         ))}
-        {skipped ? <p class="diff-notes">{skipped} more {skipped === 1 ? 'file' : 'files'} not parsed (generated, or no parser for the language); see Lines.</p> : null}
+        {skipped || tests ? (
+          <p class="diff-notes">
+            {[
+              tests ? `${tests} test ${tests === 1 ? 'file' : 'files'} left out` : '',
+              skipped ? `${skipped} ${skipped === 1 ? 'file' : 'files'} not parsed (generated, or no parser for the language)` : '',
+            ]
+              .filter(Boolean)
+              .join('; ')}
+            ; see Lines.
+          </p>
+        ) : null}
       </>
     )
   }
@@ -213,13 +224,9 @@ function DeclItem(
   handle: Handle<{ id: string; index: number; doc: DiffDoc; file: DiffFileDoc; change: DeclChangeDoc; store: Store; bodies: boolean }>,
 ) {
   return () => {
-    let { change: c, doc, file, id, index, store, bodies } = handle.props
-    let line = c.status === 'removed' ? blobHref(doc, file.filename, c.line, doc.baseSha) : blobHref(doc, file.filename, c.line)
+    let { change: c, id, index, store, bodies } = handle.props
     return (
-      <div class={`decl ${c.status}`}>
-        <a class="line" href={line} target="_blank" rel="noopener noreferrer" title={`${c.kind} ${c.container ? c.container + '.' : ''}${c.name}, line ${c.line}${c.movedFrom ? `, moved from ${c.movedFrom}` : ''}`}>
-          {c.line}
-        </a>
+      <div class={`decl ${c.status}`} title={`${c.kind} ${c.container ? c.container + '.' : ''}${c.name}${c.movedFrom ? `, moved from ${c.movedFrom}` : ''}`}>
         <Signature change={c} />
         {bodies && c.hasBodyPatch ? <Part id={id} index={index} store={store} view="body" declKey={c.key} /> : null}
       </div>
@@ -299,7 +306,7 @@ function LinesTab(handle: Handle<{ id: string; doc: DiffDoc; store: Store }>) {
           </span>
         </div>
         {doc.files.map((file, index) => {
-          let open = opened.get(file.filename) ?? (file.additions + file.deletions <= OPEN_LINES && !file.generated)
+          let open = opened.get(file.filename) ?? (file.additions + file.deletions <= OPEN_LINES && !file.generated && !file.test)
           return (
             <section key={file.filename} class="diff-file">
               <div class="file-toggle">
@@ -319,7 +326,7 @@ function LinesTab(handle: Handle<{ id: string; doc: DiffDoc; store: Store }>) {
               </div>
               {!open ? (
                 <p class="empty folded">
-                  {file.generated ? 'Generated. ' : ''}
+                  {file.generated ? 'Generated. ' : file.test ? 'Test code. ' : ''}
                   {file.additions + file.deletions} changed lines, folded.
                 </p>
               ) : file.hasPart ? (
@@ -362,6 +369,7 @@ function Part(handle: Handle<{ id: string; index: number; store: Store; view: 'l
     }
     let patch = view === 'body' ? part.bodyPatches?.[declKey ?? ''] : part.patch
     if (!patch) return <p class="empty">No line diff for this.</p>
+    if (view === 'body') return <CodeDiff patch={patch} />
     return (
       <>
         <PatchTable patch={patch} />
@@ -394,6 +402,30 @@ function patchRows(patch: string): PatchRow[] {
     else rows.push({ kind: 'ctx', old: oldLine++, new: newLine++, text: line.slice(1) })
   }
   return rows
+}
+
+/** A body's diff as plain code: added lines green, removed red, a gap between hunks as "…". */
+function CodeDiff(handle: Handle<{ patch: string }>) {
+  return () => {
+    let rows = patchRows(handle.props.patch)
+    return (
+      <pre class="code-diff">
+        {rows.map((r, i) =>
+          r.kind === 'hunk' ? (
+            i === 0 ? null : (
+              <span key={i} class="gap">
+                {'…\n'}
+              </span>
+            )
+          ) : r.kind === 'note' ? null : (
+            <span key={i} class={r.kind}>
+              {r.text + '\n'}
+            </span>
+          ),
+        )}
+      </pre>
+    )
+  }
 }
 
 /** A unified diff the way GitHub shows it: old and new line numbers, then the line. */

@@ -27,12 +27,25 @@ const GENERATED = [
   /(^|\/)zz_generated[^/]*$/,
   /\.min\.(js|css)$/,
 ]
+/** Test code: listed under Lines only, never parsed for Contract or Implementation (owner, 2026-11-03). */
+const TEST_FILE = [
+  /_test\.go$/,
+  /\.(test|spec)\.[cm]?[jt]sx?$/,
+  /(^|\/)test_[^/]*\.py$/,
+  /_test\.py$/,
+  /(^|\/)(test|tests|__tests__|testdata|e2e)\//,
+]
+
+export function isTestFile(filename: string): boolean {
+  return TEST_FILE.some((re) => re.test(filename))
+}
+
 const GENERATED_HEADER = /^(\/\/|#) Code generated .* DO NOT EDIT\.$/m
 
 const MARKDOWN = /\.(md|markdown)$/i
 
 // Part of a built diff's cache key: bump it when what a build produces changes.
-const BUILD_VERSION = 2
+const BUILD_VERSION = 3
 
 // File texts at a commit never change, and diffs of a given head and base don't either.
 let texts = new Map<string, Promise<string>>()
@@ -166,7 +179,7 @@ async function build(
   // Every version the per-file work will read, fetched together first.
   let wanted: { path: string; sha: string }[] = []
   for (let f of files) {
-    let readable = MARKDOWN.test(f.filename) || (languageFor(f.filename) && !GENERATED.some((re) => re.test(f.filename)))
+    let readable = MARKDOWN.test(f.filename) || (languageFor(f.filename) && !GENERATED.some((re) => re.test(f.filename)) && !isTestFile(f.filename))
     if (!readable) continue
     if (f.status !== 'added') wanted.push({ path: f.previousFilename ?? f.filename, sha: baseSha })
     if (f.status !== 'removed') wanted.push({ path: f.filename, sha: head.headSha })
@@ -197,6 +210,10 @@ async function build(
     doc.language = lang
     if (GENERATED.some((re) => re.test(f.filename))) {
       doc.generated = true
+      return doc
+    }
+    if (isTestFile(f.filename)) {
+      doc.test = true
       return doc
     }
     if (++parsed > MAX_PARSED_FILES) {

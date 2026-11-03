@@ -175,8 +175,8 @@ describe('artifact (vite build --mode artifact)', () => {
     // Implementation: the body-only change too, its body's diff under it.
     await page.getByRole('tab', { name: /Implementation/ }).click()
     let body = page.locator('.decl', { hasText: 'compress' })
-    await body.locator('tr.add', { hasText: 'lz4' }).waitFor()
-    assert.equal(await body.locator('tr.add .ln').nth(1).innerText(), '30')
+    await body.locator('.code-diff .add', { hasText: 'lz4' }).waitFor()
+    assert.match(await body.locator('.code-diff .del').innerText(), /zstd/)
     assert.match(page.url(), /tab=implementation/)
 
     // Docs: the rendered markdown with its changes inline, sanitized.

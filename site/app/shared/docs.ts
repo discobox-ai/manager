@@ -201,6 +201,8 @@ export interface DiffFileDoc {
   kind: 'code' | 'docs' | 'other'
   language?: string
   generated?: boolean
+  /** Test code: under Lines only. */
+  test?: boolean
   decls?: DeclChangeDoc[]
   /** There's a part document (diffParts/<id>~<index>) with its lines, docs or body diffs. */
   hasPart: boolean

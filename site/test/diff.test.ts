@@ -3,7 +3,7 @@ import { describe, it } from 'remix/test'
 
 import { diffSequence, unifiedDiff } from '../app/shared/sequence.ts'
 import { declarations } from '../server/diff/declarations.ts'
-import { compareDecls } from '../server/diff/index.ts'
+import { compareDecls, isTestFile } from '../server/diff/index.ts'
 import { htmlDiff, markdownDiff } from '../server/diff/markdown-diff.ts'
 
 const ctx = { repo: 'vm', dir: '', adrLinks: 'github' as const }
@@ -95,6 +95,14 @@ const limit = 20
       await changes('def f(a):\n    return a\nclass C:\n    def m(self):\n        pass\n', 'def f(a, b=1):\n    return a\nclass C:\n    def m(self):\n        return 1\n', 'python'),
       ['changed sig func:f', 'changed body method:C.m'],
     )
+  })
+})
+
+describe('test files', () => {
+  it('knows test code by its name or directory', () => {
+    for (let f of ['pkg/x_test.go', 'app/a.test.ts', 'ui/b.spec.tsx', 'tool/test_cli.py', 'internal/e2e/run.go', 'site/test/fixtures.ts', 'testdata/in.go'])
+      assert.ok(isTestFile(f), f)
+    for (let f of ['pkg/x.go', 'app/latest.ts', 'contest/x.go', 'tests.md']) assert.ok(!isTestFile(f), f)
   })
 })
 
