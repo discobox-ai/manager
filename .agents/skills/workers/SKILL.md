@@ -274,6 +274,10 @@ du -sh ~/.cache/* | sort -h | tail                 # find the big ones
 find ~/.cache/go-build -type f -atime +1 -delete   # Go: entries unused for a day
 ```
 
+If that frees little (a busy day rewrites the cache fast), trim harder:
+`find ~/.cache/go-build -type f -amin +360 -delete` (unused for 6 hours) took
+51 → 12 GiB and freed 39 GiB the same afternoon.
+
 It's a cache: a build that needs a removed entry rebuilds it, slower but
 correct. Prefer a time-bounded trim to wiping it, and do it while no worker
 is mid-build if you can. Other caches there (`golangci-lint`, `gopls`,
