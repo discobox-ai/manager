@@ -111,15 +111,15 @@ driving it. The only exception is "submit box X".
 ### Release validation boxes
 
 To validate a release (owner, 2026-11-03), open a tracking issue in
-**discobox-ai/release-validation** ("<from> → <to>"), then start two boxes
-**cut from that repository** with the `validate-release` skill and its role
-(`github-deliver` on release-validation; they open one PR there each):
+**discobox-ai/release-validation** ("<from> → <to>"), then start two
+**empty** boxes with the `validate-release` skill and its role
+(`github-deliver` on release-validation; each clones the repository itself,
+since this box's credential has no git route to it, and opens one PR there):
 
 ```sh
 discobox run -d --skills discobox-ai/manager//worker-skills \
   --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-deliver.json,owner=discobox-ai,repo=release-validation,forkOwner=$FORK" \
-  https://github.com/discobox-ai/release-validation@main \
-  -p '/validate-release upgrade <from> <to>'      # and a second box: '/validate-release fresh <to>'
+  --no-source -p '/validate-release upgrade <from> <to>'      # and a second box: '/validate-release fresh <to>'
 discobox tag <id> repo=discobox-ai/release-validation issue=<N> job=validate fork=$FORK
 ```
 

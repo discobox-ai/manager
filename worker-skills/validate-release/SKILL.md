@@ -9,9 +9,16 @@ metadata:
 
 # Validate a release
 
-Your box is cut from **discobox-ai/release-validation**: its notes skill,
-its baselines and a flake of host prerequisites, and nothing of discobox
-itself. Nothing of discobox is installed. You install it the way a user does, from the
+Your box starts **empty**. First clone **discobox-ai/release-validation**
+(your role reaches it; the manager's doesn't): its notes skill, its baselines
+and a flake of host prerequisites, and nothing of discobox itself. Work from
+that checkout. Nothing of discobox is installed.
+
+```sh
+FORK=$(jq -r '.tags.fork // empty' ~/.discobox/meta.json)
+git -c credential.helper= -c credential.helper='!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
+  clone https://github.com/discobox-ai/release-validation.git ~/release-validation && cd ~/release-validation
+``` You install it the way a user does, from the
 release site, and check that it installs, onboards, and (in `upgrade` mode)
 upgrades cleanly with real state in it. You never build discobox from source,
 and you never fix anything: what you find goes in the report, and new work as
@@ -22,7 +29,8 @@ mode and versions. Follow the `worker` skill for tags, power and comments.
 
 ## 0. The notes and the baseline
 
-Read, from your checkout, before anything else:
+Read, from that checkout, before anything else (the notes skill is at
+`.agents/skills/validate-release-notes/SKILL.md`):
 
 - the **`validate-release-notes`** skill: checks carried forward from past
   findings (run each, report each on its own line), recipes that worked,
