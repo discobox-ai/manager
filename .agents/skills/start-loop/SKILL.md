@@ -18,8 +18,13 @@ eval "$(discobox-access env)"; unset DISCOBOX_TOKEN
 
 `discobox-access list` must show both:
 
-- `github (GH_TOKEN → …)`, your own use;
-- `github (delegate: …)`, what you bind workers from.
+- a credential in `GH_TOKEN` reaching `api.github.com`, your own use;
+- exactly one credential you may delegate reaching `api.github.com`, what you
+  bind workers from.
+
+Go by the variable and the hosts, not the name: the owner chooses which
+secret to grant, and it may not be called `github` (`workers`, Launch, reads
+the delegated one's name).
 
 If either is missing, or `roles/manager-request.json` changed since it was
 approved (a repository or role was added), send it from this repository's

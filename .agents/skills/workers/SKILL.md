@@ -19,7 +19,21 @@ First make sure this checkout is committed and pushed (`github` skill, Pushing
 to discobox-ai/manager): `--skills` installs from the pushed `main`, not from
 local files.
 
-Run it from this repository's root, binding GitHub with the role the job's
+**The GitHub secret's name is whatever the owner bound you**, not
+necessarily `github`: the owner picks the secret when approving your request.
+Read it from your delegations each time, the one credential you may delegate
+that reaches `api.github.com`:
+
+```sh
+GH_SECRET=$(discobox-access list -json | jq -r '[.credentials[]
+  | select(.purpose == "delegate" and (.hosts | index("api.github.com")))
+  | .name] | if length == 1 then .[0] else "" end')
+```
+
+Empty means none or more than one: launch nothing, and tell the owner which
+(`discobox-access list`). Never fall back to `github`.
+
+Run it from this repository's root, binding that secret with the role the job's
 skill names in its frontmatter, `metadata.discobox.role` (`roles/README.md`).
 Read it each time rather than remembering it; a skill's role changes with
 the skill:
@@ -36,7 +50,7 @@ at launch: add it there and ask again (`roles/README.md`).
 
 ```sh
 discobox run -d --skills discobox-ai/manager//worker-skills \
-  --bind 'github:GH_TOKEN,policy=roles/<role>.json,owner=<owner>,repo=<name>' \
+  --bind "$GH_SECRET:GH_TOKEN,policy=roles/<role>.json,owner=<owner>,repo=<name>" \
   https://github.com/<repo>@<defaultBranch> \
   -p 'Deliver issue #<N> in <repo>.'
 ```
@@ -68,7 +82,7 @@ owner's own work join the process.
 
 ```sh
 discobox run -d --skills discobox-ai/manager//worker-skills \
-  --bind 'github:GH_TOKEN,policy=roles/github-submit.json,owner=<owner>,repo=<name>' \
+  --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-submit.json,owner=<owner>,repo=<name>" \
   https://github.com/<repo>@<defaultBranch> -p '<the owner's topic, or nothing>'
 discobox tag <id> repo=<repo> job=adhoc
 ```

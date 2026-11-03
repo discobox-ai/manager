@@ -29,11 +29,14 @@ GraphQL queries read every repository the token can see.
 ## Binding a worker at launch
 
 From this repository's root (policy paths are read from the working
-directory, and the server stores the resolved routes, not the file):
+directory, and the server stores the resolved routes, not the file).
+`$GH_SECRET` is the name of the GitHub secret the manager was delegated, read
+from `discobox-access list -json` (`workers`, Launch): the owner chooses the
+secret when approving, so it isn't always `github`.
 
 ```sh
 discobox run -d --skills discobox-ai/manager//worker-skills \
-  --bind 'github:GH_TOKEN,policy=roles/github-deliver.json,owner=discobox-ai,repo=discobox' \
+  --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-deliver.json,owner=discobox-ai,repo=discobox" \
   https://github.com/discobox-ai/discobox@main -p 'Deliver issue #432 in discobox-ai/discobox.'
 ```
 
