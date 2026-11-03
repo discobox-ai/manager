@@ -12,12 +12,13 @@ export const BOARD_FRAME = 'board'
 export interface BoardProps {
   table: Table
   actions: ActionWithStatus[]
+  prOpen: Record<string, boolean | null>
   renderedAt: number
 }
 
 export function Board(handle: Handle<BoardProps>) {
   return () => {
-    let { table, actions, renderedAt } = handle.props
+    let { table, actions, prOpen, renderedAt } = handle.props
     let finished = table.rows.filter((r) => r.key === 'finished')
     let rest = table.rows.filter((r) => r.key !== 'finished')
     let mine = rest.filter(hasMove)
@@ -51,18 +52,18 @@ export function Board(handle: Handle<BoardProps>) {
 
         <Section title="Your move" count={mine.length} empty="Nothing needs you right now.">
           {mine.map((row) => (
-            <RowCard key={row.key} row={row} actions={byKey.get(row.key) ?? []} highlight />
+            <RowCard key={row.key} row={row} actions={byKey.get(row.key) ?? []} prOpen={prOpen[row.key]} highlight />
           ))}
         </Section>
         <Section title="In progress" count={others.length} empty="No other rows.">
           {others.map((row) => (
-            <RowCard key={row.key} row={row} actions={byKey.get(row.key) ?? []} />
+            <RowCard key={row.key} row={row} actions={byKey.get(row.key) ?? []} prOpen={prOpen[row.key]} />
           ))}
         </Section>
         {finished.length ? (
           <Section title="Finished boxes" count={finished.length} empty="">
             {finished.map((row) => (
-              <RowCard key={row.key} row={row} actions={byKey.get(row.key) ?? []} />
+              <RowCard key={row.key} row={row} actions={byKey.get(row.key) ?? []} prOpen={prOpen[row.key]} />
             ))}
           </Section>
         ) : null}
@@ -125,6 +126,8 @@ function refProps(value: string, kind: 'issue' | 'pr'): RefProps | null {
   if (!ref) return null
   return {
     label: value.trim(),
+    fullName: ref.fullName,
+    number: ref.number,
     href: refUrl(ref, kind),
     detailsSrc: routes.details.href({ repo: ref.repo, kind: kind === 'pr' ? 'pull' : 'issues', number: String(ref.number) }),
   }
@@ -132,9 +135,11 @@ function refProps(value: string, kind: 'issue' | 'pr'): RefProps | null {
 
 // data-rmx-key: a frame reload diffs the DOM by this attribute, not by JSX key, so a row's
 // expanded details and half-typed form stay with that row when rows above it come or go.
-function RowCard(handle: Handle<{ row: Row; actions: ActionWithStatus[]; highlight?: boolean }>) {
+function RowCard(
+  handle: Handle<{ row: Row; actions: ActionWithStatus[]; prOpen?: boolean | null; highlight?: boolean }>,
+) {
   return () => {
-    let { row, actions, highlight } = handle.props
+    let { row, actions, prOpen, highlight } = handle.props
     let issue = refProps(row.issue, 'issue')
     let pr = refProps(row.pr, 'pr')
     return (
@@ -192,6 +197,11 @@ function RowCard(handle: Handle<{ row: Row; actions: ActionWithStatus[]; highlig
           rowKey={row.key}
           issue={issue}
           pr={pr}
+          merge={
+            pr && prOpen !== false
+              ? { href: pr.href, prominent: /^review and merge/i.test(row.yourMove.trim()) }
+              : null
+          }
           recordHref={routes.record.href()}
           boardFrame={BOARD_FRAME}
         />
@@ -252,6 +262,7 @@ function ActionLine(handle: Handle<{ action: ActionWithStatus; showKey?: boolean
 
 const cardStyle = css({
   display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr)',
   gap: '8px',
   padding: '12px 14px',
   background: 'var(--card)',

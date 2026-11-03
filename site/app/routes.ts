@@ -7,4 +7,6 @@ export const routes = route({
   events: get('/events'),
   details: get('/details/:repo/:kind/:number'),
   record: post('/actions'),
+  adrIndex: get('/adr/:repo'),
+  adr: get('/adr/:repo/:name.md'),
 })

@@ -1,14 +1,12 @@
 import type { Handle } from 'remix/component'
 import { css, unsafeHTML } from 'remix/component'
 
-import type { Check, Comment, IssueDetails, PullDetails } from '../data/github.ts'
+import type { AdrFile, Check, Comment, IssueDetails, PullDetails } from '../data/github.ts'
+import { renderMarkdown, rewriteGithubHtml } from '../data/markdown.ts'
 
-// body_html comes from GitHub's own renderer, which sanitizes it. Links open in a new tab.
-function githubHtml(html: string): ReturnType<typeof unsafeHTML> {
-  let cleaned = html
-    .replace(/<script\b[\s\S]*?<\/script>/gi, '')
-    .replace(/<a (?![^>]*\btarget=)/g, '<a target="_blank" rel="noopener noreferrer" ')
-  return unsafeHTML(cleaned || '<p><em>No description.</em></p>')
+// body_html comes from GitHub's own renderer, which sanitizes it; ADR links are pointed at our viewer.
+function githubHtml(html: string, repo: string): ReturnType<typeof unsafeHTML> {
+  return unsafeHTML(rewriteGithubHtml(html, repo) || '<p><em>No description.</em></p>')
 }
 
 export function DetailsError(handle: Handle<{ what: string; message: string }>) {
@@ -32,7 +30,7 @@ export function IssuePanel(handle: Handle<{ issue: IssueDetails; label: string }
           <span>by {issue.author}</span>
           <Labels labels={issue.labels} />
         </Meta>
-        <div class="md" innerHTML={githubHtml(issue.bodyHtml)} />
+        <div class="md" innerHTML={githubHtml(issue.bodyHtml, repoOf(issue.url))} />
         <Comments comments={issue.comments} />
       </div>
     )
@@ -98,12 +96,74 @@ export function PullPanel(handle: Handle<{ pull: PullDetails; label: string }>) 
           ))}
         </ul>
 
+        {pull.adrs.length ? (
+          <>
+            <h4 mix={subhead}>ADRs in this PR ({pull.adrs.length})</h4>
+            {pull.adrs.map((adr) => (
+              <AdrSection key={adr.path} adr={adr} repo={repoOf(pull.url)} sha={pull.headSha} />
+            ))}
+          </>
+        ) : null}
+
         <h4 mix={subhead}>Description</h4>
-        <div class="md" innerHTML={githubHtml(pull.bodyHtml)} />
+        <div class="md" innerHTML={githubHtml(pull.bodyHtml, repoOf(pull.url))} />
         <Comments comments={pull.comments} />
       </div>
     )
   }
+}
+
+function repoOf(url: string): string {
+  return url.split('/')[4] ?? 'discobox'
+}
+
+function AdrSection(handle: Handle<{ adr: AdrFile; repo: string; sha: string }>) {
+  return () => {
+    let { adr, repo, sha } = handle.props
+    return (
+      <details mix={adrBox}>
+        <summary mix={summaryStyle}>
+          <strong>{adr.title}</strong>{' '}
+          <span mix={muted} style={{ display: 'inline' }}>
+            <span class="mono">{adr.filename}</span> ({adr.status}) ·{' '}
+            <a href={`/adr/${repo}/${adr.filename}?ref=${sha}`} target="_blank" rel="noopener">
+              open
+            </a>
+          </span>
+        </summary>
+        {adr.patch ? (
+          <details mix={css({ margin: '8px 0' })}>
+            <summary mix={css({ cursor: 'pointer', fontSize: '12px', color: 'var(--muted)' })}>diff</summary>
+            <Patch patch={adr.patch} />
+          </details>
+        ) : null}
+        {adr.error ? (
+          <p mix={css({ color: 'var(--danger)' })}>Couldn't read the file: {adr.error}</p>
+        ) : (
+          <div
+            class="md"
+            mix={css({ marginTop: '8px' })}
+            innerHTML={unsafeHTML(renderMarkdown(adr.markdown, { repo, ref: sha, dir: 'docs/adr' }))}
+          />
+        )}
+      </details>
+    )
+  }
+}
+
+export function Patch(handle: Handle<{ patch: string }>) {
+  return () => (
+    <pre mix={patchStyle}>
+      {handle.props.patch.split('\n').map((line, i) => (
+        <span
+          key={i}
+          class={line.startsWith('@@') ? 'hunk' : line.startsWith('+') ? 'add' : line.startsWith('-') ? 'del' : undefined}
+        >
+          {line || ' '}
+        </span>
+      ))}
+    </pre>
+  )
 }
 
 function Head(handle: Handle<{ kind: string; label: string; title: string; url: string }>) {
@@ -209,7 +269,7 @@ function Comments(handle: Handle<{ comments: Comment[] }>) {
                 {new Date(c.at).toISOString().replace('T', ' ').slice(0, 16)}Z
               </a>
             </div>
-            <div class="md" innerHTML={githubHtml(c.bodyHtml)} />
+            <div class="md" innerHTML={githubHtml(c.bodyHtml, repoOf(c.url))} />
           </div>
         ))}
       </>
@@ -219,6 +279,7 @@ function Comments(handle: Handle<{ comments: Comment[] }>) {
 
 const panelStyle = css({
   display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr)',
   gap: '8px',
   padding: '12px 14px',
   border: '1px solid var(--border)',
@@ -231,3 +292,26 @@ const subhead = css({ margin: '6px 0 0', fontSize: '13px' })
 const listStyle = css({ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '2px' })
 const muted = css({ margin: 0, color: 'var(--muted)' })
 const badge = css({ fontSize: '12px', fontWeight: 600, borderRadius: '999px', padding: '0 8px' })
+
+const adrBox = css({
+  minWidth: 0,
+  border: '1px solid var(--border)',
+  borderRadius: '6px',
+  padding: '6px 10px',
+  background: 'var(--card)',
+})
+const summaryStyle = css({ cursor: 'pointer', padding: '2px 0' })
+const patchStyle = css({
+  margin: 0,
+  maxWidth: '100%',
+  padding: '8px 0',
+  background: 'var(--code-bg)',
+  borderRadius: '6px',
+  overflowX: 'auto',
+  fontSize: '12px',
+  lineHeight: 1.45,
+  '& span': { display: 'block', padding: '0 10px', whiteSpace: 'pre' },
+  '& .add': { background: 'var(--ok-bg)', color: 'var(--ok)' },
+  '& .del': { background: 'var(--danger-bg)', color: 'var(--danger)' },
+  '& .hunk': { color: 'var(--muted)' },
+})

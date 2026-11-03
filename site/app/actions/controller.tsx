@@ -5,16 +5,19 @@ import { redirect } from 'remix/response/redirect'
 import { assets } from '../assets.ts'
 import { ActionError, appendAction, buildAction, readActions } from '../data/actions.ts'
 import { changes } from '../data/changes.ts'
-import { getIssue, getPull } from '../data/github.ts'
-import { readTable } from '../data/table.ts'
+import { adrTitle, getFileText, getIssue, getPull, listDir, pullIsOpen } from '../data/github.ts'
+import { renderMarkdown } from '../data/markdown.ts'
+import { parseRef, readTable } from '../data/table.ts'
 import { githubOrg } from '../config.ts'
 import { routes } from '../routes.ts'
+import { AdrPage } from './adr-page.tsx'
 import { Board, BOARD_FRAME } from './board.tsx'
 import { DetailsError, IssuePanel, PullPanel } from './details.tsx'
 import { Document } from './document.tsx'
 import { LiveUpdates } from './public/live.tsx'
 
 const noStore = { 'Cache-Control': 'no-store' }
+const REPO = /^[A-Za-z0-9_.-]+$/
 
 export default createController(routes, {
   actions: {
@@ -39,7 +42,15 @@ export default createController(routes, {
 
     async board(context) {
       let [table, actions] = await Promise.all([readTable(), readActions()])
-      return context.render(<Board table={table} actions={actions} renderedAt={Date.now()} />, {
+      // Whether each row's PR is open, for its merge button; null (unknown) still shows the button.
+      let prOpen: Record<string, boolean | null> = {}
+      await Promise.all(
+        table.rows.map(async (row) => {
+          let ref = parseRef(row.pr)
+          if (ref) prOpen[row.key] = await pullIsOpen(ref)
+        }),
+      )
+      return context.render(<Board table={table} actions={actions} prOpen={prOpen} renderedAt={Date.now()} />, {
         headers: noStore,
       })
     },
@@ -102,6 +113,46 @@ export default createController(routes, {
           { headers: noStore },
         )
       }
+    },
+
+    async adr(context) {
+      let { repo, name } = context.params
+      let file = `${name}.md`
+      if (!REPO.test(repo) || !/^[\w.-]+\.md$/.test(file)) return new Response('Not Found', { status: 404 })
+      let ref = context.url.searchParams.get('ref') || undefined
+      try {
+        let markdown = await getFileText(`${githubOrg}/${repo}`, `docs/adr/${file}`, ref)
+        let html = renderMarkdown(markdown, { repo, ref, dir: 'docs/adr' })
+        return context.render(<AdrPage repo={repo} ref={ref} file={file} title={adrTitle(markdown, file)} html={html} />, {
+          headers: { 'Cache-Control': 'private, max-age=30' },
+        })
+      } catch (error: any) {
+        return context.render(<AdrPage repo={repo} ref={ref} file={file} title={file} html={null} error={error?.message ?? String(error)} />, {
+          status: error?.status === 404 ? 404 : 502,
+          headers: noStore,
+        })
+      }
+    },
+
+    async adrIndex(context) {
+      let { repo } = context.params
+      if (!REPO.test(repo)) return new Response('Not Found', { status: 404 })
+      let ref = context.url.searchParams.get('ref') || undefined
+      let full = `${githubOrg}/${repo}`
+      let [listing, readme] = await Promise.allSettled([
+        listDir(full, 'docs/adr', ref),
+        getFileText(full, 'docs/adr/README.md', ref),
+      ])
+      let entries =
+        listing.status === 'fulfilled'
+          ? listing.value.filter((e) => e.type === 'file' && /\.md$/.test(e.name) && e.name !== 'README.md').map((e) => e.name)
+          : []
+      let html = readme.status === 'fulfilled' ? renderMarkdown(readme.value, { repo, ref, dir: 'docs/adr' }) : null
+      let error = listing.status === 'rejected' ? String(listing.reason?.message ?? listing.reason) : undefined
+      return context.render(
+        <AdrPage repo={repo} ref={ref} title="ADR index" html={html} entries={entries} error={error} />,
+        { headers: { 'Cache-Control': 'private, max-age=30' } },
+      )
     },
 
     async record(context) {

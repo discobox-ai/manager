@@ -88,6 +88,17 @@ export interface ChangedFile {
   status: string
   additions: number
   deletions: number
+  patch: string | null
+}
+
+export interface AdrFile {
+  path: string
+  filename: string
+  status: string
+  title: string
+  markdown: string
+  patch: string | null
+  error?: string
 }
 
 export interface PullDetails extends IssueDetails {
@@ -103,6 +114,7 @@ export interface PullDetails extends IssueDetails {
   filesTruncated: boolean
   additions: number
   deletions: number
+  adrs: AdrFile[]
 }
 
 function labels(raw: any[]): Label[] {
@@ -173,8 +185,9 @@ export async function getPull(ref: Ref): Promise<PullDetails> {
     get(`/repos/${ref.fullName}/pulls/${ref.number}/files?per_page=100`),
     lastComments(ref),
   ])
-  let checks = await checksFor(ref, p.head.sha)
+  let [checks, adrs] = await Promise.all([checksFor(ref, p.head.sha), adrsIn(ref, p.head.sha, files.json)])
   return {
+    adrs,
     title: p.title,
     state: p.state,
     stateReason: null,
@@ -196,9 +209,69 @@ export async function getPull(ref: Ref): Promise<PullDetails> {
       status: f.status,
       additions: f.additions,
       deletions: f.deletions,
+      patch: f.patch ?? null,
     })),
     filesTruncated: p.changed_files > (files.json as any[]).length,
     additions: p.additions,
     deletions: p.deletions,
   }
+}
+
+export const ADR_FILE = /^docs\/adr\/([^/]+\.md)$/
+
+export function adrTitle(markdown: string, fallback: string): string {
+  let m = markdown.match(/^#\s+(.+?)\s*#*\s*$/m)
+  return m ? m[1] : fallback
+}
+
+/**
+ * A file's text at a ref, read through the upstream repository. A PR from the bot's fork has its
+ * head commit in the upstream repo too, so ref=<head sha> works there; the fork itself is never read.
+ */
+export async function getFileText(fullName: string, path: string, ref?: string): Promise<string> {
+  let q = ref ? `?ref=${encodeURIComponent(ref)}` : ''
+  let { json } = await get(`/repos/${fullName}/contents/${path.split('/').map(encodeURIComponent).join('/')}${q}`)
+  if (Array.isArray(json) || json.type !== 'file') throw new GitHubError(`${path} is not a file`, 400)
+  if (json.encoding !== 'base64') throw new GitHubError(`${path}: unexpected encoding ${json.encoding}`, 500)
+  return Buffer.from(json.content, 'base64').toString('utf8')
+}
+
+export interface DirEntry {
+  name: string
+  path: string
+  type: string
+}
+
+export async function listDir(fullName: string, path: string, ref?: string): Promise<DirEntry[]> {
+  let q = ref ? `?ref=${encodeURIComponent(ref)}` : ''
+  let { json } = await get(`/repos/${fullName}/contents/${path}${q}`)
+  if (!Array.isArray(json)) throw new GitHubError(`${path} is not a directory`, 400)
+  return json.map((e: any) => ({ name: e.name, path: e.path, type: e.type }))
+}
+
+async function adrsIn(ref: Ref, sha: string, files: any[]): Promise<AdrFile[]> {
+  let adrFiles = files.filter(
+    (f) => ADR_FILE.test(f.filename) && !/\/README\.md$/i.test(f.filename) && f.status !== 'removed',
+  )
+  return Promise.all(
+    adrFiles.map(async (f): Promise<AdrFile> => {
+      let filename = f.filename.replace(/^docs\/adr\//, '')
+      let base = { path: f.filename, filename, status: f.status, patch: f.status === 'added' ? null : (f.patch ?? null) }
+      try {
+        let markdown = await getFileText(ref.fullName, f.filename, sha)
+        return { ...base, markdown, title: adrTitle(markdown, filename) }
+      } catch (error: any) {
+        return { ...base, markdown: '', title: filename, error: error?.message ?? String(error) }
+      }
+    }),
+  )
+}
+
+/** Whether a PR is open, for the merge button. null when GitHub didn't answer in time. */
+export async function pullIsOpen(ref: Ref, timeoutMs = 2500): Promise<boolean | null> {
+  let timeout = new Promise<null>((r) => setTimeout(() => r(null), timeoutMs))
+  let state = get(`/repos/${ref.fullName}/pulls/${ref.number}`)
+    .then(({ json }) => json.state === 'open' && !json.merged)
+    .catch(() => null)
+  return Promise.race([state, timeout])
 }

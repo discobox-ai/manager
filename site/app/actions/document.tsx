@@ -42,7 +42,17 @@ const GLOBAL_CSS = `
   }
   button:hover { border-color: var(--accent); }
   button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  button.danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+  button.danger { background: var(--danger); color: #fff; border-color: var(--danger); font-weight: 600; }
+  a.btn {
+    display: inline-block; text-decoration: none; color: inherit; border: 1px solid var(--border);
+    background: var(--card); border-radius: 6px; padding: 3px 10px;
+  }
+  a.btn:hover { border-color: var(--accent); }
+  a.btn.merge-prominent {
+    background: #1f883d; border-color: #1f883d; color: #fff; font-weight: 600; padding: 4px 14px;
+  }
+  a.btn.merge-prominent:hover { background: #1a7f37; }
+  dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
   textarea, input[type=text] {
     width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px;
   }
@@ -52,7 +62,16 @@ const GLOBAL_CSS = `
   .md code { background: var(--code-bg); padding: 1px 4px; border-radius: 4px; }
   .md pre code { background: none; padding: 0; }
   .md table { border-collapse: collapse; display: block; overflow-x: auto; }
-  .md th, .md td { border: 1px solid var(--border); padding: 3px 8px; }
+  .md th, .md td { border: 1px solid var(--border); padding: 4px 10px; vertical-align: top; }
+  .md th { background: var(--code-bg); text-align: left; }
+  .md table { overflow-wrap: normal; }
+  .md td:first-child { white-space: nowrap; }
+  .md tbody tr:nth-child(2n) td { background: color-mix(in srgb, var(--code-bg) 45%, transparent); }
+  .md h1 { font-size: 1.5em; padding-bottom: 0.25em; border-bottom: 1px solid var(--border); }
+  .md h2 { font-size: 1.25em; padding-bottom: 0.2em; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1em; }
+  .md a.gh-link { font-size: 0.85em; color: var(--muted); }
+  .md hr { border: 0; border-top: 1px solid var(--border); }
   .md blockquote { margin: 0; padding-left: 12px; border-left: 3px solid var(--border); color: var(--muted); }
   .md > :first-child { margin-top: 0; }
   .md > :last-child { margin-bottom: 0; }
