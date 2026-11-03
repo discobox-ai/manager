@@ -23,6 +23,10 @@ workers:
   # discobox server workers are created on. Inside a discobox the devShell may
   # point the CLI at a nested dev server; always pass this explicitly.
   server: https://api.discobox.internal
+  # Of those, triage workers up at once, so a backlog of new issues doesn't
+  # take every slot. New issues are triaged highest priority/* first, then
+  # newest first.
+  triageMax: 2
   # Where workers get their skills.
   skills: discobox-ai/manager//worker-skills
 

@@ -18,15 +18,16 @@ The owner starts the manager's box once, from this repository:
 
 ```sh
 discobox run -d --discobox-api --no-project-skills \
-  https://github.com/discobox-ai/manager@main -p 'You are the manager. Start the loop.'
+  https://github.com/discobox-ai/manager@main -p '/start-loop'
 ```
 
 - `--discobox-api` lets it create, steer and tag its workers (only boxes it
   creates).
 - `--no-project-skills` keeps the project's other skill repositories (the old
   `orchestrate-issues`) from loading beside its own.
-- It starts with no GitHub access. Its first step sends
-  `roles/manager-request.json`: a use part for itself and a delegate part for
-  its workers. The owner approves both parts once.
+- Its prompt runs the `start-loop` skill. That first sends
+  `roles/manager-request.json` (a use part for itself and a delegate part for
+  its workers), which the owner approves once. Run `/start-loop` again in the
+  box any time to rebuild from scratch.
 
 Then the owner talks to it in that box.

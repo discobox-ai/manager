@@ -33,6 +33,7 @@ and skills (`verify-recipes`; `discobox-review` is in every box).
 | Deliver | `deliver-issue` | Its PR merged (`merged`); `ready` while green and waiting for the owner |
 | Fix CI | `fix-ci` | The fix is a PR, green; tagged `ready` |
 | Rebase | `rebase-pr` | The PR rebased keeping both sides, green; tagged `ready` |
+| Labels | `migrate-labels` | The repository has the `status/*` and `type/*` labels and every open issue is relabelled, after the owner approved the plan in the box; tagged `ready` |
 | Submit | `submit` | An ad-hoc box's work is an issue with a submit comment, then carried on as `deliver-issue`, parked on a pushed branch, or kept as design only |
 
 `worker`, `commit`, `open-pr` and `verify` are the building blocks those jobs

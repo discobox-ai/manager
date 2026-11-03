@@ -15,6 +15,7 @@ are the source.
 |---|---|---|
 | `github-triage` | `triage-issue` workers | Read the repository and search issues; comment on issues |
 | `github-deliver` | `deliver-issue`, `propose-adr`, `fix-ci`, `rebase-pr` workers | Triage's, plus git push and fetch; open and edit its PR; reply to review; mark ready; re-run failed CI |
+| `github-labels` | `migrate-labels` workers | Read; create and edit labels; set and remove labels on issues; comment |
 | `github-submit` | Ad-hoc boxes (`job=adhoc`), for `submit` | Deliver's, plus filing an issue |
 | `github-manager` | The manager itself, once per watched repository | Read; file, comment on, label and close issues; re-run failed CI. No git, no PRs |
 | `github-push` | The manager itself, for discobox-ai/manager only | Git fetch and push |

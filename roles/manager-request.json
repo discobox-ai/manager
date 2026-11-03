@@ -123,9 +123,37 @@
           "owner": "discobox-ai",
           "repo": "review"
         }
+      },
+      {
+        "file": "roles/github-labels.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "discobox"
+        }
+      },
+      {
+        "file": "roles/github-labels.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "vm"
+        }
+      },
+      {
+        "file": "roles/github-labels.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "manager"
+        }
+      },
+      {
+        "file": "roles/github-labels.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "review"
+        }
       }
     ]
   },
-  "justification": "Manage issues and labels in discobox-ai/discobox, discobox-ai/vm, discobox-ai/manager, discobox-ai/review and push my own repository discobox-ai/manager; delegate the worker roles (github-deliver, github-submit, github-triage) so I can bind each worker its job's role at launch.",
+  "justification": "Manage issues and labels in discobox-ai/discobox, discobox-ai/vm, discobox-ai/manager, discobox-ai/review and push my own repository discobox-ai/manager; delegate the worker roles (github-deliver, github-labels, github-submit, github-triage) so I can bind each worker its job's role at launch.",
   "wait": true
 }

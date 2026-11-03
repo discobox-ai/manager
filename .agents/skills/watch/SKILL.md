@@ -42,8 +42,5 @@ and post a one-line "no change" if nothing moved.
 
 ## Start of every session
 
-1. `discobox-monitor status`. Re-enable anything missing, and disable
-   instances for work that's finished.
-2. `discobox-monitor pop` (no wait) to drain what queued while you were away.
-3. Rebuild the table (`docs/state.md`) and post it.
-4. Start the waiting `pop`.
+The `start-loop` skill does it: status, drain, rebuild, then the waiting
+`pop`.

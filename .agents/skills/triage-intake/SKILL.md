@@ -7,6 +7,11 @@ description: How the manager handles incoming work — a new issue, an issue the
 
 ## A new issue in a watched repository (no `status/*` label)
 
+0. **Only in a migrated repository** (it has the `status/*` and `type/*`
+   labels, `docs/labels.md`). In one that isn't, every issue looks new: start
+   no triage there, start a `migrate-labels` worker instead (`workers`). And
+   only up to `workers.triageMax` triage workers at once, highest
+   `priority/*` first, then newest.
 1. Start a triage worker:
    `-p 'Triage issue #N in <repo>.'` (job `triage`, skill `triage-issue`).
 2. When it finishes, its verdict is a comment on the issue: proposed

@@ -28,7 +28,9 @@ the skill:
 sed -n '/^---$/,/^---$/p' worker-skills/<skill>/SKILL.md | sed -n 's/^ *discobox\.role: *//p'
 ```
 
-An ad-hoc box takes `submit`'s role. A role that isn't in
+An ad-hoc box takes `submit`'s role. A label migration
+(`migrate-labels`) is tagged `repo=<owner>/<name> job=labels`, with no
+`issue`, and its prompt is `Migrate the labels of <repo>.` A role that isn't in
 `roles/manager-request.json`'s delegate part, for that repository, is refused
 at launch: add it there and ask again (`roles/README.md`).
 

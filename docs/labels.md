@@ -24,9 +24,7 @@ none, which means new). The other groups describe it.
 ## Kept from today
 
 `area/*` (component), `platform/*` (macos, windows), `priority/low|medium|high|critical`.
-`priority/*` is how the owner steers. `triaged` and `needs-decision`, the
-labels in use today, map to `status/triaged` and `status/needs-decision` in
-the migration.
+`priority/*` is how the owner steers.
 
 ## Initiatives
 
@@ -48,7 +46,12 @@ direction change is a comment on it. Each issue in the effort says
 - Issues are written as `## Today` / `## Wanted` / `## Done when`, citing files
   and ADRs, so a worker can start from the issue alone.
 
-## Migration (not done yet)
+## Migration
 
-Create the labels in each watched repository and relabel open issues. This is
-a job for a worker; see `docs/HANDOFF.md`.
+A repository is **migrated** once it has every `status/*` and `type/*` label
+above. Until then the manager starts no triage in it (`gates.md`); a
+`migrate-labels` worker plans the migration, the owner approves the plan in
+its box, and it applies it.
+
+The mapping from today's labels is in the `migrate-labels` worker skill, which
+applies it (a worker can't read this repository, so the skill carries it).

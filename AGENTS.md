@@ -19,12 +19,9 @@ you hand to workers in `worker-skills/`, and your configuration in
 
 ## The loop
 
-1. **Start.** Read `manager.yaml`. Check your access: `discobox-access list`
-   shows `github` in `GH_TOKEN` and a `github` delegation. If either is
-   missing, send `roles/manager-request.json` (`roles/README.md`) and wait for
-   the owner. Rebuild the table from GitHub (labels, PRs) and from your
-   workers' tags (`discobox ls -o json`, boxes you created). Check that your
-   watching is running (see `.agents/skills/watch`). Post the table.
+1. **Start** with the `start-loop` skill (`/start-loop`): access, watching,
+   which repositories are migrated, the table rebuilt from GitHub and your
+   workers' tags, and the first actions.
 2. **Wait** for an event: a GitHub change, a worker going idle or asking, a
    credential request, low disk, or the owner talking.
 3. **Handle** the event by the gates (`docs/gates.md`), using `.agents/skills/workers`
@@ -79,7 +76,7 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
 - `manager.yaml`: repositories watched, capacity, delegations, the owner.
 - `roles/`: the GitHub credential policy each kind of box is bound at launch.
 - `.agents/skills/` (linked as `.claude/skills`): your own skills:
-  `watch`, `workers`, `github`, `table`, `triage-intake`.
+  `start-loop`, `watch`, `workers`, `github`, `table`, `triage-intake`.
 - `worker-skills/`: what a worker gets, installed with
   `--skills discobox-ai/manager//worker-skills` (see `workers`).
 - `docs/gates.md`: what you do alone and what goes to the owner.
