@@ -157,9 +157,12 @@ job needs; don't ask for it.
 
 ## Comments
 
-Every comment you post ends with a footer naming this box, so whoever reads
-the issue can find it: `<sub>From \`$DISCOBOX_ADDRESS\`</sub>`. Leave it off
-when `DISCOBOX_ADDRESS` is unset.
+Everything you post on GitHub ends with a footer naming this box: every
+comment, PR body, issue body, review reply and process note. Whoever reads it
+can then find the box that wrote it (owner, 2026-11-03):
+`<sub>From \`$DISCOBOX_ADDRESS\`</sub>`, on a line of its own after a blank
+line, last. When you edit a body, keep the footer last. Leave it off only when
+`DISCOBOX_ADDRESS` is unset.
 
 ## Power: never sit idle
 

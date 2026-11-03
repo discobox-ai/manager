@@ -17,6 +17,13 @@ that could read stdin get `</dev/null` in loops.
 - Main's CI: `gh api repos/<repo>/actions/runs?branch=<default>&status=completed`.
   Skip cancelled runs.
 
+## The footer
+
+Everything you post (issues, comments, process checks, closing notes, PR body
+edits) ends with a footer naming this box, on its own line, last:
+`<sub>From \`$DISCOBOX_ADDRESS\`</sub>` (owner, 2026-11-03). Workers do the same
+(`worker` skill, Comments).
+
 ## Filing and editing issues
 
 - Write issues as `## Today` (facts, with file paths) / `## Wanted` (what to
