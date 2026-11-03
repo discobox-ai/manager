@@ -1,186 +1,133 @@
 ---
 name: open-pr
-description: Push the committed work to a branch on GitHub, open a pull request into discobox `main`, watch its CI checks, fix whatever fails, and repeat until every check on the PR's latest commit is green — then leave it for a human to merge. Use when the user wants a PR opened, wants work proven by CI before it lands.
+description: Push the committed work to a branch on GitHub, open a pull request into the repository's default branch, watch its CI checks, fix whatever fails, and repeat until every check on the PR's latest commit is green — then leave it for a human to merge. Used by deliver-issue, fix-ci and submit.
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write, Agent, SendMessage, Skill, Monitor, AskUserQuestion
 metadata:
-  argument-hint: "[branch-name] [--issue N] [--qa-report path]"
+  argument-hint: "<branch-name>"
 ---
 
-# Open a PR and Drive It Green
+# Open a PR and drive it green
 
-Put the local commits on a GitHub branch, open a PR into `main`, and keep
-working until the PR's head commit passes every check. The PR is where CI
-proves the change; a human reviews and merges it.
+Put the local commits on a GitHub branch, open a PR into `BASE`, and keep
+working until the PR's head commit passes every check. CI proves the change;
+a human reviews and merges it.
 
-Invoking this skill is authorization to push **one** branch to
-`discobox-ai/discobox` (creating it on GitHub only — the local checkout stays on
-its branch), open a PR from it, push further commits to it, edit the PR's body,
-mark it ready, and comment on it. It is **not** authorization to merge, enable
-auto-merge, push to `main`, force-push, request reviewers, or close anything —
-ask for those.
+`REPO`, `BASE`, `GH_URL` and the git credential helper come from the
+`worker` skill. Push one branch and nothing else, and edit only this PR.
 
-## 0. Credentials
-
-The repo is always `discobox-ai/discobox`; pass `--repo discobox-ai/discobox`
-to every `gh` call. Outside a discobox, with `gh` logged in and a GitHub
-remote, run the commands below directly and skip this section.
-
-Inside a discobox there is no `gh` login. `origin` is the host checkout's own
-remote — possibly a mirror — and `discobox` is the pool; in a discobox created
-before ADR 26-10-10-545, `origin` is the pool and `upstream` is that remote.
-Check `git remote -v`, and do not push to any of them by name: every GitHub call
-goes through a GitHub credential, with the URL spelled out. Your job's role file (`roles/github-deliver.json` or `github-submit.json`)
-is bound at launch; see the calling skill. Push `<branch>` and nothing else,
-and edit only this PR's body: a route can't say which branch a push writes,
-and `main`'s branch protection covers a push to `main`.
-
-`GH_TOKEN` holds the credential's sentinel; a shell started before it was
-bound takes it up with
-`eval "$(discobox-access env)"`. `gh` reads it as it is. Git takes it through a
-one-shot credential helper:
-
-```bash
-GH_URL=https://github.com/discobox-ai/discobox
-git -c credential.helper= \
-  -c credential.helper='!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
-  push "$GH_URL" HEAD:refs/heads/<branch>
-```
+Invoking this skill is authorization to push **one** branch, open a PR from
+it, push further commits to it, edit its body, mark it ready, and comment on
+it. It is not authorization to merge, enable auto-merge, push `BASE`,
+force-push, request reviewers, or close anything; ask for those, unless the
+calling skill already has (`deliver-issue`).
 
 ## 1. What goes in the PR
 
-The work must be committed. `git status --short` shows nothing tracked — an
-untracked `wnb-*-failed.txt` from the dev loop is noise — and anything else
-uncommitted is a question for the user, not something to sweep in.
+The work must be committed: `git status --short` shows nothing tracked, and
+anything else uncommitted is a question, not something to sweep in.
 
-Fetch GitHub's `main` (with the credential helper above, `fetch "$GH_URL"
-main`) and read what the PR would carry:
+Fetch `BASE` from GitHub (`git fetch "$GH_URL" "$BASE"`, with the helper) and
+read what the PR would carry:
 
 ```bash
 git log --oneline FETCH_HEAD..HEAD
 git diff --stat FETCH_HEAD...HEAD
 ```
 
-Those must be exactly this change's commits. A commit that belongs to someone
-else's unpushed work, or to a different change, means stop and ask — never
-open a PR that smuggles it in. An empty list means there is nothing to PR.
+Those must be exactly this change's commits. A commit from someone else's
+work or a different change means stop and ask; an empty list means there's
+nothing to open. If `git merge-tree --write-tree FETCH_HEAD HEAD` reports a
+conflict, rebase onto `FETCH_HEAD` now (nothing is published yet) and re-run
+the tests the conflict touched.
 
-If `main` moved and `git merge-tree --write-tree FETCH_HEAD HEAD` reports a
-conflict, rebase onto `FETCH_HEAD` now — the commits are not published yet, so
-this rewrites nothing anyone has — and re-run the tests the conflict touched.
-
-**Branch name:** `issue-<N>` when it fixes an issue; otherwise `<type>/<slug>`
-from the first commit's subject (`fix/rm-stopped-box`). Check it is free:
-`git ls-remote "$GH_URL" refs/heads/<branch>` (with the helper)
-returns nothing, or a commit that is an ancestor of `HEAD` — that is this
-work's earlier push. Anything else is someone's branch: pick another name.
+**Branch:** `discobox/issue-<N>` for an issue (the manager watches
+`discobox/*`). Check it's free: `git ls-remote "$GH_URL"
+refs/heads/<branch>` returns nothing, or an ancestor of `HEAD` (this work's
+earlier push). Anything else is someone else's branch: stop and say so.
 
 ## 2. Push and open
 
-Push `HEAD:refs/heads/<branch>` as in §0. Then find or open the PR:
+Push `HEAD:refs/heads/<branch>`, then find or open the PR:
 
 ```bash
-gh pr list --repo discobox-ai/discobox --head <branch> --state open --json number,url
-gh api -X POST repos/discobox-ai/discobox/pulls -f base=main -f head=<branch> -F draft=true \
+gh pr list --repo $REPO --head <branch> --state open --json number,url
+gh api -X POST repos/$REPO/pulls -f base=$BASE -f head=<branch> -F draft=true \
   -f title="<conventional subject>" -F body=@<scratchpad>/pr-body.md --jq '.number, .html_url'
 ```
 
-One PR per branch: if one is open, update its body instead, with `gh api -X
-PATCH repos/discobox-ai/discobox/pulls/<pr> -F body=@<scratchpad>/pr-body.md`. Draft until green, so nobody reviews a PR CI has not
-passed.
+One PR per branch: if one is open, update its body instead (`gh api -X PATCH
+repos/$REPO/pulls/<pr> -F body=@…`). It stays a draft until green, so nobody
+reviews what CI hasn't passed. Tag the box `pr=<pr>` (`worker`, Tags).
 
-Inside a discobox, tag the box `pr=<pr>` as soon as the PR exists — and
-`issue=<N>` too when the PR fixes or refers to one — merged into the tags
-already there, so the user's `discobox ls --tag pr=<pr>` finds it:
-
-```bash
-S=<scratchpad>; M=~/.discobox/meta.json
-{ cat $M 2>/dev/null || echo '{}'; } | jq --arg v <pr> '.tags = ((.tags // {}) + {pr: $v})' > $S/meta.json &&
-  jq -e --arg v <pr> '.tags.pr == $v and (.tags | length) <= 64' $S/meta.json >/dev/null && cp $S/meta.json $M
-```
-
-For the issue, run the same lines with `issue` and `<N>` in place of `pr` and
-`<pr>`. A PR that neither fixes nor refers to an issue drops the `issue` tag
-earlier work left: add `| del(.tags.issue)` to the merge. The `jq -e` check
-proves the merge produced the tag and at most 64 tags (more makes the whole
-file invalid); when it fails nothing is written: with more than 64 tags
-merged, tell the user the box's tags are full and drop none of theirs to make
-room; otherwise (the file empty or not valid JSON) say the merge failed and
-leave the file alone. A file with any field but `description` and `tags` is
-ignored too.
-
-Title: the commit's subject when there is one commit; otherwise a
-conventional subject covering them. Body:
+Title: the commit's subject when there's one commit, else a conventional
+subject covering them. Body:
 
 ```markdown
-<What changed and why, three to six lines. The cause, the fix, anything a
+<What changed and why, three to six lines: the cause, the fix, what a
 reviewer should look at first.>
 
-Fixes #<N>
+Closes #<N>
 
 ## Testing
 
-- <each phase 1 step and its result; pre-existing failures named>
-
-<details><summary>QA: Verified — build <sha></summary>
-
-<the test-fix QA report, verbatim>
-</details>
+- <what ran and its result; pre-existing failures named>
+- <what verify observed, and what couldn't run here>
 
 <sub>From `<$DISCOBOX_ADDRESS>`</sub>
 ```
 
-`Fixes #N` only when it does fix the issue — it closes the issue on merge;
-`Refs #N` otherwise. Leave out the Testing section's QA block when `test-fix`
-did not run, and say so instead. The footer carries `$DISCOBOX_ADDRESS`
-verbatim; leave it off when that is unset. End the body with whatever
-attribution line the harness asks PR descriptions to end with.
+`Closes #N` when it delivers the issue; `Part of #N` when it's one step of it
+(an ADR PR). End with whatever attribution line the harness asks PR
+descriptions to end with.
 
 ## 3. Watch the checks
 
-Everything below is about the PR's **head commit**, which must equal local
+Everything here is about the PR's **head commit**, which must equal local
 `HEAD`:
 
 ```bash
-gh pr view <pr> --repo discobox-ai/discobox --json headRefOid -q .headRefOid
-gh pr checks <pr> --repo discobox-ai/discobox --json name,state,bucket,link
+gh pr view <pr> --repo $REPO --json headRefOid -q .headRefOid
+gh pr checks <pr> --repo $REPO --json name,state,bucket,link
 ```
 
-Arm a Monitor that polls `gh pr checks` (every 60s) and exits when no check is in bucket `pending`, and keep working
-while it runs. CI takes about seven minutes.
+Arm a Monitor that polls `gh pr checks` every 60 seconds and exits when
+nothing is `pending`, and keep working while it runs.
 
-- **Green** — every check is `pass` or `skipping`, and CI's six jobs (`check`,
-  `test`, `verify`, `build`, `darwin`, `windows`) are among them. Path-filtered
-  workflows (`vm-image`, `vm-kernel`) appear only when their paths changed.
-- **`cancel`** — CI cancels a PR's run when a newer push supersedes it. A
-  cancelled check on an older commit is not a failure; one on the head commit
-  is — re-list, then re-run it.
-- **`fail`** — §4.
+- **Green**: every check is `pass` or `skipping`, and the repository's
+  required checks are among them.
+- **`cancel`**: CI cancels a run a newer push superseded. Cancelled on an
+  older commit isn't a failure; on the head commit, re-list, then re-run it.
+- **`fail`**: §4.
 
 ## 4. Fix, push, repeat
 
-Read the failure: [ci-failures.md](ci-failures.md). Then:
+Read the failure. `gh run view --log-failed` refuses while the run is still
+going; read a finished job's log through the API meanwhile:
 
-1. Decide whether it is this change's. Failing on `main` too → pre-existing:
-   note it on the PR, do not fix it here unless the user asks.
-2. Reproduce it locally where you can (Windows- and macOS-only failures often
-   reproduce with the tricks in ci-failures.md), fix the cause, and run the
-   narrowest local check that covers it.
-3. Run the fix through `discobox-review` — a CI fix is new code. The review's
-   base has not moved, so only the files you edited need approval again.
-4. If the fix changes behavior QA validated, run `test-fix` phase 2 again for
-   the affected checks.
-5. Commit conventionally, push the branch (fast-forward — never force), and go
-   back to §3 against the new head.
+```bash
+gh api repos/$REPO/actions/jobs/<job-id>/logs | sed 's/\x1b\[[0-9;]*m//g' > <scratchpad>/job.log
+```
 
-After five failed rounds, stop and put the remaining failures to the user.
+1. **Is it this change?** Look at the latest runs on `BASE` (`gh run list
+   --repo $REPO --branch $BASE --limit 5`). Failing there too means
+   pre-existing: note it on the PR, and don't fix it here unless asked. A
+   suspected flake gets one re-run of the failed jobs (`gh run rerun <id>
+   --failed`), after checking `/proc/loadavg`; failing twice isn't a flake.
+2. **Reproduce it locally** where you can, fix the cause, and run the
+   narrowest check that covers it. One failure can hide the next: a green
+   job after a fix isn't proof it was the last problem.
+3. **Review the fix** with `discobox-review`: a CI fix is new code.
+4. **Commit, push** (fast-forward, never force), and go back to §3.
 
-A conflict with `main` after the PR is open needs a rebase and a force-push:
-ask first.
+After five failed rounds, tag `blocked` and put the remaining failures in a
+PR comment.
+
+A conflict with `BASE` after the PR is open needs a rebase and a force-push:
+ask first, unless the calling skill already has.
 
 ## Done when
 
-The PR's head commit is local `HEAD`, every check on it is green, and the PR is
-marked ready (`gh pr ready`). Do not merge.
-
-Finish with: the PR URL, the head SHA, the green run IDs, and every CI failure
-met on the way with its fix — or the pre-existing failures left for the user.
+The PR's head commit is local `HEAD`, every check on it is green, and the PR
+is marked ready (`gh pr ready <pr> --repo $REPO`). Don't merge. Finish with
+the PR URL, the head SHA, and every CI failure met with its fix, or the
+pre-existing failures left.

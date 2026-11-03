@@ -45,8 +45,11 @@ discobox run -d --skills discobox-ai/manager//worker-skills \
   grants or discobox-access gets refused as handing out privileges.
 - **Name the job's limits in the prompt** when they differ from the skill:
   "ADR only: draft it as Proposed, stop when its PR is green".
-- **Tag the box right away:** `discobox tag <id> issue=<repo>#<N> job=<job>`.
-  Then set the issue to `status/in-progress`.
+- **Tag the box right away**, before anything else:
+  `discobox tag <id> repo=<owner>/<name> issue=<N> job=<job> --description '<repo>#<N>: <title>'`.
+  The worker reads `repo` and `issue` from its tags (`worker` skill), and
+  waits a little for them. Then set the issue to `status/in-progress`. Tags
+  are set only after launch; `discobox run` has no flag for them.
 - **A launch that prints an error can still make a working box.** Seen with
   push rejections and decode errors. Before launching again, list the boxes
   you created and look for the new one. Two workers on one issue waste a slot
@@ -82,8 +85,8 @@ you:
 3. It may ask the owner questions on the way, tagging itself `needs-input`:
    that's "Answer in the box" on the table. Don't answer them yourself.
 4. It ends with a fixed comment on the issue (`submit` §5). Read its
-   **Outcome** and act by `docs/gates.md`. The box's tag
-   `issue=<repo>#<N>` is already set; set `job=deliver` for *carry-on*.
+   **Outcome** and act by `docs/gates.md`. The box has set its own
+   `issue=<N>` tag; set `job=deliver` for *carry-on*.
 
 ## Read a worker's state
 
@@ -95,6 +98,24 @@ you:
   the worker had answered it and opened its PR.
 - A screen still showing `esc to interrupt`, or a running background shell or
   monitor, means the worker is working, whatever the title says.
+
+## A question without its tag
+
+A worker asks the owner with `AskUserQuestion`, and tags itself
+`needs-input` first (`worker` skill). When the bottom of a box's live screen
+shows a question dialog and the box isn't tagged `needs-input`, put the tags
+on yourself:
+
+```sh
+discobox tag <id> needs-input --rm ready --rm blocked
+```
+
+and set its issue to `status/needs-input` (`github` skill), with a one-line
+comment naming the topic in a few words, not the question. It goes on the
+table as "Answer in the box". When the dialog is gone, drop the tag
+(`--rm needs-input`) and put the issue back to `status/in-progress`. The
+same goes for an ad-hoc box with no issue: tag the box, and the table row
+says it.
 
 ## Type into a worker
 

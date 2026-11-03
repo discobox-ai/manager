@@ -16,11 +16,11 @@ it on, the work is like any other: **an issue, with every PR naming it.**
 
 It does not assume the work is finished, and often no PR comes out of it.
 
-The owner is usually at this box, so this is the one skill that asks the owner
-directly. Every time you ask, tag the box `needs-input` first and drop it once
-answered (§6): the owner may have said "submit box X" to the manager and gone
-elsewhere, and the tag is how the manager knows to put "Answer in the box" on
-its table.
+**Read the `worker` skill first.** It gives you `REPO` and `BASE`, your tags,
+how to ask the owner, and your GitHub access (role `github-submit`). The
+owner is usually at this box, and this skill asks them several things:
+tag `needs-input` before each question, as `worker` says. They may have said
+"submit box X" to the manager and gone elsewhere.
 
 Invoking this skill is authorization to: file one issue in this box's
 repository (or comment on an existing one), push the branch
@@ -31,22 +31,12 @@ you propose them in §5's comment, and it applies them.
 
 ## 0. Before anything
 
-- **Which repository.** The box's `repo` tag (`jq -r .tags.repo
-  ~/.discobox/meta.json`), set by the manager at launch. If it is missing,
-  ask the owner; never guess from a remote URL, which may be the box's own git
-  origin, not GitHub.
+- **The repository** is the `repo` tag (`worker`, Where you are). Missing on
+  an ad-hoc box: ask the owner, and never guess from a git remote.
 - **One submit per box.** An `issue` tag already set means this box has been
   submitted. Re-running is fine only to carry on what that issue says; never
   file a second issue from the same box.
-- **GitHub is bound at launch.** It's in `GH_TOKEN`, by the manager's role
-  file `roles/github-submit.json` in discobox-ai/manager: those routes and no others.
-  Check `discobox-access list` shows it. If it doesn't, tag the box `blocked`,
-  say so, and stop. A step refused with a `route:` reason (`discobox-access
-  audit --blocked`) is outside the role. Never work around it. If it's a
-  one-off the job truly needs, ask for just that route with `discobox-access
-  request`, saying why in the justification; the owner decides.
-- **Hold the box up** while you work: `touch -d '+2 hours'
-  /run/discobox/keepalive/submit`; `rm` it when you finish.
+- Hold the box up (`worker`, Keeping the box up).
 
 Status line: `submitting: <repo>`.
 
@@ -97,7 +87,7 @@ Search first: `gh api 'search/issues?q=repo:<repo>+is:issue+is:open+<terms>'`.
   conditional requests", not "ad-hoc work"). If the work is part of a
   tracking issue, say `Part of <repo>#<T>` at the top.
 
-Tag the box `issue=<repo>#<N>` (§6). Status line: `issue <repo>#<N>`.
+Tag the box `issue=<N>` (`tag issue <N>`, `worker`, Tags). Status line: `issue <repo>#<N>`.
 
 ## 3. The design gate
 
@@ -167,30 +157,8 @@ Then:
 
 - **carry-on:** keep going as `deliver-issue`; its tags (`ready`, `blocked`,
   `merged`) carry on from here, as they do for any delivering worker.
-- **parked** or **design-only:** tag the box `ready` (§6) and stop. The
-  manager retires the box.
-
-## 6. Tags
-
-The box's tags in `~/.discobox/meta.json` are how the manager knows where
-this box stands. Merge a tag in without dropping the others, and keep at most
-one of `ready`, `blocked`, `needs-input`:
-
-```bash
-S=<scratchpad>; M=~/.discobox/meta.json
-# set <k> to <v>; for a state tag (ready, blocked, needs-input) <v> is "" and the other two are dropped
-{ cat $M 2>/dev/null || echo '{}'; } | jq --arg k '<k>' --arg v '<v>' '
-  .tags = (.tags // {})
-  | if ($k | IN("ready","blocked","needs-input")) then .tags |= del(.ready, .blocked, ."needs-input") else . end
-  | .tags[$k] = $v' > $S/meta.json &&
-  jq -e '(.tags | length) <= 64' $S/meta.json >/dev/null && cp $S/meta.json $M
-# drop the state tag once answered
-{ cat $M; } | jq '.tags |= del(."needs-input")' > $S/meta.json && cp $S/meta.json $M
-```
-
-- `needs-input` while a question to the owner is open, and only then.
-- `issue=<repo>#<N>` from §2 on.
-- `ready` at the end of *parked* or *design-only*.
+- **parked** or **design-only:** tag the box `ready` and stop. The manager
+  retires the box.
 
 ## Done when
 

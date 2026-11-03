@@ -9,7 +9,8 @@ none, which means new). The other groups describe it.
 |---|---|---|
 | (none) | New; triage starts | – |
 | `status/triaged` | Scoped and labelled, waiting for priority or a slot | triage worker's verdict, applied by the manager |
-| `status/needs-decision` | The owner has to decide something; the issue says what | manager |
+| `status/needs-decision` | The owner has to decide something before work starts; the issue says what | manager |
+| `status/needs-input` | Its worker is waiting on the owner in the box (a question on its screen) | manager, from the box's `needs-input` tag or its screen |
 | `status/ready` | Go: the next free worker takes it | owner, or the manager per `gates.md` |
 | `status/in-progress` | A worker is on it (its box is tagged `issue=N`) | manager |
 | `status/in-review` | Its PR is green, waiting for the owner | manager |
@@ -38,9 +39,11 @@ direction change is a comment on it. Each issue in the effort says
 
 ## Linkage
 
-- A worker box is tagged `issue=<repo>#<N>` and `job=<triage|adr|deliver|fix|rebase>`.
-  An ad-hoc box is tagged `repo=<repo>` and `job=adhoc` until `submit` gives it
-  an `issue`.
+- A box's tags are defined in the `worker` worker skill: `repo=<owner>/<name>`,
+  `issue=<N>` and `job=<triage|adr|deliver|fix|rebase|adhoc>` set by the
+  manager at launch (an ad-hoc box gets its `issue` from `submit`); `pr=<P>`
+  and one state tag (`needs-input`, `blocked`, `ready`, `merged`) set by the
+  box; `to-delete` set by the manager on retirement.
 - An implementation PR says `Closes #N`; an ADR PR says `Part of #N`.
 - Issues are written as `## Today` / `## Wanted` / `## Done when`, citing files
   and ADRs, so a worker can start from the issue alone.

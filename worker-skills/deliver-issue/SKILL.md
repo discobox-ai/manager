@@ -1,234 +1,148 @@
 ---
 name: deliver-issue
-description: Take one assigned discobox issue from implementation to a merged pull request — implement it, review it with discobox-review, verify it at runtime, commit, open a PR from discobox/issue-<N>, drive CI green, then keep the PR mergeable and answer comments until a human merges it. Use when a discobox is launched to deliver an issue, or the user wants an issue taken all the way to a PR and kept there.
+description: Take one issue from implementation to a merged pull request — implement it, review it with discobox-review, verify it at runtime, commit, open a PR from discobox/issue-<N>, drive CI green, then keep the PR mergeable and answer review until a human merges it. Use when a worker box is launched to deliver an issue.
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write, Agent, SendMessage, Skill, Monitor, AskUserQuestion
 metadata:
   discobox.role: github-deliver
   argument-hint: "<issue-number>"
 ---
 
-# Deliver an Issue
+# Deliver an issue
 
 One issue, one branch, one PR, carried until it merges. This skill sequences
-the repository's other skills; it does not replace them. Each phase ends with
-a one-line status in the terminal — a lead discobox may be reading your screen
-to know where you are.
+the repository's own way of building and the other worker skills; it
+doesn't replace them.
 
-Invoking this skill with issue `<N>` is authorization to: push the branch
-`discobox/issue-<N>` to `discobox-ai/discobox` (create it, fast-forward it, and
-`git push --force-with-lease` it after a rebase onto `main`), open and edit one
-PR from it into `main`, comment on that PR and reply to its review comments,
-and re-run its failed CI jobs. It is **not** authorization to push `main` or
-any other branch, merge, enable auto-merge, close anything, or force-push
-without a lease.
+**Read the `worker` skill first.** It gives you `REPO`, `N` and `BASE`, your
+tags, how to ask the owner, and your GitHub access (role `github-deliver`).
 
-These widen `open-pr` (and `test-fix`, `commit`) while this skill runs: where
-`open-pr` says invoking it does not authorize force-pushing, or says a
-conflict with `main` needs a rebase and to "ask first",
-this skill has already asked — rebase and force-push with a lease to
-`discobox/issue-<N>` without asking again.
-Nobody may be watching your screen to answer.
+Invoking this skill is authorization to: push the branch
+`discobox/issue-N` to `REPO` (create it, fast-forward it, and force-push it
+with a lease after a rebase onto `BASE`), open and edit one PR from it into
+`BASE`, comment on that PR and reply to its review, and re-run its failed CI
+jobs. It is not authorization to push `BASE` or any other branch, merge,
+enable auto-merge, close anything, or force-push without a lease. Where
+`open-pr` says a rebase and force-push need asking first, this skill has
+asked.
 
 ## 0. Before anything
 
-- **Read the issue** with `gh api repos/discobox-ai/discobox/issues/<N>` and
-  its `/comments`, and every comment on it, and the issues it names as
-  blockers or context (a tracking issue's sub-issues often say what runs
-  beside them). Read `CLAUDE.md` and the `DESIGN.md`/`REVIEW.md` files from
-  the root down to each package you will touch.
-- **GitHub is bound at launch.** It's in `GH_TOKEN`, by the manager's role
-  file `roles/github-deliver.json` in discobox-ai/manager: those routes and no others.
-  Check `discobox-access list` shows it. If it doesn't, tag the box `blocked`,
-  say so, and stop. A step refused with a `route:` reason (`discobox-access
-  audit --blocked`) is outside the role. Never work around it. If it's a
-  one-off the job truly needs, ask for just that route with `discobox-access
-  request`, saying why in the justification; the owner decides.
-- **Tag this box** `issue=<N>`, merged into the tags already there, so the
-  user's `discobox ls --tag issue=<N>` finds it (`open-pr` adds `pr=` in §5):
-
-  ```bash
-  S=<scratchpad>; M=~/.discobox/meta.json
-  { cat $M 2>/dev/null || echo '{}'; } | jq --arg v <N> '(.tags.issue // "") as $prev
-    | .tags = ((.tags // {}) + {issue: $v} | del(.ready, .blocked, .merged)) | if $prev != $v then del(.tags.pr) else . end' > $S/meta.json &&
-    jq -e --arg v <N> '.tags.issue == $v and (.tags | length) <= 64' $S/meta.json >/dev/null && cp $S/meta.json $M
-  ```
-
-  A new issue drops the `pr` tag the last one left, and a fresh start drops a
-`ready`, `blocked` or `merged` tag (§6) the last run left. The `jq -e` check proves
-  the merge produced the tag and at most 64 tags (more makes the whole file
-  invalid); when it fails nothing is written: with more than 64 tags merged,
-  tell the user the box's tags are full and drop none of theirs to make
-  room; otherwise (the file empty or not valid JSON) say the merge failed
-  and leave the file alone. A file with any field but `description` and
-  `tags` is ignored too.
-- **Hold the box up.** A discobox stops after 30 minutes of a still screen,
-  even while hooks or CI run in the background:
-  `touch -d '+3 hours' /run/discobox/keepalive/deliver-issue`. Refresh it
-  before every long wait; `rm` it when you finish.
-- **Check the disk** before anything heavy (`check-hooks`, `verify`, image
-  rebuilds): `df -h /`. Under 50G free, run `docker builder prune -a -f` —
-  this box's build cache only. Never `docker image prune -a` (it deletes the
-  dev images `verify` needs, and the dev loop rebuilds them all) and never
-  delete a shared cache (`~/.cache/go-build`, `/nix`). On a full disk, command
-  output is lost: send it to `/dev/shm` and read it from there.
+- **Read the issue** (`gh api repos/$REPO/issues/$N` and its comments),
+  every issue it names as a blocker or context, and the ADRs it cites. The
+  triage comment, if there is one, holds the reproduction and a failing test.
+  An ADR the issue depends on must be **Accepted**: one still Proposed means
+  tag `blocked`, comment that it waits on the ADR, and stop.
+- **Read how the repository is built** (`worker`, The repository says how
+  it's built), down to each package you'll touch.
+- Hold the box up and check the disk (`worker`, Keeping the box up).
 
 ## 1. Implement
 
-When this box triaged the issue (`triage-issue`), start from the failing test
-it left in `issue<N>_test.go`, the one posted on the issue: move it, unchanged,
-into the file where its neighbors live, so the fix is proven by that test. The
-triage's investigation is already in your context; re-read only the comments
-posted since.
+When the triage comment has a failing test, start by adding it, unchanged,
+where its neighbours live, and confirm it fails. The fix is proven by that
+test going green.
 
-Build the change the way `CLAUDE.md` says: structural, tests with it, the
-affected `DESIGN.md` updated in the same change, an ADR only when a plausible
-alternative is rejected. A decision that is not yours — scope, a product
-default, a design with two defensible answers — goes to the user with
-`AskUserQuestion`, options first and your recommendation marked; do not stall
-on it silently and do not decide it yourself.
+Build the change the way the repository says: structural, tests with it,
+its design docs updated in the same change. A choice that isn't yours (scope,
+a product default, two defensible designs) is a question for the owner
+(`worker`, Asking the owner). A design with a plausible rejected alternative
+that no accepted ADR covers is out of scope for delivery: tag `blocked` and
+say it needs an ADR first.
 
-Run the tests of what you touched, then `go tool task check-hooks`:
+Run the tests of what you touched and the repository's own checks (lint,
+generated files, hooks) as it says.
 
-- Output that names code you already fixed is stale: `go tool task
-  rerun-hooks`, then check again.
-- "Unsettled" or a timeout with hooks still queued (the Docker builds and the
-  pool e2e are slow) is not a failure: wait and check again, with the
-  keepalive refreshed.
-- `installer` `*DrawsTheMarkOnlyWhereItShows` failing only inside a discobox
-  is the box's `FORCE_COLOR`: confirm with
-  `env -u FORCE_COLOR -u CLICOLOR_FORCE -u COLORTERM go test ./pkg/installer/ -run DrawsTheMark`.
-
-Status line: `implemented: <what>, tests <pass/fail>, hooks <state>`.
+Status line: `implemented: <what>, tests <pass/fail>, checks <state>`.
 
 ## 2. Review
 
-Invoke the `discobox-review` skill and drive it to full sign-off (`open 0`,
-`unapproved 0`). Its rules hold: you fix or push back with a reason, the
-reviewer resolves. Status line: `reviewed: <rounds> rounds, <what it found>`.
+Invoke `discobox-review` and drive it to full sign-off. Its rules hold: you
+fix or push back with a reason, the reviewer resolves.
+
+Status line: `reviewed: <rounds> rounds, <what it found>`.
 
 ## 3. Verify
 
-Invoke the `verify` skill (it reads `verify-recipes` first). Verification is
-runtime observation of the changed behavior in the running `task dev` loop,
-not tests. Purge any test discobox you create.
+Invoke the `verify` skill (it reads the repository's `verify-recipes`).
+Verification is observing the changed behaviour in the running product, not
+tests. Clean up anything you created to do it.
 
-When verify finds a bug: fix it, run a `discobox-review` round on the fix,
-then verify again. A path that cannot run here (macOS, Windows, a real pool)
-is named as unverified, not skipped silently. Status line: `verified: <what
-was observed>` or `verify found: <bug>, fixing`.
+When verify finds a bug: fix it, review the fix, verify again. A path that
+can't run here (another OS, a real cloud) is named as unverified, never
+skipped silently.
+
+Status line: `verified: <what was observed>` or `verify found: <bug>, fixing`.
 
 ## 4. Commit
 
-Group and word the commits the way the `commit` skill describes, but do not
-stop to confirm the grouping with the user — an unattended run would stall on
-that question at every commit; the review has already approved the content.
-Ask only when a change plainly belongs to something other than this issue.
-Review and verify fixes made after a commit are
-new commits on top — never amend or squash a commit you have pushed. Leave
-the tree clean: a stray `.wnb-*.tmp` from the dev loop is deleted, not
-committed. `git status --short` empty before §5.
+Group and word the commits as the `commit` skill describes, but don't stop to
+confirm the grouping: the review approved the content. Ask only when a change
+plainly belongs to something other than this issue. Fixes after a commit are
+new commits on top; never amend or squash a pushed commit. `git status
+--short` is empty before §5.
 
 ## 5. Open the PR
 
-Invoke the `open-pr` skill with branch `discobox/issue-<N>`, adding to its
-rules:
+Invoke `open-pr` with branch `discobox/issue-N`, adding to its rules:
 
-- Push under the §0 credential. After a rebase, read the
-  branch's head on GitHub first (`git ls-remote <url> refs/heads/discobox/issue-<N>`)
-  and lease against it: `git push --force-with-lease=refs/heads/discobox/issue-<N>:<sha> <url> HEAD:refs/heads/discobox/issue-<N>`.
-  A bare `--force-with-lease` to a URL has no tracking ref to lease against
-  and is always rejected as stale.
-- The body's Testing section carries the review summary and the `verify`
-  observations — what ran, what was seen, and what could not run here.
-- A CI failure that also fails on `main`, or that passes on a single re-run
-  and locally, is noted on the PR as pre-existing or a flake — not fixed here.
-- Mark the PR ready once every check on its head commit is green.
+- After a rebase, read the branch's head on GitHub first (`git ls-remote
+  "$GH_URL" refs/heads/discobox/issue-N`) and lease against it:
+  `git push --force-with-lease=refs/heads/discobox/issue-N:<sha> "$GH_URL"
+  HEAD:refs/heads/discobox/issue-N`. A bare `--force-with-lease` to a URL
+  has no tracking ref and is always rejected.
+- The body's Testing section carries the review summary and what `verify`
+  observed, and what couldn't run here.
 
-Status line: `PR #<pr> open, CI <state>`.
+Status line: `PR #P open, CI <state>`.
 
 ## 6. Keep it mergeable until merged
 
-Arm a Monitor that checks every 5 minutes, and keep reacting until the PR is merged or closed. Each poll also
-refreshes the lease — `touch -d '+1 hour' /run/discobox/keepalive/deliver-issue`
-— or the box powers itself off after 30 still minutes and the Monitor dies
-with it:
+Arm a Monitor that checks every 5 minutes, refreshing the keepalive on each
+poll (or the box powers off after 30 still minutes and the Monitor dies with
+it), and react until the PR is merged or closed:
 
 ```bash
-gh api repos/discobox-ai/discobox/pulls/<pr> --jq '"\(.state) \(.merged_at != null) \(.mergeable_state) \(.head.sha)"'
-gh api repos/discobox-ai/discobox/pulls/<pr>/reviews --jq '.[] | "\(.id) \(.user.login) \(.state)"'
-gh api repos/discobox-ai/discobox/pulls/<pr>/comments --jq '.[] | "\(.id) \(.in_reply_to_id) \(.user.login)"'
-gh api repos/discobox-ai/discobox/issues/<pr>/comments --jq '.[] | "\(.id) \(.user.login)"'
-gh pr checks <pr> --repo discobox-ai/discobox --json name,bucket
+gh api repos/$REPO/pulls/$P --jq '"\(.state) \(.merged_at != null) \(.mergeable_state) \(.head.sha)"'
+gh api repos/$REPO/pulls/$P/reviews --jq '.[] | "\(.id) \(.user.login) \(.state)"'
+gh api repos/$REPO/pulls/$P/comments --jq '.[] | "\(.id) \(.in_reply_to_id) \(.user.login)"'
+gh api repos/$REPO/issues/$P/comments --jq '.[] | "\(.id) \(.user.login)"'
+gh pr checks $P --repo $REPO --json name,bucket
 ```
 
-- **`mergeable_state` `dirty`** — `main` moved under you (other PRs merge
-  ahead of yours, often several times). Fetch `main`, rebase
-  `discobox/issue-<N>` onto it, resolve every conflict so both changes are
-  kept, run the tests the conflict touched, then push with the lease form
-  from §5 (`--force-with-lease=refs/heads/discobox/issue-<N>:<sha>`) to
-  `discobox/issue-<N>` only. `unknown` just
-  after a merge is GitHub recomputing — check again before acting.
-- **A new review, review comment or PR comment** from anyone — read a
-  review's body as well as its threads, and answer every finding, each thread
-  on that thread (`gh api -X POST
-  repos/discobox-ai/discobox/pulls/<pr>/comments/<comment-id>/replies -f
-  body=...`). A review's body can hold findings with no thread of their
-  own (a `CHANGES_REQUESTED` with no inline comment); answer those together in
-  one PR comment (`gh api -X POST
-  repos/discobox-ai/discobox/issues/<pr>/comments -F body=@<file>`):
-  - right → fix it, and reply with what changed and the commit;
-  - wrong or out of scope → reply with why, briefly;
-  - a finding already answered, raised again → reply with a link to that
-    answer;
-  - a judgement for the user → ask with `AskUserQuestion`, then reply.
+- **`mergeable_state` `dirty`**: `BASE` moved. Fetch it, rebase onto it
+  keeping both sides of every conflict, run the tests the conflict touched,
+  and push with the lease from §5. `unknown` just after a merge is GitHub
+  recomputing: check again first.
+- **A new review, review comment or PR comment** from anyone: read a
+  review's body as well as its threads, and answer every finding on its own
+  thread (`gh api -X POST repos/$REPO/pulls/$P/comments/<id>/replies -f
+  body=…`). Findings in a review body with no thread go in one PR comment.
+  - right: fix it, and reply with what changed and the commit;
+  - wrong or out of scope: reply with why, briefly;
+  - raised again after an answer: reply with a link to the answer;
+  - a judgement for the owner: ask (`worker`, Asking the owner), then reply.
 
-  A fix is new code: `discobox-review` round, re-run `verify` if it changes
-  runtime behavior, commit on top, push (fast-forward), CI green again.
-- **A failing check on the head commit** — fix it as `open-pr` §4 says.
-- **Merged or closed** — tag the box `merged` or drop its tag (below), stop
-  the Monitor, remove the keepalive, and finish.
+  A fix is new code: review it, verify it if it changes behaviour, commit on
+  top, push, get CI green again.
+- **A failing check on the head commit**: fix it as `open-pr` §4 says.
+- **Merged**: tag `merged`. **Closed without merging**: drop the state tag.
+  Either way stop the Monitor, remove the keepalive, and finish.
 
-If the credential's binding lapses mid-watch, ask again with the same request. Status line on
-every change: `PR #<pr>: <what happened, what you did>`.
+**Your state tag through all of this** (`worker`, Tags):
 
-### Ready, blocked, merged
+- `ready`: every check on the head commit is green, every review, thread and
+  comment has a reply, `mergeable_state` is neither `dirty` nor `unknown`,
+  and the PR is marked ready. It needs only a human merge. GitHub's own
+  `mergeable_state` `blocked` (a required review not given) still counts as
+  ready: it's waiting for its human.
+- none: you're working. When a `ready` PR goes `dirty`, gets a new review or
+  comment, or a check leaves `pass`, drop `ready` before you start on it.
+- `blocked` / `needs-input`: as `worker` says.
 
-Three plain tags on the box tell the user where its PR stands: `ready`,
-`blocked` and `merged`, each with an empty value. The console shows them as
-`#ready`, `#blocked` and `#merged`, and `discobox ls --tag ready` lists
-them. Set at most one of them, and move it each time the state
-changes, from §0 until the end:
-
-- **`ready`**: every check on the head commit is green, every
-  review, thread and comment has a reply, `mergeable_state` is neither `dirty`
-  nor `unknown` (still recomputing: check again first), and
-  the PR is marked ready. All it needs is a human merge.
-- **`blocked`**: you cannot get there without someone else. That covers a
-  question waiting on the user, a credential request refused or still waiting for an
-  answer when the next step needs it, five failed CI rounds (`open-pr` §4), or a conflict you cannot
-  resolve while keeping both changes. Say why in the status line. GitHub's
-  own `mergeable_state` `blocked` (a required review not yet given) is not
-  this tag: that PR is waiting for its human, so it can still be `ready`.
-- **neither**: you are working. When a `ready` PR goes `dirty`, gets a new
-  review or comment, or has a check on its head commit leave `pass` or `skipping`
-  (re-run, failed or cancelled), drop `ready` before you start on it.
-  Drop `blocked` as soon as the answer comes.
-- **`merged`**: the PR merged. The box's work is done.
-- **closed without merging**: drop all three.
-
-Set `<s>` to `ready`, `blocked` or `merged`, or leave it empty to drop all three:
-
-```bash
-S=<scratchpad>; M=~/.discobox/meta.json
-{ cat $M 2>/dev/null || echo '{}'; } | jq --arg s '<s>' '.tags = ((.tags // {}) | del(.ready, .blocked, .merged))
-  | if $s != "" then .tags[$s] = "" else . end' > $S/meta.json &&
-  jq -e --arg s '<s>' '($s == "" or .tags[$s] == "") and (.tags | length) <= 64' $S/meta.json >/dev/null && cp $S/meta.json $M
-```
-
-If the check fails, nothing is written, and the rules for §0's tag merge apply.
+Status line on every change: `PR #P: <what happened, what you did>`.
 
 ## Done when
 
 The PR is merged or closed. Finish with the PR URL, its final head SHA, the
-review rounds, everything `verify` observed or could not run, and
-any CI failure left as pre-existing.
+review rounds, everything `verify` observed or couldn't run, and any CI
+failure left as pre-existing.

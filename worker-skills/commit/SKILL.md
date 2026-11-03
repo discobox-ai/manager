@@ -22,8 +22,9 @@ Analyze outstanding changes and organize them into logical, well-structured comm
      - Type (e.g., refactoring, bug fix, new feature, docs, tests)
      - Component/module (e.g., all CLI changes, all API changes)
 
-3. **Propose commit groups**:
-   - Present the proposed groupings to the user via AskUserQuestion
+3. **Propose commit groups** (a job skill may say to skip confirming):
+   - Present the proposed groupings to the user via AskUserQuestion (in a
+     worker box, tag `needs-input` first, as the `worker` skill says)
    - Each group should have:
      - List of files to include
      - Proposed commit message following conventional commits format
@@ -44,9 +45,10 @@ Follow conventional commits:
 <type>(<scope>): <description>
 
 [optional body]
-
-Co-Authored-By: Claude <noreply@anthropic.com>
 ```
+
+End the message with whatever attribution lines the harness asks commits to
+end with, and no others.
 
 Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`
 

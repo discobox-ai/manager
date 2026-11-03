@@ -19,7 +19,7 @@ sets direction, trust or what ships goes to the owner, as a row on the table.
 | Main's CI fails | Re-runs once if it looks like a flake (unrelated to the commit). Otherwise, or if it fails twice, files an issue and starts a `fix-ci` worker | – |
 | A PR merges | Closes its issue if it's still open, retires the worker | – |
 | A worker asks for a credential | – | Every request: workers get GitHub from their role at launch (`roles/`), so a request is outside it |
-| A worker stops on a question | – | A "box needs input" row; the owner answers in the box |
+| A worker stops on a question | Makes sure the box is tagged `needs-input` and its issue is `status/needs-input`, setting them if the box didn't (`workers`, A question without its tag) | "Answer in the box"; the owner answers in the box |
 | A worker shows a mechanical prompt (login expired, the first-run permission dialog) | Answers it (see `workers`) | – |
 | Disk below `disk.minFreeGiB` | Starts no workers; has idle workers free their build caches | Only if it can't recover |
 | A finished worker | Tags it `to-delete` and stops it | Listed for deletion |

@@ -19,7 +19,8 @@ Status and to-do are one table, ranked:
   - "Review and merge", only once every check on the PR's head is green.
     Never "review and merge once green".
   - "Look at it" for a failing PR its worker can't make green.
-  - "Answer in the box" for a worker on a question.
+  - "Answer in the box" for a box tagged `needs-input` (or showing a question
+    it didn't tag; tag it first, `workers`).
   - A concrete decision ("Say 'accept 694' …").
 - **Why this rank:** rank by how much a row unblocks (critical path first),
   then by how hard the decision is to reverse.

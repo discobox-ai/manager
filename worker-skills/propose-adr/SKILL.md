@@ -1,31 +1,31 @@
 ---
 name: propose-adr
-description: Draft an Architecture Decision Record as Proposed for one issue, in its own PR, and stop once that PR is green — no implementation. Use when a worker is launched with "ADR only" or to propose the design for an issue.
+description: Draft an Architecture Decision Record as Proposed for one issue, in its own PR, and stop once that PR is green — no implementation. Use when a worker box is launched to propose the design for an issue ("ADR only").
 metadata:
   discobox.role: github-deliver
 ---
 
 # Propose an ADR
 
-1. **Read the issue.** It names the questions the ADR must settle. Read the
-   repository's ADR process (`docs/adr/README.md`, `AGENTS.md`/`CLAUDE.md`)
-   and the ADRs the issue cites, and those they relate to.
-2. **Read the code** the decision touches, so every "today" claim in the ADR
-   is checked against the default branch, with file paths.
-3. **Write it as `Proposed`**, with the ID scheme the repository uses (in
-   discobox: `YY-MM-DD-RRR`, three random digits, never "the next number").
-   Answer each question the issue lists. Mark anything you leave to
-   implementation as open, never decided by default. Record the alternatives
-   you rejected and why. Add it to the index if the repository keeps one.
-4. **One PR, the ADR alone** (and its index line). Title
-   `docs(adr): propose <id>, <the decision in a phrase>`. Body says
-   `Part of #N`. Drive its checks green.
-5. **Stop.** Tag your box `ready`. Don't implement, and don't mark the ADR
-   Accepted. The owner accepts it; when they do, the manager starts a worker
-   for a follow-up PR that marks it Accepted (and marks what it supersedes,
-   per the repository's process).
-6. If a question can't be settled without the owner (a product or trust
-   choice), ask it in your terminal, put it in a comment on the PR, and tag
-   `needs-input`.
+**Read the `worker` skill first** (`REPO`, `N`, `BASE`, tags, GitHub).
 
-**Credentials:** bound at launch, role `github-deliver` (`deliver-issue` §0), and a one-off beyond it is asked for as that section says.
+1. **Read the issue.** It names the questions the ADR must settle. Read the
+   repository's ADR process (its `docs/adr/README.md` or wherever its
+   `AGENTS.md`/`CLAUDE.md` points), the ADRs the issue cites, and those they
+   relate to.
+2. **Read the code** the decision touches, so every claim about today is
+   checked against `BASE`, with file paths.
+3. **Write it as `Proposed`**, with the repository's ID scheme. Answer each
+   question the issue lists. Mark anything left to implementation as open,
+   never decided by default. Record the alternatives you rejected and why.
+   Add it to the index if the repository keeps one.
+4. **One PR, the ADR alone** (and its index line), from
+   `discobox/issue-N-adr`, with `open-pr`. Title `docs(adr): propose <id>,
+   <the decision in a phrase>`. The body says `Part of #N`, never `Closes`.
+5. **Stop** once it's green: tag `ready`. Don't implement, and don't mark it
+   Accepted. The owner accepts it; then the manager starts a worker for a
+   follow-up PR that marks it Accepted (and what it supersedes).
+
+A question the ADR can't settle without the owner (a product or trust
+choice) is asked as `worker` says, and recorded in the PR body once
+answered.
