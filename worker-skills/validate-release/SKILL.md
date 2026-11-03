@@ -21,11 +21,15 @@ mode and versions. Follow the `worker` skill for tags, power and comments.
 
 ## 0. The baseline
 
-The last recorded onboarding for your mode is in discobox-ai/manager:
+The last accepted onboarding record for your mode is kept in
+discobox-ai/manager (`release-validation/onboarding-<mode>.md`), which your
+role can't read. The manager posts it on your tracking issue before it starts
+you, as a comment headed `**Release validation baseline** (<mode>)`:
 
 ```sh
-gh api repos/discobox-ai/manager/contents/release-validation/onboarding-<mode>.md \
-  --jq .content | base64 -d > ~/baseline.md   # 404: no baseline yet, this run makes the first
+gh api "repos/$REPO/issues/$ISSUE/comments?per_page=100" \
+  --jq '[.[] | select(.body | startswith("**Release validation baseline** (<mode>)"))][-1].body' > ~/baseline.md
+# empty: no baseline yet, this run makes the first
 ```
 
 Read it before you start: it tells you what the experience was last time, so

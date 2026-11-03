@@ -122,6 +122,10 @@ discobox run -d --no-source --skills discobox-ai/manager//worker-skills \
 discobox tag <id> repo=discobox-ai/discobox issue=<N> job=validate
 ```
 
+Before starting them, post each mode's baseline on the issue (workers can't
+read this repository): a comment headed `**Release validation baseline**
+(<mode>)` holding `release-validation/onboarding-<mode>.md`, if it exists.
+
 Each posts one report on the issue. When the owner accepts a run, commit its
 attached onboarding record to `release-validation/onboarding-<mode>.md` here
 (the next run's baseline), then retire the box.
