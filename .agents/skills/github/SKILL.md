@@ -29,10 +29,30 @@ that could read stdin get `</dev/null` in loops.
 
 ## Closing
 
-When a PR merges without closing its issue, run
-`gh issue close N --reason completed --comment "Delivered in #PR."` yourself. A
-superseded or obsolete issue closes `--reason "not planned"`, with a comment
-naming what replaced it.
+Close through REST, not `gh issue close` or `gh pr close`: those run GraphQL
+mutations your role doesn't allow. Comment first, then close:
+
+```sh
+gh api -X POST repos/<repo>/issues/<N>/comments -f body='Delivered in #<PR>.'
+gh api -X PATCH repos/<repo>/issues/<N> -f state=closed -f state_reason=completed
+```
+
+- **A PR merged without closing its issue:** close the issue as above.
+- **A superseded or obsolete issue:** `state_reason=not_planned`, with a
+  comment naming what replaced it.
+- **A community PR with no issue** (`docs/gates.md`): a PR is an issue to
+  this API, so the same two calls close it, with `state_reason` left out:
+
+  > Thanks for the contribution. Every pull request here must be linked to an
+  > issue: please open one (or find the existing one) describing the problem
+  > or the change, then open the PR again with `Closes #<issue>` in its
+  > description.
+
+  A community PR is one whose `author_association` is not `OWNER`, `MEMBER`
+  or `COLLABORATOR` (`gh api repos/<repo>/pulls/<P> --jq
+  .author_association`). It names an issue when its body or a commit says
+  `Closes`, `Fixes` or `Resolves #N`, or `Part of #N`, and that issue exists
+  in the repository.
 
 ## Pushing to discobox-ai/manager (this repository)
 
