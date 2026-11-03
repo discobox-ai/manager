@@ -135,7 +135,9 @@ you:
    that's "Answer in the box" on the table. Don't answer them yourself.
 4. It ends with a fixed comment on the issue (`submit` §5). Read its
    **Outcome** and act by `docs/gates.md`. The box has set its own
-   `issue=<N>` tag; set `job=deliver` for *carry-on*.
+   `issue=<N>` tag; set `job=deliver` for *carry-on*. For *waiting-on-adr*,
+   keep the box: when its ADR PR merges, set `job=deliver` and type "ADR PR
+   #<P> merged; carry on as deliver-issue for #<N>" into it.
 
 ## Read a worker's state
 

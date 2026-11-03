@@ -105,42 +105,45 @@ Tag the box `issue=<N>` (`tag issue <N>`, `worker`, Tags). Name the box for it
 If the session settled a design choice with a plausible alternative, it
 needs an ADR. Follow the repository's ADR process and `propose-adr` §§1–3 for
 the form: Context from the code, the decision, and the rejected alternatives,
-taken from §1's **Decided**. Then ask the owner: "Accept ADR <id> as
-written?"
+taken from §1's **Decided**.
 
-- **Accepted:** write it with Status `Accepted`, and a line under its date:
-  `Accepted by the owner in an ad-hoc session, <date>`. It travels with the
-  code, in §4's PR or parked branch.
-- **Not yet:** write it as `Proposed`, commit it on its own, and open it as
-  its own PR (`propose-adr` §4) from `discobox/issue-<N>-adr`. The code can't
-  go further than a parked branch (§4) until the owner merges that PR, which
-  accepts it.
+**The ADR always goes up as its own PR** (owner, 2026-11-03). The owner reads
+it there, in full, and merging it is the acceptance. Don't ask the owner to
+accept it in the box. Write it as `Proposed`, commit it on its own, and open
+it as its own PR (`propose-adr` §4) from `discobox/issue-<N>-adr`. Tell the
+owner the PR's URL. The code waits for that PR (§4, *wait for the ADR*).
 
 No design choice, or only obvious ones: no ADR. Say which in §5.
 
-Status line: `adr: <id> accepted | <id> proposed in #<P> | none`.
+Status line: `adr: <id> proposed in #<P> | none`.
 
 ## 4. The code
 
-Ask the owner which of three it is (`AskUserQuestion`), recommending one:
+With a Proposed ADR from §3, it's **wait for the ADR**, without asking:
+commit the work in progress (`commit` skill wording, `wip:` prefix if it
+doesn't build), push it to `discobox/issue-<N>`, open no PR, and stay. When
+the owner merges the ADR PR, the manager wakes this box and it carries on as
+`deliver-issue` from its §1, its PR's first commit marking the ADR Accepted.
+This box keeps the context; a fresh worker would start cold.
+
+With no ADR, ask the owner which of three it is (`AskUserQuestion`),
+recommending one:
 
 - **Carry on here.** Finish it in this box, unattended if the owner leaves:
   run `deliver-issue` from its §1 (Implement) with `<N>`, through review,
-  verify, the PR and keeping it mergeable until merged. Not open to a
-  Proposed ADR from §3.
-- **Park it.** The work stays for later, or waits on a Proposed ADR, or the
-  owner wants a fresh worker on it. Commit the work in progress as it is
-  (`commit` skill wording, `wip:` prefix if it doesn't build), push it to
-  `discobox/issue-<N>`, and open no PR. The next worker starts from that
-  branch.
+  verify, the PR and keeping it mergeable until merged.
+- **Park it.** The work stays for later, or the owner wants a fresh worker on
+  it. Commit the work in progress as it is (`commit` skill wording, `wip:`
+  prefix if it doesn't build), push it to `discobox/issue-<N>`, and open no
+  PR. The next worker starts from that branch.
 - **Design only.** The code was a sketch, and only what it taught is kept, in
-  the issue and the ADR. Push nothing.
+  the issue. Push nothing.
 
 Recommend *carry on* when the work is close and nothing waits on the owner;
-*park* when a Proposed ADR blocks it or a lot remains; *design only* when the
-code would mislead a worker more than help.
+*park* when a lot remains; *design only* when the code would mislead a worker
+more than help.
 
-Status line: `code: carry-on | parked at <sha> | design-only`.
+Status line: `code: carry-on | waiting on #<P> at <sha> | parked at <sha> | design-only`.
 
 ## 5. Hand it over
 
@@ -151,9 +154,9 @@ the manager rebuilds from it:
 ```markdown
 **Submitted from an ad-hoc session** (box `<box id>`, ad-hoc | prototype)
 
-- **Outcome:** carry-on | parked | design-only
+- **Outcome:** carry-on | waiting-on-adr | parked | design-only
 - **Branch:** `discobox/issue-<N>` at `<sha>` | none
-- **ADR:** <id>, accepted in session | <id>, Proposed in #<P> | none
+- **ADR:** <id>, Proposed in #<P> | none
 - **Proposed labels:** type/<…>, priority/<…>, area/<…>
 
 ### Where it stands
@@ -169,12 +172,14 @@ Then:
 
 - **carry-on:** keep going as `deliver-issue`; its tags and sleeping carry on
   from here, as they do for any delivering worker.
+- **waiting-on-adr:** tag the box `blocked` and power off. The manager wakes
+  it when the ADR PR merges, and it carries on as `deliver-issue`.
 - **parked** or **design-only:** tag the box `ready` and stop. The manager
   retires the box.
 
 ## Done when
 
 The issue holds §5's comment, and either the box carries on as
-`deliver-issue`, or it is tagged `ready` with the branch pushed (*parked*)
+`deliver-issue`, or it is tagged `blocked` waiting on its ADR PR, or it is tagged `ready` with the branch pushed (*parked*)
 or nothing pushed (*design-only*). Finish with the issue URL, the outcome,
 the branch and SHA if any, and the ADR if any.
