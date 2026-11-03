@@ -83,14 +83,17 @@ credentials.
 
 On `<from>`, make the state an upgrade must keep:
 
-- **Harnesses:** configure at least `claude-code` and one other the release
-  offers (config only; no login).
+- **Harnesses:** set `claude-code` as the project default, and configure one
+  other the release offers that needs no login (e.g. opencode), adding a file
+  to it. claude-code can't reach `configured` without a login: that's expected.
 - **Pools:** a **container** pool and a **libkrun** pool. libkrun needs
   `/dev/kvm`: if it's missing in this box, record "libkrun: skipped, no
   /dev/kvm" and go on.
 - **Boxes:** one in each pool. In each, write a marker into its data
-  (`/.discobox/data/validate-<from>.txt` with a random value you keep) and
+  (`sudo` to write `/.discobox/data/validate-<from>.txt`, root-owned by design, with a random value you keep) and
   into its working tree, then stop one and leave one running.
+- Run as a fresh local user with an empty `HOME` and no `DISCOBOX_*`
+  variables: inside a discobox the CLI otherwise talks to the host's server.
 
 Record every command and its result in `~/seed.md`.
 
