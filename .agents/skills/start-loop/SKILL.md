@@ -97,7 +97,7 @@ Match them up by `repo` and `issue`. Then:
   nothing left, or `to-delete`):
   a row for the owner to delete.
 
-Post the table (`table` skill), with its link list.
+Write the table (`scripts/table`, `table` skill), with its links; the owner reads it in the side pane.
 
 ## 6. First actions
 
@@ -117,7 +117,7 @@ this order, within `workers.max` and `disk.minFreeGiB`:
 4. **New issues** in migrated repositories: triage, at most
    `workers.triageMax` at once, highest `priority/*` first, then newest.
 
-Re-post the table if a row changed.
+Update the rows that changed (`scripts/table`).
 
 ## 7. Wait
 

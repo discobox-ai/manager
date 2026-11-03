@@ -1,0 +1,136 @@
+#!/usr/bin/env python3
+"""Edit the manager's status table, the file the manager-table mod draws.
+
+Rows are keyed: an issue ("460", "vm 33"), or a PR ("pr 411", "pr vm 31")
+for a row with no issue, or a name for anything else ("finished").
+
+  table set KEY field=value ...    update a row (adds it, at the end, if missing)
+  table add KEY [--at N|--before KEY] field=value ...
+  table rm KEY ...                 remove rows
+  table move KEY --at N|--before KEY
+  table link LABEL URL             add or replace a link under the table
+  table unlink LABEL ...
+  table show                       the rows, one per line
+
+Fields: item agent issue pr doing move why ("move" is "Your move"; "–" is none).
+Every write is atomic (a temp file, then a rename) and stamps postedAt.
+"""
+import json, os, sys, time
+
+PATH = os.path.expanduser(os.environ.get("MANAGER_TABLE", "~/.local/state/discobox-manager/table.json"))
+FIELDS = {"item": "item", "agent": "agent", "issue": "issue", "pr": "pr", "doing": "doing", "move": "yourMove", "yourMove": "yourMove", "why": "why"}
+
+
+def load():
+    try:
+        with open(PATH) as f:
+            d = json.load(f)
+    except FileNotFoundError:
+        d = {}
+    d.setdefault("rows", [])
+    d.setdefault("links", [])
+    return d
+
+
+def save(d):
+    d["postedAt"] = int(time.time() * 1000)
+    os.makedirs(os.path.dirname(PATH), exist_ok=True)
+    tmp = PATH + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(d, f, indent=1)
+    os.replace(tmp, PATH)
+
+
+def key_of(r):
+    if r.get("key"):
+        return r["key"]
+    if r.get("issue") not in (None, "", "-"):
+        return r["issue"]
+    if r.get("pr") not in (None, "", "-"):
+        return "pr " + r["pr"]
+    return r.get("item", "")
+
+
+def find(rows, key):
+    for i, r in enumerate(rows):
+        if key_of(r) == key:
+            return i
+    return -1
+
+
+def parse(args):
+    out, pos = {}, {}
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a in ("--at", "--before"):
+            pos[a] = args[i + 1]
+            i += 2
+            continue
+        k, sep, v = a.partition("=")
+        if not sep or k not in FIELDS:
+            sys.exit(f"table: bad field {a!r} (fields: {', '.join(sorted(set(FIELDS) - {'yourMove'}))})")
+        out[FIELDS[k]] = v
+        i += 1
+    return out, pos
+
+
+def place(rows, row, pos):
+    if "--at" in pos:
+        rows.insert(max(0, int(pos["--at"]) - 1), row)
+    elif "--before" in pos and find(rows, pos["--before"]) >= 0:
+        rows.insert(find(rows, pos["--before"]), row)
+    else:
+        rows.append(row)
+
+
+def blank(key):
+    r = {f: "-" for f in ("item", "agent", "issue", "pr", "doing", "why")}
+    r["yourMove"] = "–"
+    r["key"] = key
+    return r
+
+
+def main(argv):
+    if len(argv) < 2 or argv[1] in ("-h", "--help"):
+        print(__doc__)
+        return
+    cmd, args = argv[1], argv[2:]
+    d = load()
+    rows = d["rows"]
+    if cmd == "show":
+        for n, r in enumerate(rows, 1):
+            print(f"{n:2} {key_of(r):14} | {r.get('yourMove','–'):24} | {r.get('doing','')[:50]} | {r.get('item','')[:50]}")
+        return
+    if cmd in ("set", "add"):
+        key, (fields, pos) = args[0], parse(args[1:])
+        i = find(rows, key)
+        if i < 0:
+            row = blank(key)
+            row.update(fields)
+            place(rows, row, pos)
+        else:
+            rows[i].update(fields)
+            rows[i].setdefault("key", key)
+            if pos:
+                place(rows, rows.pop(i), pos)
+    elif cmd == "rm":
+        d["rows"] = [r for r in rows if key_of(r) not in set(args)]
+    elif cmd == "move":
+        key, (_, pos) = args[0], parse(args[1:])
+        i = find(rows, key)
+        if i < 0:
+            sys.exit(f"table: no row {key!r}")
+        place(rows, rows.pop(i), pos)
+    elif cmd == "link":
+        label, url = args[0], args[1]
+        d["links"] = [l for l in d["links"] if not l.startswith(label + ":")] + [f"{label}: {url}"]
+    elif cmd == "unlink":
+        d["links"] = [l for l in d["links"] if not any(l.startswith(a + ":") for a in args)]
+    else:
+        sys.exit(f"table: unknown command {cmd!r}")
+    save(d)
+
+
+if __name__ == "__main__":
+    main(sys.argv)

@@ -32,8 +32,10 @@ you hand to workers in `worker-skills/`, and your configuration in
    credential request, low disk, or the owner talking.
 3. **Handle** the event by the gates (`docs/gates.md`), using `.agents/skills/workers`
    to act on boxes and `.agents/skills/github` for labels and issues.
-4. **Report.** Re-post the table whenever a row changes (`.agents/skills/table`).
-   Say nothing when nothing changed.
+4. **Report.** Update the table's rows whenever they change (`scripts/table`,
+   `.agents/skills/table`); the owner reads it in the side pane. In chat, say
+   something only when the owner has a new move or asks. Nothing changed:
+   say nothing.
 5. Go back to 2. When the owner speaks, answer, act on what they decide, then
    wait again.
 

@@ -5,10 +5,12 @@ description: The manager's single status table for the owner — its columns, ra
 
 # The table
 
-Status and to-do are one table, ranked:
+Status and to-do are one table, ranked. It lives in a file the owner's
+`manager-table` mod draws as a side pane, with the first "Your move" in a band
+above the prompt (owner, 2026-11-03). **Don't post it in chat**: the pane is
+the table. Each row has:
 
-| # | Item | Agent | Issue | PR | Doing | Your move | Why this rank |
-|---|------|-------|-------|----|-------|-----------|---------------|
+`Item`, `Agent`, `Issue`, `PR`, `Doing`, `Your move` and `Why this rank`.
 
 - **Item** is a plain description, with no numbers in it.
 - **Agent** is the worker's box ID, **Issue** and **PR** are bare numbers
@@ -34,20 +36,30 @@ Status and to-do are one table, ranked:
 - **Finished boxes** the owner should delete get one row of their own. Check
   that each still exists first.
 
-Under the table, a plain list of links, one per line:
-`- 426: https://github.com/discobox-ai/discobox/issues/426`. Never put links
-inline in the table; they crowd it in a terminal.
+## Editing it: `scripts/table`
 
-**The side pane.** Every time you post the table, also write it to
-`~/.local/state/discobox-manager/table.json`: the same rows in rank order
-and the link list, as
-`{"postedAt": <epoch ms>, "rows": [{"item", "agent", "issue", "pr", "doing",
-"yourMove", "why"}], "links": ["426: https://…"]}`. Write a temporary file
-beside it and `mv` it into place, so a reader never sees half a file. The
-`manager-table` mod reads that file every few seconds, draws it in a side
-pane and puts the first "Your move" in the status line; the pane turns
-"Stale" when the file is 15 minutes old. Post the table in chat as well.
+Change only what changed, by row key; never rewrite the file. The key is
+the row's issue (`460`, `vm 33`), else its PR (`pr 372`), else a name
+(`finished`).
 
-**Re-post the table every time a row changes**, including a worker resuming
-after the owner answered it. When nothing changed, say so in a line rather
-than re-posting it.
+```sh
+scripts/table set 460 doing="ADR PR green" move="Review and merge" pr=463
+scripts/table add 461 item="…" agent=sbx_… doing="Working: triage" --before finished
+scripts/table rm 411 "pr vm 31"
+scripts/table move 460 --at 1
+scripts/table link 463 https://github.com/discobox-ai/discobox/pull/463
+scripts/table show
+```
+
+Fields: `item agent issue pr doing move why`. `move` is "Your move", `–`
+when there's none. Links go under the table, one per issue or PR, never
+inline. The file is `~/.local/state/discobox-manager/table.json`; the
+command writes it atomically and stamps it, and the pane turns "Stale" when
+it's 15 minutes old.
+
+## When it changes
+
+Update the row every time it changes, including a worker resuming after the
+owner answered it. In chat, say something only when the owner has a new
+move, or when they ask; one line, not the table. When the owner asks where
+things stand, answer from `scripts/table show` in a few lines.
