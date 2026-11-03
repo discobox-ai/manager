@@ -67,8 +67,10 @@ Monitor(
   in `~/.local/state/discobox-manager/artifact-sync/outbox/`, and by a
   background sync agent this session starts, which sends them and pulls the
   owner's button presses into `inbox/`. On each heartbeat: if the outbox
-  holds files older than 10 minutes, the sync agent is gone. Start it again
-  with the same brief (the `table` skill, The status artifact).
+  holds files older than 10 minutes, the sync agent stopped listening: a
+  subagent isn't told when its Monitor expires (2026-11-03). Send it one
+  line (SendMessage): re-arm the Monitor and do a pass. If it doesn't answer,
+  start a new one with the same brief (the `table` skill, The status artifact).
 - While a box waiting on the owner is due to be paused (`workers`, Power),
   check it when it's due rather than waiting for an event.
 
