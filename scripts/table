@@ -16,7 +16,8 @@ for a row with no issue, or a name for anything else ("finished").
 Fields: item agent issue pr doing move why ("move" is "Your move"; "–" is none).
 Every write is atomic (a temp file, then a rename) and stamps postedAt.
 """
-import json, os, sys, time
+import json
+import re, os, sys, time
 
 PATH = os.path.expanduser(os.environ.get("MANAGER_TABLE", "~/.local/state/discobox-manager/table.json"))
 FIELDS = {"item": "item", "agent": "agent", "issue": "issue", "pr": "pr", "doing": "doing", "move": "yourMove", "yourMove": "yourMove", "why": "why"}
@@ -30,6 +31,10 @@ def load():
         d = {}
     d.setdefault("rows", [])
     d.setdefault("links", [])
+    for r in d["rows"]:
+        k = r.get("key", "")
+        if r.get("issue", "-") in ("-", "") and ISSUE_KEY.match(k) and not k.startswith("pr "):
+            r["issue"] = k
     return d
 
 
@@ -89,7 +94,13 @@ def blank(key):
     r = {f: "-" for f in ("item", "agent", "issue", "pr", "doing", "why")}
     r["yourMove"] = "–"
     r["key"] = key
+    if ISSUE_KEY.match(key):
+        r["issue"] = key
     return r
+
+
+# An issue key: "460", or "vm 33" for another repository ("manager 1" too).
+ISSUE_KEY = re.compile(r"^(?:[a-z][\w.-]* )?\d+$")
 
 
 def slots():
