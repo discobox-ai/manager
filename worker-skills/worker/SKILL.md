@@ -57,8 +57,7 @@ move it whenever the state changes:
 | (none) | Working. |
 | `needs-input` | A question to the owner is open on your screen. Set it **before** you ask, drop it once answered. |
 | `blocked` | You can't go on without someone else, and it isn't a question on screen: a refused credential, a check you can't make green, a conflict you can't resolve keeping both sides. Say why in a comment on the issue or PR. |
-| `ready` | Your job's end state is reached (the job skill says what that is), and it needs only a human now. |
-| `merged` | Your PR merged. Done. |
+| `ready` | Your job's end state is reached (the job skill says what that is; for a PR, green), and it needs only a human now. |
 
 Also yours to set: `pr=<P>` once your PR exists. Never change `repo`,
 `issue`, `job` or `to-delete`; those are the manager's, except that `submit`
@@ -71,7 +70,7 @@ tag() {
   local M=~/.discobox/meta.json T; T=$(mktemp)
   { cat $M 2>/dev/null || echo '{}'; } | jq --arg k "$1" --arg v "${2-}" --argjson n $# '
     .tags = (.tags // {})
-    | if $n == 1 then .tags |= del(.["needs-input"], .blocked, .ready, .merged)
+    | if $n == 1 then .tags |= del(.["needs-input"], .blocked, .ready)
                       | if $k != "" then .tags[$k] = "" else . end
       else .tags[$k] = $v end' > $T &&
   jq -e '(.tags | length) <= 64' $T >/dev/null && cp $T $M; rm -f $T
@@ -132,7 +131,7 @@ A box that's waiting costs the pool as much as one that's working. **Sleep
 whenever you wait, and power off when you're done.** Sleeping is
 `discobox-power` (the `discobox` skill, Sleep, and name when to wake):
 
-- **Done** (your state tag is `ready`, `merged` or `blocked`, or your job
+- **Done** (your state tag is `ready` or `blocked`, or your job
   ended): finish your status line, then power off as the very last thing:
   `discobox-power sleep --note '<repo>#<N>: <state>'`. The manager wakes you
   if there's more to do (a review comment, a conflict, a failing check).

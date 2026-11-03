@@ -7,7 +7,7 @@ manager, rebuilds the whole table from three places:
    checks and mergeable state.
 2. **Box tags.** Each worker the manager created carries
    `repo=<owner>/<name>`, `issue=<N>`, `job=<…>`, `pr=<P>`, and a state tag:
-   `needs-input`, `blocked`, `ready` or `merged`, and `to-delete` once
+   `needs-input`, `blocked` or `ready`, and `to-delete` once
    retired (the `worker` worker skill defines them). List them with `discobox ls -o json`,
    filtered on `createdBySandboxId` equal to the manager's own box ID.
 3. **The event queue.** `discobox-monitor` events wait until popped, so

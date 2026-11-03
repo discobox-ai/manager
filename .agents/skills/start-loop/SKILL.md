@@ -88,7 +88,8 @@ Match them up by `repo` and `issue`. Then:
 - **A maintainer's PR with no issue:** row "needs an issue".
 - **A PR from a box of yours that merged, with its issue still open:** close
   the issue (`github` skill) and retire the box.
-- **A finished box** (`ready` with nothing left, `merged`, or `to-delete`):
+- **A finished box** (its PR merged or closed, a triage or job `ready` with
+  nothing left, or `to-delete`):
   a row for the owner to delete.
 
 Post the table (`table` skill), with its link list.

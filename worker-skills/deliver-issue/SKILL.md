@@ -1,6 +1,6 @@
 ---
 name: deliver-issue
-description: Take one issue from implementation to a merged pull request — implement it, review it with discobox-review, verify it at runtime, commit, open a PR from discobox/issue-<N>, drive CI green, then keep the PR mergeable and answer review until a human merges it. Use when a worker box is launched to deliver an issue.
+description: Take one issue from implementation to a green pull request — implement it, review it with discobox-review, verify it at runtime, commit, open a PR from discobox/issue-<N>, drive CI green, then sleep, and answer review, fix checks and rebase when the manager wakes you, until a human merges it. Use when a worker box is launched to deliver an issue.
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write, Agent, SendMessage, Skill, Monitor, AskUserQuestion
 metadata:
   discobox.role: github-deliver
@@ -105,10 +105,11 @@ Status line: `PR #P open, CI <state>`.
 
 ## 6. Keep it mergeable until merged
 
-Don't wait awake. Once the PR is `ready`, **power off** (`worker`, Power):
-the manager watches the PR and wakes you, with a line saying why, when it
-needs you (a review or comment, a conflict, a failing check, a merge). Each
-time you're woken, read the PR's state:
+Don't wait awake. Once the PR is green and `ready`, **power off** (`worker`,
+Power). The manager watches the PR and wakes you, with a line saying why,
+when it needs you: a review or comment, a failing check, missing Evidence,
+or a rebase. You're never woken for the merge: the manager retires the box
+when it merges. Each time you're woken, read the PR's state:
 
 ```bash
 gh api repos/$REPO/pulls/$P --jq '"\(.state) \(.merged_at != null) \(.mergeable_state) \(.head.sha)"'
@@ -118,10 +119,11 @@ gh api repos/$REPO/issues/$P/comments --jq '.[] | "\(.id) \(.user.login)"'
 gh pr checks $P --repo $REPO --json name,bucket
 ```
 
-- **`mergeable_state` `dirty`**: `BASE` moved. Fetch it, rebase onto it
-  keeping both sides of every conflict, run the tests the conflict touched,
-  and push with the lease from §5. `unknown` just after a merge is GitHub
-  recomputing: check again first.
+- **Rebase, when the manager asks for it** (and only then: it decides which
+  PRs are near enough the front of the merge queue to be worth it). Fetch
+  `BASE`, rebase onto it keeping both sides of every conflict, run the tests
+  the conflict touched, and push with the lease from §5. A PR that's `dirty`
+  but you weren't asked to rebase: leave it.
 - **A new review, review comment or PR comment** from anyone: read a
   review's body as well as its threads, and answer every finding on its own
   thread (`gh api -X POST repos/$REPO/pulls/$P/comments/<id>/replies -f
@@ -134,9 +136,6 @@ gh pr checks $P --repo $REPO --json name,bucket
   A fix is new code: review it, verify it if it changes behaviour, commit on
   top, push, get CI green again.
 - **A failing check on the head commit**: fix it as `open-pr` §4 says.
-- **Merged**: tag `merged`. **Closed without merging**: drop the state tag.
-  Either way finish, and power off.
-
 Whatever you did, end each waking by setting your state tag again and
 sleeping: with a wake if you pushed and CI is running, without one if the PR
 is `ready` again.
@@ -148,14 +147,16 @@ is `ready` again.
   and the PR is marked ready. It needs only a human merge. GitHub's own
   `mergeable_state` `blocked` (a required review not given) still counts as
   ready: it's waiting for its human.
-- none: you're working. When a `ready` PR goes `dirty`, gets a new review or
-  comment, or a check leaves `pass`, drop `ready` before you start on it.
+- none: you're working. When you're woken to work on a `ready` PR, drop
+  `ready` before you start on it.
 - `blocked` / `needs-input`: as `worker` says.
 
 Status line on every change: `PR #P: <what happened, what you did>`.
 
 ## Done when
 
-The PR is merged or closed. Finish with the PR URL, its final head SHA, the
+The PR is green and `ready` and the box is asleep, every time it's woken,
+until the PR is merged or closed (the manager retires the box then). Each
+time, finish with the PR URL, its final head SHA, the
 review rounds, everything `verify` observed or couldn't run, and any CI
 failure left as pre-existing.

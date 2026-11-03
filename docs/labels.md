@@ -40,7 +40,7 @@ direction change is a comment on it. Each issue in the effort says
 - A box's tags are defined in the `worker` worker skill: `repo=<owner>/<name>`,
   `issue=<N>` and `job=<triage|adr|deliver|fix|rebase|adhoc>` set by the
   manager at launch (an ad-hoc box gets its `issue` from `submit`); `pr=<P>`
-  and one state tag (`needs-input`, `blocked`, `ready`, `merged`) set by the
+  and one state tag (`needs-input`, `blocked`, `ready`) set by the
   box; `to-delete` set by the manager on retirement.
 - An implementation PR says `Closes #N`; an ADR PR says `Part of #N`.
 - Issues are written as `## Today` / `## Wanted` / `## Done when`, citing files

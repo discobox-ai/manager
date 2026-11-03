@@ -163,8 +163,9 @@ Workers sleep whenever they wait and power off when they're done (the
   `pop` no longer than the time left (`watch`). The row stays "Answer in the
   box": opening it starts it again.
 - **Wake a sleeping worker when its work needs it**: a review or comment on
-  its PR, a conflict, a failing check on its head, its PR merged or closed,
-  the owner's "accept" for its ADR. `discobox start <id>`, wait until its
+  its PR, a failing check on its head, Evidence missing (`github`, The
+  process comment), a rebase it's due (Rebases, below), the owner's "accept"
+  for its ADR. **Never for a merge or close**: retire it as it sleeps. `discobox start <id>`, wait until its
   terminal is idle at the prompt (`admin terminal screen`), then type one
   line saying why, e.g. `PR #452 has a new review; carry on (deliver-issue
   §6).`, then Enter.
@@ -181,11 +182,35 @@ Workers sleep whenever they wait and power off when they're done (the
 `discobox tag` starts a stopped box to write the tag, so a box you tag while
 it sleeps is awake afterwards: stop it again if it has nothing to do.
 
+## Rebases
+
+A PR that conflicts with its base needs a rebase only if it's about to be
+merged. Rebasing every conflicting PR after each merge is a rebase storm:
+each rebase reruns CI, and the next merge makes most of them conflict again.
+
+- **The merge queue** is the PRs at "Review and merge" on the table, in its
+  ranked order (`table`).
+- **Only the top 3 of the queue get rebased.** When one of them is `dirty`,
+  wake its worker: `PR #<P> conflicts with <base>; rebase it (deliver-issue
+  §6).` A conflicting PR further down waits, with its row saying
+  "conflicts, rebased when near the front". When a merge moves it into the
+  top 3, it's its turn.
+- **One rebase per PR per base.** Don't ask again while it's rebasing or its
+  CI is running, and don't ask again for a base it's already rebased onto.
+  After a merge, give GitHub a minute to recompute `mergeable_state` before
+  acting (`unknown` means not yet).
+- **A PR not yet green** isn't in the queue: its worker is still on it, and
+  rebases as part of its own work.
+- A worker whose box is gone gets a new `rebase-pr` worker, under the same
+  rules.
+
 ## Retire
 
-When a worker's PR merges or its job needs nothing more:
-`discobox tag <id> to-delete --rm ready --rm blocked --rm merged --rm needs-input`,
-then `discobox stop <id>` (tagging woke it).
+When a worker's PR merges or closes, or its job needs nothing more, retire
+it right away, without waking it to do anything:
+`discobox tag <id> to-delete --rm ready --rm blocked --rm needs-input`,
+then `discobox stop <id>` (writing the tag starts a sleeping box; stop it
+straight after).
 An archived box refuses tags (409). List it for deletion anyway. The owner
 deletes boxes, often before you get to them; a 404 means it's already gone.
 

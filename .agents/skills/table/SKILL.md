@@ -24,6 +24,8 @@ Status and to-do are one table, ranked:
   - "Answer in the box" for a box tagged `needs-input` (or showing a question
     it didn't tag; tag it first, `workers`).
   - A concrete decision ("Say 'accept 694' …").
+- **The merge queue** is the rows at "Review and merge", in rank order. Only
+  its top 3 get rebased when they conflict (`workers`, Rebases).
 - **Why this rank:** rank by how much a row unblocks (critical path first),
   then by how hard the decision is to reverse.
 - **Ad-hoc boxes** get a row too: Item is the owner's topic, Doing "owner

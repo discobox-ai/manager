@@ -30,7 +30,7 @@ and skills (`verify-recipes`; `discobox-review` is in every box).
 |---|---|---|
 | Triage | `triage-issue` | A triage comment proposing labels and size, and a verdict; tagged `ready` |
 | ADR | `propose-adr` | A Proposed ADR in its own PR, green; tagged `ready` |
-| Deliver | `deliver-issue` | Its PR merged (`merged`); `ready` while green and waiting for the owner |
+| Deliver | `deliver-issue` | Its PR green; tagged `ready` and asleep, woken only when the PR needs it. Retired by the manager on merge |
 | Fix CI | `fix-ci` | The fix is a PR, green; tagged `ready` |
 | Rebase | `rebase-pr` | The PR rebased keeping both sides, green; tagged `ready` |
 | Labels | `migrate-labels` | The repository has the `status/*` and `type/*` labels and every open issue is relabelled, after the owner approved the plan in the box; tagged `ready` |
