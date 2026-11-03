@@ -101,7 +101,7 @@ export function buildAction(form: FormData, row: Row): RecordedAction {
       // on the row is a new ask.
       let move = row.yourMove.trim()
       if (!hasMove(row)) throw new ActionError('This row asks nothing of you.')
-      return line(kind, (issue ?? pr)?.fullName, { move })
+      return line(kind, (issue ?? pr)?.fullName, { move, ...(reason ? { reason } : {}) })
     }
     default:
       throw new ActionError(`Unknown action kind ${JSON.stringify(kind)}.`)

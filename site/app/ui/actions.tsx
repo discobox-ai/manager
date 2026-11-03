@@ -16,7 +16,7 @@ export function describeAction(a: ActionView): string {
     case 'instruct':
       return `Instruction: “${a.text}”`
     case 'resolve':
-      return `Resolved: “${a.move ?? ''}”`
+      return `Resolved: “${a.move ?? ''}”${a.reason ? ` — “${a.reason}”` : ''}`
     default:
       return String((a as { kind: string }).kind)
   }

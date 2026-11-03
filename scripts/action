@@ -50,7 +50,7 @@ def target(a):
     if k == "instruct":
         return f"instruction: {a.get('text')!r}"
     if k == "resolve":
-        return f"resolved, says the owner: move={a.get('move')!r}"
+        return f"resolved, says the owner: move={a.get('move')!r}" + (f" note={a['reason']!r}" if a.get("reason") else "")
     return k or "?"
 
 

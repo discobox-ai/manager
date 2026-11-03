@@ -515,7 +515,14 @@ pre.sig del, .md del { background: var(--bad-wash); color: var(--bad); border-ra
 .glyph.done { color: var(--good); }
 .layout .move.resolved { color: var(--good); }
 .reopened-note { margin: 0; color: var(--bad); font-size: var(--step--1); }
-.layout .controls button.resolve { color: var(--good); font-weight: 600; }
+.layout .controls button.resolve {
+  color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 10px; font-weight: 600;
+}
+.layout .controls button.resolve:hover, .layout .controls button.resolve[aria-expanded="true"] { border-color: var(--good); color: var(--good); text-decoration: none; }
+.resolve-confirm { background: var(--wash) !important; border: 1px solid var(--rule) !important; }
+.resolve-confirm > span { flex-basis: 100%; }
+.resolve-confirm input { flex: 1 1 16rem; min-width: 0; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; padding: 5px 8px; font: inherit; }
+.resolve-confirm button.primary { background: var(--good); border-color: var(--good); color: #0b1a12; }
 </style>
   </head>
   <body>

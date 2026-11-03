@@ -27,7 +27,7 @@ const KIND_LABEL: Record<ActionKind, string> = {
   'close-issue': 'Close issue',
   prioritize: 'Prioritize',
   instruct: 'Instruction',
-  resolve: 'Resolved ✓',
+  resolve: 'Resolve…',
 }
 
 type Values = Pick<ActionInput, 'reason' | 'stateReason' | 'priority' | 'text'>
@@ -45,6 +45,7 @@ export function RowControls(handle: Handle<RowControlsProps>) {
   let flash: string | null = null
 
   function choose(kind: ActionKind) {
+    resolving = false
     open = open === kind ? null : kind
     confirming = null
     error = null
@@ -92,7 +93,11 @@ export function RowControls(handle: Handle<RowControlsProps>) {
     handle.update()
   }
 
-  /** Resolved takes no form: one press records it, and the row moves down the list. */
+  // Resolve opens a small confirm with an optional note for the manager; only Mark resolved records
+  // it, and then the row moves to Resolved.
+  let resolving = false
+  let resolveNote = ''
+
   async function resolve() {
     let { rowKey, issue, pr, store, resolvable } = handle.props
     if (!resolvable) return
@@ -100,7 +105,9 @@ export function RowControls(handle: Handle<RowControlsProps>) {
     error = null
     handle.update()
     try {
-      await store.record({ key: rowKey, kind: 'resolve', issue, pr, move: resolvable })
+      await store.record({ key: rowKey, kind: 'resolve', issue, pr, move: resolvable, ...(resolveNote.trim() ? { reason: resolveNote.trim() } : {}) })
+      resolving = false
+      resolveNote = ''
     } catch (caught) {
       error = caught instanceof Error ? caught.message : String(caught)
     }
@@ -133,9 +140,16 @@ export function RowControls(handle: Handle<RowControlsProps>) {
             <button
               type="button"
               class="resolve"
+              aria-expanded={resolving}
               disabled={pending}
-              title="Moves this row to Resolved. The manager hears about it, and reopens it if it still needs you."
-              mix={on('click', resolve)}
+              title="Tell the manager this move is handled; the row moves to Resolved. The manager reopens it if it still needs you."
+              mix={on('click', () => {
+                resolving = !resolving
+                open = null
+                confirming = null
+                error = null
+                handle.update()
+              })}
             >
               {KIND_LABEL.resolve}
             </button>
@@ -160,6 +174,47 @@ export function RowControls(handle: Handle<RowControlsProps>) {
           {flash ? <span class="flash">{flash}</span> : null}
         </div>
 
+        {resolving && resolvable ? (
+          <div class="confirm resolve-confirm" role="group" aria-label="Resolve this move">
+            <span>
+              Mark <strong>{resolvable}</strong> as resolved? The row moves to Resolved; the manager checks it, and reopens it if it
+              still needs you.
+            </span>
+            <input
+              type="text"
+              id={`resolve-note-${rowKey}`}
+              placeholder="Note for the manager (optional): what you did"
+              aria-label="Note for the manager"
+              value={resolveNote}
+              mix={[
+                ref((el: HTMLInputElement) => el.focus()),
+                on('input', (event) => {
+                  resolveNote = (event.currentTarget as HTMLInputElement).value
+                }),
+                on('keydown', (event) => {
+                  if (event.key === 'Enter') void resolve()
+                  if (event.key === 'Escape') {
+                    resolving = false
+                    handle.update()
+                  }
+                }),
+              ]}
+            />
+            <button type="button" class="primary" disabled={pending} mix={on('click', resolve)}>
+              {pending ? 'Recording…' : 'Mark resolved'}
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              mix={on('click', () => {
+                resolving = false
+                handle.update()
+              })}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : null}
         {open ? (
           <ActionForm
             key={open}

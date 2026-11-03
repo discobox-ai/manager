@@ -101,7 +101,10 @@ describe('box (vite build)', () => {
     let list = page.getByRole('navigation', { name: 'Rows' })
     let pane = page.locator('.inbox-pane')
     await pane.getByRole('heading', { name: 'VM snapshots ADR' }).waitFor()
-    await pane.getByRole('button', { name: 'Resolved ✓' }).click()
+    await pane.getByRole('button', { name: 'Resolve…' }).click()
+    await list.getByRole('heading', { name: /^Your move · [1-9]/ }).waitFor()
+    await pane.getByRole('textbox', { name: 'Note for the manager' }).fill('Answered it in the box')
+    await pane.getByRole('button', { name: 'Mark resolved' }).click()
     await list.getByRole('heading', { name: 'Resolved · 1' }).waitFor()
     await list.getByRole('heading', { name: 'Your move · 0' }).waitFor()
     await pane.locator('.move.resolved').waitFor()
@@ -110,13 +113,14 @@ describe('box (vite build)', () => {
     assert.equal(action.kind, 'resolve')
     assert.equal(action.key, 'vm 33')
     assert.equal(action.move, 'Answer the box: snapshot format')
+    assert.equal(action.reason, 'Answered it in the box')
 
     // scripts/action unresolve appends this: back to Your move, with the manager's reason.
     let line = { id: action.id, done: true, at: new Date().toISOString(), unresolved: true, note: 'The box is still asking' }
     fs.appendFileSync(path.join(stateDir, 'actions-done.jsonl'), JSON.stringify(line) + '\n')
     await list.getByRole('heading', { name: 'Your move · 1' }).waitFor({ timeout: 10_000 })
     await list.getByText('Reopened: The box is still asking').waitFor()
-    await pane.getByRole('button', { name: 'Resolved ✓' }).waitFor()
+    await pane.getByRole('button', { name: 'Resolve…' }).waitFor()
   })
 
   it('says so when the artifact sync agent has stopped sending', async (t) => {
