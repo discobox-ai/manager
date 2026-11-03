@@ -62,6 +62,13 @@ Monitor(
   `discobox-power sleep --wake-in` timer has been seen not to fire, 2026-11-03).
   Start that worker and type one line: its PR is green, finish it (`open-pr`)
   and mark it ready.
+- **The status artifact's sync agent.** The "Manager status" artifact is fed
+  by `site/sync.ts` (service `manager-sync`), which queues `write_db` batches
+  in `~/.local/state/discobox-manager/artifact-sync/outbox/`, and by a
+  background sync agent this session starts, which sends them and pulls the
+  owner's button presses into `inbox/`. On each heartbeat: if the outbox
+  holds files older than 10 minutes, the sync agent is gone. Start it again
+  with the same brief (the `table` skill, The status artifact).
 - While a box waiting on the owner is due to be paused (`workers`, Power),
   check it when it's due rather than waiting for an event.
 
