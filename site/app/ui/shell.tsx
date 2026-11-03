@@ -2,19 +2,12 @@ import type { Handle, RemixNode } from 'remix/component'
 
 import { routes } from '../routes.ts'
 import { href } from '../routing.ts'
-import { host } from '../store/index.ts'
-import { StylePicker } from './style-picker.tsx'
 
 /** The page column every route renders into. */
-export function Page(handle: Handle<{ title: string; layouts?: boolean; children?: RemixNode }>) {
+export function Page(handle: Handle<{ title: string; children?: RemixNode }>) {
   return () => {
     document.title = handle.props.title
-    return (
-      <>
-        <div class="wrap">{handle.props.children}</div>
-        {host === 'box' ? <StylePicker layouts={handle.props.layouts} /> : null}
-      </>
-    )
+    return <div class="wrap">{handle.props.children}</div>
   }
 }
 

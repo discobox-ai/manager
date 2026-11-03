@@ -1,25 +1,22 @@
-import type { Handle, RemixNode } from 'remix/component'
+import { on, type Handle } from 'remix/component'
 
-import { hasMove } from '../shared/refs.ts'
-import type { BoardState, Store } from '../store/index.ts'
-import { ActionLine } from './actions.tsx'
-import { GroupedLayout, InboxLayout, KanbanLayout, KeysLayout, LinesLayout, NextLayout, RailLayout, SummaryLayout } from './layouts/layouts.tsx'
-import { layoutEvents, layoutNow } from './style-picker.tsx'
-import { RowCard } from './row-card.tsx'
+import type { RowDoc } from '../shared/docs.ts'
+import type { Store } from '../store/index.ts'
+import { groups, Notice, parts, RecentLine, RowBody, stage, STAGE_GLYPH, STAGE_LABEL, Topline } from './board-parts.tsx'
+import { ChatPanel, hasUnread } from './chat.tsx'
 import { Page } from './shell.tsx'
-import { ago, stamp } from './time.ts'
+
+const CHAT = '\u0000chat'
 
 /**
- * The status board: a sticky strip with the table's age and what needs the owner, then the rows
- * ranked as the table ranks them: the owner's moves first, in a warm band, everything else below.
+ * The status board as an inbox: the chat with the manager and the table's rows down the left
+ * (what needs the owner first), and whatever is chosen on the right, in full.
  */
 export function BoardPage(handle: Handle<{ store: Store }>) {
   let { store } = handle.props
   let now = Date.now()
+  let selected: string | null = null
   let unsubscribe = store.subscribe(() => handle.update())
-  let onLayout = () => handle.update()
-  layoutEvents.addEventListener('change', onLayout)
-  handle.signal.addEventListener('abort', () => layoutEvents.removeEventListener('change', onLayout))
   // Relative times tick even when nothing else changes.
   let timer = setInterval(() => {
     now = Date.now()
@@ -30,170 +27,85 @@ export function BoardPage(handle: Handle<{ store: Store }>) {
     clearInterval(timer)
   })
 
+  function choose(key: string) {
+    selected = key
+    handle.update()
+    // On a narrow screen the pane is below the list: bring it into view.
+    if (matchMedia('(max-width: 760px)').matches) queueMicrotask(() => document.querySelector('.inbox-pane')?.scrollIntoView({ behavior: 'smooth' }))
+  }
+
   return () => {
     let state = store.board()
     now = Math.max(now, Date.now())
-    let finished = state.rows.filter((r) => r.key === 'finished')
-    let rest = state.rows.filter((r) => r.key !== 'finished')
-    let mine = rest.filter(hasMove)
-    let others = rest.filter((r) => !hasMove(r))
-    let pending = state.actions.filter((a) => a.status === 'pending').length
-    let recent = [...state.actions].reverse().slice(0, 10)
-    let layout = store.host === 'box' ? layoutNow() : ''
-    let Layout = PROTOTYPES[layout]
-    if (Layout) {
+    let { mine, others, finished } = groups(state)
+    let all = [...mine, ...others, ...finished]
+    let row = selected === CHAT ? null : (all.find((r) => r.key === selected) ?? (selected === null ? all[0] : null))
+    let chatOpen = selected === CHAT || !row
+    let last = state.chat.at(-1)
+    let item = (r: RowDoc) => {
+      let s = stage(r)
       return (
-        <Page title="Manager status" layouts>
-          <div class={`layout layout-${layout}`}>
-            <Layout key={layout} state={state} store={store} now={now} />
-          </div>
-        </Page>
+        <li key={r.key}>
+          <button
+            type="button"
+            class={`inbox-item${r === row ? ' selected' : ''}`}
+            aria-current={r === row}
+            mix={on('click', () => choose(r.key))}
+          >
+            <span class={`glyph ${s}`} title={STAGE_LABEL[s]}>
+              {STAGE_GLYPH[s]}
+            </span>
+            <span class="title">{r.item}</span>
+          </button>
+        </li>
       )
     }
-    let card = (row: BoardState['rows'][number]) => (
-      <RowCard key={row.key} row={row} actions={state.actions.filter((a) => a.key === row.key)} store={store} />
-    )
-
     return (
-      <Page title="Manager status" layouts>
-        <header class="strip">
-          <h1>Manager status</h1>
-          <When state={state} store={store} now={now} />
-          {state.loaded ? (
-            <span class="need">
-              <strong>{mine.length}</strong> {mine.length === 1 ? 'row needs' : 'rows need'} you · {state.rows.length} rows
-              {pending ? ` · ${pending} pending for the manager` : ''}
-            </span>
-          ) : null}
-        </header>
-        {state.meta?.slots ? (
-          <section class="slots" aria-label="Worker slots">
-            <strong>
-              {state.meta.slots.boxes.length}/{state.meta.slots.max} running
-            </strong>
-            <ul>
-              {state.meta.slots.boxes.map((b) => (
-                <li key={b.id}>
-                  {b.label} <code>{b.id}</code>
+      <Page title="Manager status">
+        <div class="layout layout-inbox">
+          <Topline state={state} store={store} now={now} />
+          <Notice state={state} />
+          <div class="inbox">
+            <nav class="inbox-list" aria-label="Rows">
+              <ul>
+                <li>
+                  <button
+                    type="button"
+                    class={`inbox-item chat-item${chatOpen ? ' selected' : ''}`}
+                    aria-current={chatOpen}
+                    mix={on('click', () => choose(CHAT))}
+                  >
+                    <span class={`glyph${hasUnread(state.chat) ? ' yours' : ''}`}>{hasUnread(state.chat) ? '●' : '›'}</span>
+                    <span class="title">
+                      Chat with the manager
+                      {last ? <span class="preview">{(last.from === 'owner' ? 'you: ' : '') + last.text}</span> : null}
+                    </span>
+                  </button>
                 </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-        {state.notice ? (
-          <div class="notice" role="status">
-            <strong>{state.notice.lead}</strong> {state.notice.text}
+              </ul>
+              <h2>Your move · {mine.length}</h2>
+              <ul>{mine.map(item)}</ul>
+              <h2>In progress · {others.length + finished.length}</h2>
+              <ul>{[...others, ...finished].map(item)}</ul>
+            </nav>
+            <article class="inbox-pane">
+              {chatOpen ? (
+                <>
+                  <h2 class="pane-title">Chat with the manager</h2>
+                  <ChatPanel chat={state.chat} store={store} now={now} />
+                </>
+              ) : (
+                <>
+                  {parts(row!).mine ? <div class="move">→ {row!.yourMove}</div> : null}
+                  <h2 class="pane-title">{row!.item}</h2>
+                  <RowBody key={row!.key} row={row!} state={state} store={store} detailsOpen={Boolean(parts(row!).pr || parts(row!).issue)} />
+                </>
+              )}
+            </article>
           </div>
-        ) : null}
-
-        <Section id="mine" title="Your move" count={mine.length} loaded={state.loaded} empty="Rows that need you appear here, with the move in the band on top.">
-          {mine.map(card)}
-        </Section>
-        <Section id="rest" title="In progress" count={others.length} loaded={state.loaded} empty="Work the manager's workers are doing appears here.">
-          {others.map(card)}
-        </Section>
-        {finished.length ? (
-          <Section id="finished" title="Finished boxes" count={finished.length} loaded={state.loaded} empty="">
-            {finished.map(card)}
-          </Section>
-        ) : null}
-
-        <section aria-labelledby="h-recent">
-          <h2 id="h-recent">
-            Recent actions <span class="count">({recent.length})</span>
-          </h2>
-          {recent.length ? (
-            <ul class="recorded">
-              {recent.map((a) => (
-                <ActionLine key={a.id} action={a} showKey />
-              ))}
-            </ul>
-          ) : (
-            <p class="empty">
-              Nothing recorded yet. A button on a row records an action; the manager carries it out and marks it done here.
-            </p>
-          )}
-        </section>
-
-        {state.meta?.links.length ? (
-          <footer class="links">
-            {state.meta.links.map((l) => (
-              <div key={l.label}>
-                {l.label}:{' '}
-                {/^https?:\/\//.test(l.url) ? (
-                  <a href={l.url} target="_blank" rel="noopener noreferrer">
-                    {l.url}
-                  </a>
-                ) : (
-                  l.url
-                )}
-              </div>
-            ))}
-          </footer>
-        ) : null}
+          <RecentLine state={state} />
+        </div>
       </Page>
-    )
-  }
-}
-
-const PROTOTYPES: Record<string, typeof InboxLayout> = {
-  inbox: InboxLayout,
-  lines: LinesLayout,
-  next: NextLayout,
-  grouped: GroupedLayout,
-  kanban: KanbanLayout,
-  keys: KeysLayout,
-  rail: RailLayout,
-  summary: SummaryLayout,
-}
-
-function When(handle: Handle<{ state: BoardState; store: Store; now: number }>) {
-  return () => {
-    let { state, store, now } = handle.props
-    let meta = state.meta
-    if (!meta) {
-      return <span class="when">{state.loaded ? "Waiting for the first sync from the manager's box." : 'Loading…'}</span>
-    }
-    let measured = meta[store.staleness.field]
-    let stale = measured == null || now - measured > store.staleness.afterMs
-    return (
-      <span class="when">
-        <span class={`dot${state.live ? ' on' : ''}`} title={state.live ? 'Live: updates as the table changes' : 'Not connected; retrying'} />
-        {meta.postedAt ? (
-          <span title={new Date(meta.postedAt).toISOString()}>
-            Table updated {ago(now - meta.postedAt)} ({stamp(meta.postedAt)})
-          </span>
-        ) : (
-          <span>Table never posted</span>
-        )}
-        {store.showsSync && meta.syncedAt ? (
-          <>
-            {' · '}
-            <span title={new Date(meta.syncedAt).toISOString()}>synced {ago(now - meta.syncedAt)}</span>
-          </>
-        ) : null}
-        {stale ? (
-          <span class="stale" title={store.staleness.title}>
-            stale
-          </span>
-        ) : null}
-      </span>
-    )
-  }
-}
-
-function Section(
-  handle: Handle<{ id: string; title: string; count: number; loaded: boolean; empty: string; children?: RemixNode }>,
-) {
-  return () => {
-    let { id, title, count, loaded, empty, children } = handle.props
-    return (
-      <section aria-labelledby={`h-${id}`}>
-        <h2 id={`h-${id}`}>
-          {title} <span class="count">({count})</span>
-        </h2>
-        {count ? <div class="cards">{children}</div> : loaded && empty ? <p class="empty">{empty}</p> : null}
-      </section>
     )
   }
 }

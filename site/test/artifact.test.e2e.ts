@@ -62,21 +62,21 @@ describe('artifact (vite build --mode artifact)', () => {
   it('shows the synced rows, and a PR row merges on GitHub', async (t) => {
     let page = await t.serve(await serve(() => artifactPage()))
     await page.goto('/artifact/21128720/index.html')
-    let card = page.locator('article', { hasText: 'VM snapshots ADR' })
-    await card.locator('.move', { hasText: 'Review and merge' }).waitFor()
+    let card = page.locator('.inbox-pane')
+    await card.getByRole('heading', { name: 'VM snapshots ADR' }).waitFor()
+    await card.locator('.move', { hasText: /Review and merge/i }).waitFor()
     let merge = card.getByRole('link', { name: 'Merge on GitHub ↗' })
     assert.equal(await merge.getAttribute('href'), 'https://github.com/discobox-ai/vm/pull/38')
     assert.match((await merge.getAttribute('class')) ?? '', /\bbig\b/)
-    assert.match(await page.locator('.when').innerText(), /synced 1 min ago/)
+    assert.match(await page.locator('.topline').innerText(), /synced 1 min ago/)
     // The viewer puts the stylesheet in <body>, which the app renders over: it must survive.
-    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(243, 245, 248)')
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(14, 15, 18)')
   })
 
   it('shows a PR’s details from its synced document, sanitized', async (t) => {
     let page = await t.serve(await serve(() => artifactPage()))
     await page.goto('/')
-    let card = page.locator('article', { hasText: 'VM snapshots ADR' })
-    await card.getByRole('button', { name: '▸ Details' }).click()
+    let card = page.locator('.inbox-pane')
     await card.getByText('Checks on 01234567 (1)').waitFor()
     await card.locator('.md strong', { hasText: 'qcow2' }).waitFor()
     assert.equal(await card.locator('.md script').count(), 0)
@@ -88,7 +88,8 @@ describe('artifact (vite build --mode artifact)', () => {
   it('records a close as a pending actions document, and shows it done when actionsDone arrives', async (t) => {
     let page = await t.serve(await serve(() => artifactPage()))
     await page.goto('/')
-    let card = page.locator('article', { hasText: 'VM snapshots ADR' })
+    let card = page.locator('.inbox-pane')
+    await card.getByRole('heading', { name: 'VM snapshots ADR' }).waitFor()
     await card.getByRole('button', { name: 'Close / reject PR' }).click()
     await card.getByRole('textbox', { name: 'Reason' }).fill('Superseded by vm 40')
     await card.getByRole('button', { name: 'Close / reject PR…' }).click()
@@ -114,7 +115,8 @@ describe('artifact (vite build --mode artifact)', () => {
   it('hides the action buttons from a view-only viewer', async (t) => {
     let page = await t.serve(await serve(() => artifactPage({ writable: false })))
     await page.goto('/')
-    let card = page.locator('article', { hasText: 'Flaky Windows test' })
+    await page.getByRole('navigation', { name: 'Rows' }).getByRole('button', { name: 'Flaky Windows test' }).click()
+    let card = page.locator('.inbox-pane')
     await card.getByRole('heading', { name: 'Flaky Windows test' }).waitFor()
     await page.waitForTimeout(100)
     assert.equal(await card.getByRole('button', { name: 'Instruction' }).count(), 0)
@@ -132,13 +134,13 @@ describe('artifact (vite build --mode artifact)', () => {
     let frame = page.frameLocator('iframe')
     await frame.getByText('ADRs open on GitHub from here.').waitFor()
     await frame.getByRole('link', { name: 'Manager status' }).click()
-    await frame.locator('article', { hasText: 'VM snapshots ADR' }).waitFor()
+    await frame.locator('.inbox-pane').getByRole('heading', { name: 'VM snapshots ADR' }).waitFor()
   })
 
   it('opens a PR’s diff from its row, with contract, docs, implementation and lines tabs', async (t) => {
     let page = await t.serve(await serve(() => artifactPage()))
     await page.goto('/')
-    await page.locator('article', { hasText: 'VM snapshots ADR' }).getByRole('link', { name: 'diff' }).click()
+    await page.locator('.inbox-pane').getByRole('link', { name: 'diff', exact: true }).click()
     await page.getByRole('heading', { name: 'ADR 0007: snapshot format' }).waitFor()
     assert.match(page.url(), /#\/diff\/vm\/38$/)
 
@@ -170,5 +172,33 @@ describe('artifact (vite build --mode artifact)', () => {
     await added.waitFor()
     assert.equal(await added.locator('.ln').nth(1).innerText(), '12')
     assert.match(await added.locator('.code').innerText(), /opts Options/)
+  })
+
+  it('chats through the database: a message is an actions document, the thread comes back as chat', async (t) => {
+    let page = await t.serve(await serve(() => artifactPage()))
+    await page.goto('/')
+    await page.getByRole('button', { name: /Chat with the manager/ }).click()
+    let box = page.getByRole('textbox', { name: 'Message the manager' })
+    await box.fill('Ship 0.18.1 today?')
+    await box.press('Enter')
+    let chat = page.getByRole('region', { name: 'Chat with the manager' })
+    await chat.locator('.msg.owner.sending', { hasText: 'Ship 0.18.1 today?' }).waitFor()
+
+    let writes = await page.evaluate(() => (window as any).__writes)
+    let { path: docPath, data } = writes.at(-1)
+    assert.match(docPath, /^actions\/[\w-]+$/)
+    assert.equal(data.kind, 'chat')
+    assert.equal(data.text, 'Ship 0.18.1 today?')
+    assert.equal(data.status, 'pending')
+    // It's a message, not an action: it stays out of recent actions.
+    assert.match(await page.locator('.recent-line').innerText(), /Recent actions · 0/)
+
+    // The sync carries it to chat.jsonl and sends the thread back, with the manager's reply.
+    await page.evaluate((m) => {
+      ;(window as any).__put(`chat/${m.id}`, { id: m.id, at: m.at, from: 'owner', text: m.text })
+      ;(window as any).__put('chat/r1', { id: 'r1', at: new Date(Date.parse(m.at) + 1000).toISOString(), from: 'manager', text: 'Yes, once #523 is fixed.', replyTo: m.id })
+    }, data)
+    await chat.locator('.msg.manager', { hasText: 'once #523 is fixed' }).waitFor()
+    assert.equal(await chat.locator('.msg.sending').count(), 0)
   })
 })

@@ -81,6 +81,27 @@ wakes you. Then:
    as if they had typed it to you.
 3. `scripts/action done <id> "<what you did>"`; the site shows it done.
 
+## Chat
+
+The site and the artifact both open on an inbox whose first entry is a chat
+with you: one thread, the owner's messages in
+`~/.local/state/discobox-manager/chat.jsonl`, which the `site-chat`
+monitor watches (the artifact's reach it through the sync, like its
+buttons). A message is the owner speaking, as if typed to you here: act on
+it by the gates (`docs/gates.md`), then answer **in the thread**, always,
+even when there's nothing to do but say so:
+
+1. `scripts/chat list`: the messages with no reply yet (`show` for the
+   thread, to see what came before).
+2. Do what it asks, or find out what it asks about.
+3. `scripts/chat reply <id> "<answer>"`: plain text, short, what you did or
+   what you found. A reply goes to `chat-replies.jsonl`, which wakes no one,
+   and shows on the page within seconds (the artifact's at its next sync).
+
+Several waiting messages get one reply each, oldest first. A question that
+needs the owner's decision is still answered here, with the options; it
+also goes on the table if it holds up work.
+
 ## The status artifact
 
 "Manager status" (https://claude.ai/code/artifact/21128720-e384-4249-a3d0-9b8b6b5e7923)
@@ -101,7 +122,7 @@ dev mode, so a saved change is live on it at once. After a change to
 `site/app/` is pushed, `npm run build` in `site/`, then republish: the Artifact tool on that file with `url` set to the artifact's
 URL and no `capabilities`, so its database and user grants carry forward.
 Its stored rules, to restate in full if a collection is ever added: `rows`,
-`details`, `meta`, `actionsDone`, `diffs` and `diffParts` read `view`, write
+`details`, `meta`, `actionsDone`, `diffs`, `diffParts` and `chat` read `view`, write
 `admin`; `actions` read `view`, write `interact`; plus `user: {}`.
 
 The site keeps no state of its own and commits nothing: lose the box and

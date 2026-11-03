@@ -1,10 +1,15 @@
-import type { ActionDoc, ActionKind, AdrFileView, AdrIndexView, DetailsDoc, DiffDoc, DiffErrorDoc, DiffPartDoc, MetaDoc, RowDoc } from '../shared/docs.ts'
+import type { ActionDoc, ActionKind, ChatDoc, AdrFileView, AdrIndexView, DetailsDoc, DiffDoc, DiffErrorDoc, DiffPartDoc, MetaDoc, RowDoc } from '../shared/docs.ts'
 
 /** A recorded action with what became of it. */
 export interface ActionView extends ActionDoc {
   status: 'pending' | 'done' | 'refused'
   doneAt?: string | null
   note?: string | null
+}
+
+/** A chat message as the page shows it; "sending" until the manager's box has it. */
+export interface ChatView extends ChatDoc {
+  status?: 'sending' | 'failed'
 }
 
 /** A problem reading the data, shown above the board. */
@@ -19,6 +24,8 @@ export interface BoardState {
   meta: MetaDoc | null
   rows: RowDoc[]
   actions: ActionView[]
+  /** The chat with the manager, oldest first. */
+  chat: ChatView[]
   notice: Notice | null
   /** Changes arrive as they happen (box: the event stream is connected). */
   live: boolean
@@ -72,6 +79,8 @@ export interface Store {
   canRecord(): boolean
   /** Records an action for the manager; resolves with its id. Rejects with a readable message. */
   record(input: ActionInput): Promise<string>
+  /** Sends the owner's chat message to the manager. Rejects with a readable message. */
+  sendChat(text: string): Promise<void>
   /** The ADR viewer, where this host has one. */
   adr?: {
     file(repo: string, file: string, ref?: string): Promise<AdrFileView>

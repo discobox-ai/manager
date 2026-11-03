@@ -1,4 +1,4 @@
-import type { ActionDoc, AdrFileView, AdrIndexView, DetailsDoc, DoneDoc } from '../shared/docs.ts'
+import type { ActionDoc, AdrFileView, AdrIndexView, ChatDoc, DetailsDoc, DoneDoc } from '../shared/docs.ts'
 import { mergeActions } from './merge.ts'
 import type { ActionInput, BoardState, DetailsState, Loadable, Store } from './types.ts'
 
@@ -8,6 +8,7 @@ interface StateResponse {
   rows: BoardState['rows']
   actions: ActionDoc[]
   actionsDone: DoneDoc[]
+  chat: ChatDoc[]
 }
 
 async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
@@ -47,7 +48,7 @@ function watchUrl<T>(cache: Map<string, { at: number; value: Promise<any> }>, ur
  * actions files changed, and once a minute regardless.
  */
 export function createBoxStore(): Store {
-  let state: BoardState = { loaded: false, meta: null, rows: [], actions: [], notice: null, live: false }
+  let state: BoardState = { loaded: false, meta: null, rows: [], actions: [], chat: [], notice: null, live: false }
   let listeners = new Set<() => void>()
   let detailWatchers = new Map<string, Set<(s: DetailsState) => void>>()
   let detailDocs = new Map<string, DetailsDoc>()
@@ -73,6 +74,7 @@ export function createBoxStore(): Store {
           meta: body.meta,
           rows: body.rows,
           actions: mergeActions(body.actions, done),
+          chat: body.chat ?? [],
           notice: body.meta?.error ? { lead: "Can't read the table.", text: body.meta.error } : null,
         })
       })
@@ -158,6 +160,17 @@ export function createBoxStore(): Store {
       if (!res.ok) throw new Error(body.error ?? `Couldn't record it (HTTP ${res.status}).`)
       refresh()
       return String(body.action?.id ?? '')
+    },
+    async sendChat(text: string) {
+      let res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ text }),
+      })
+      let body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error ?? `Couldn't send it (HTTP ${res.status}).`)
+      if (body.message) set({ chat: [...state.chat, body.message] })
+      refresh()
     },
     adr: {
       file: (repo, file, ref) =>

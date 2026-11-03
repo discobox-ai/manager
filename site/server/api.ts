@@ -8,6 +8,7 @@ export const api = route({
   diffPart: get('/api/diff/:id/:index'),
   events: get('/api/events'),
   record: post('/api/actions'),
+  chat: post('/api/chat'),
   adrIndex: get('/api/adr/:repo'),
   adr: get('/api/adr/:repo/:name.md'),
 })

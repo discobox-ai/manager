@@ -1,9 +1,10 @@
 import { createController } from 'remix/router'
 
-import type { AdrFileView, AdrIndexView, DetailsDoc } from '../app/shared/docs.ts'
+import type { AdrFileView, AdrIndexView, ChatDoc, DetailsDoc } from '../app/shared/docs.ts'
 import { ActionError, appendAction, buildAction, readActions } from './actions.ts'
 import { api } from './api.ts'
 import { changes } from './changes.ts'
+import { appendOwnerMessage, ChatError, readChat } from './chat.ts'
 import { githubOrg } from './config.ts'
 import { actionDoc, detailsDoc, doneDoc, metaDoc, rowDocs } from './docs.ts'
 import { diffFor } from './diff/index.ts'
@@ -21,17 +22,19 @@ export interface StateResponse {
   rows: Awaited<ReturnType<typeof rowDocs>>
   actions: ReturnType<typeof actionDoc>[]
   actionsDone: NonNullable<ReturnType<typeof doneDoc>>[]
+  chat: ChatDoc[]
 }
 
 export default createController(api, {
   actions: {
     async state() {
-      let [table, actions] = await Promise.all([readTable(), readActions()])
+      let [table, actions, chat] = await Promise.all([readTable(), readActions(), readChat()])
       let body: StateResponse = {
         meta: { ...metaDoc(table), syncedAt: Date.now() },
         rows: await rowDocs(table),
         actions: actions.map(actionDoc),
         actionsDone: actions.map(doneDoc).filter((d) => d !== null),
+        chat,
       }
       return Response.json(body, { headers: noStore })
     },
@@ -94,6 +97,22 @@ export default createController(api, {
       return new Response(stream, {
         headers: { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive' },
       })
+    },
+
+    async chat({ request }) {
+      let input: Record<string, unknown>
+      try {
+        input = await request.json()
+      } catch {
+        return Response.json({ error: 'Send the message as JSON.' }, { status: 400 })
+      }
+      try {
+        let message = await appendOwnerMessage(input.text)
+        return Response.json({ ok: true, message })
+      } catch (error) {
+        if (error instanceof ChatError) return Response.json({ error: error.message }, { status: 400 })
+        throw error
+      }
     },
 
     async record({ request }) {

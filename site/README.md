@@ -18,6 +18,18 @@ with Vite. The UI never knows which host it's on. It reads one set of documents
 | Routes | real paths (`/adr/vm`) | the fragment (`#/adr/vm`); the viewer owns the URL |
 | ADR viewer | yes | links to GitHub instead (it can't reach GitHub) |
 | Diff viewer | `/api/diff/:id`, built on request | `diffs` and `diffParts` documents, for open PRs |
+| Chat | `POST /api/chat` to `chat.jsonl`; replies from `chat-replies.jsonl` | an `actions` document of kind `chat`, carried to `chat.jsonl` by the sync; the thread comes back as `chat` documents |
+
+## The board and the chat
+
+The board is an inbox (`app/ui/board.tsx`): the chat with the manager and the table's rows down
+the left, with what needs the owner first and a mark for where each row's work stands, and the
+chosen one in full on the right. The look is "Signal", dark only: Bricolage Grotesque and Martian
+Mono, no boxes, the owner's move in amber.
+
+The chat is one thread. The owner's messages go to `chat.jsonl`, which the manager's `site-chat`
+monitor watches; the manager answers with `scripts/chat reply`, into `chat-replies.jsonl`, so its
+replies wake nothing (the `table` skill, "Chat").
 
 ## The diff viewer
 

@@ -1,5 +1,5 @@
-import type { ActionDoc, DetailsDoc, DoneDoc, MetaDoc, RowDoc } from '../shared/docs.ts'
-import { mergeActions } from './merge.ts'
+import { CHAT_KIND, type ActionDoc, type ChatDoc, type DetailsDoc, type DoneDoc, type MetaDoc, type RowDoc } from '../shared/docs.ts'
+import { mergeActions, mergeChat } from './merge.ts'
 import type { ActionInput, BoardState, DetailsState, Loadable, Notice, Store } from './types.ts'
 
 // The parts of the artifact runtime's db and user capabilities this page uses (contract 0.2.96).
@@ -52,7 +52,7 @@ function newId(): string {
  * carries it to the box, and its actionsDone document comes back when the manager has done it.
  */
 export function createArtifactStore(): Store {
-  let state: BoardState = { loaded: false, meta: null, rows: [], actions: [], notice: null, live: false }
+  let state: BoardState = { loaded: false, meta: null, rows: [], actions: [], chat: [], notice: null, live: false }
   let listeners = new Set<() => void>()
   let db: Db | null = null
   let dbReady: Promise<Db | null> | null = null
@@ -107,7 +107,8 @@ export function createArtifactStore(): Store {
       set({ live: false })
       notice({ lead: `Couldn't read ${what} (${e.code}).`, text: 'Reload the page to try again.' })
     }
-    let actionsChanged = () => set({ actions: mergeActions(actions.values(), done) })
+    let thread = new Map<string, ChatDoc>()
+    let actionsChanged = () => set({ actions: mergeActions(actions.values(), done), chat: mergeChat(thread.values(), actions.values()) })
 
     db.doc('meta/state').onSnapshot((snap) => {
       settled(snap)
@@ -129,6 +130,10 @@ export function createArtifactStore(): Store {
       actions = new Map(snap.docs.map((d) => [d.id, d.data() as unknown as ActionDoc]))
       actionsChanged()
     }, failed('recorded actions'))
+    db.collection('chat').onSnapshot((snap) => {
+      thread = new Map(snap.docs.map((d) => [d.id, d.data() as unknown as ChatDoc]))
+      actionsChanged()
+    }, failed('the chat'))
     db.collection('actionsDone').onSnapshot((snap) => {
       done = new Map(snap.docs.map((d) => [d.id, d.data() as unknown as DoneDoc]))
       actionsChanged()
@@ -197,6 +202,23 @@ export function createArtifactStore(): Store {
       return watchDoc(`diffParts/${id}~${index}`, listener, (error) => ({ error }))
     },
     canRecord: () => writable,
+    async sendChat(text: string) {
+      let db = await connect()
+      if (!db) throw new Error("This view can't send messages: it can't reach the status data.")
+      let body = text.trim()
+      if (!body) throw new Error('Write a message first.')
+      let doc = { id: newId(), at: new Date().toISOString(), kind: CHAT_KIND, key: 'chat', text: body.slice(0, 4000), status: 'pending' }
+      try {
+        await db.collection('actions').doc(doc.id).set(doc)
+      } catch (error: any) {
+        if (error?.code === 'invalid_argument' || error?.code === 'not_granted') {
+          writable = false
+          set({})
+          throw new Error('This view can only look; it can’t send messages.')
+        }
+        throw new Error(`Couldn't send it (${error?.code ?? error?.message ?? error}).`)
+      }
+    },
     async record(input: ActionInput) {
       let db = await connect()
       if (!db) throw new Error("This view can't record actions: it can't reach the status data.")

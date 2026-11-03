@@ -24,6 +24,9 @@ export interface RowDoc extends Row {
 
 export type ActionKind = 'close-pr' | 'close-issue' | 'prioritize' | 'instruct'
 
+/** An actions/<id> document the artifact writes for a chat message; the sync carries it to chat.jsonl. */
+export const CHAT_KIND = 'chat'
+
 /** actions/<id>, and one line of actions.jsonl. */
 export interface ActionDoc {
   id: string
@@ -37,6 +40,16 @@ export interface ActionDoc {
   stateReason?: 'completed' | 'not_planned'
   priority?: 'priority/high' | 'priority/critical'
   text?: string
+}
+
+/** chat/<id>, and one line of chat.jsonl (the owner's) or chat-replies.jsonl (the manager's). */
+export interface ChatDoc {
+  id: string
+  at: string
+  from: 'owner' | 'manager'
+  text: string
+  /** The owner's message a reply answers. */
+  replyTo?: string
 }
 
 /** actionsDone/<id> */

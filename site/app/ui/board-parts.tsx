@@ -1,17 +1,17 @@
-// What every prototype layout of the board shares: the row's parts, how a row is classed (by its
-// move, and by where its work stands), and the compact pieces around the list.
+// The board's pieces: a row's parts, where its work stands (its mark in the list), the header line,
+// and a row's body in the pane.
 import { on, type Handle, type RemixNode } from 'remix/component'
 
-import type { RowDoc } from '../../shared/docs.ts'
-import { hasMove, parseRef, refUrl } from '../../shared/refs.ts'
-import { routes } from '../../routes.ts'
-import { href } from '../../routing.ts'
-import type { ActionView, BoardState, Store } from '../../store/index.ts'
-import { ActionLine } from '../actions.tsx'
-import { RowControls, type RefInfo } from '../row-controls.tsx'
-import { ago, stamp } from '../time.ts'
+import type { RowDoc } from '../shared/docs.ts'
+import { hasMove, parseRef, refUrl } from '../shared/refs.ts'
+import { routes } from '../routes.ts'
+import { href } from '../routing.ts'
+import type { ActionView, BoardState, Store } from '../store/index.ts'
+import { ActionLine } from './actions.tsx'
+import { RowControls, type RefInfo } from './row-controls.tsx'
+import { ago, stamp } from './time.ts'
 
-export interface LayoutProps {
+export interface BoardProps {
   state: BoardState
   store: Store
   now: number
@@ -42,28 +42,6 @@ export function parts(row: RowDoc): Parts {
 export function present(value: string | undefined | null): string {
   let v = (value ?? '').trim()
   return v === '-' || v === '–' || v === '—' ? '' : v
-}
-
-/** The kind of thing the owner is asked to do, from the move's wording. */
-export type MoveKind = 'merge' | 'answer' | 'decide' | 'link' | 'grant' | 'other'
-
-export const MOVE_LABEL: Record<MoveKind, string> = {
-  merge: 'Review and merge',
-  answer: 'Answer a box',
-  decide: 'Decide',
-  link: 'Link an issue',
-  grant: 'Grant access',
-  other: 'Something else',
-}
-
-export function moveKind(row: RowDoc): MoveKind {
-  let m = row.yourMove.toLowerCase()
-  if (/review and merge|\bmerge\b/.test(m)) return 'merge'
-  if (/answer|in the box/.test(m)) return 'answer'
-  if (/link an issue/.test(m)) return 'link'
-  if (/grant|access/.test(m)) return 'grant'
-  if (/decide|agree|pick|accept|choose/.test(m)) return 'decide'
-  return 'other'
 }
 
 /** Where a row's work stands, from what its agent is doing. */
@@ -103,7 +81,7 @@ export function actionsFor(state: BoardState, row: RowDoc): ActionView[] {
 }
 
 /** The board's one header line: name, freshness, what needs you and the worker slots. */
-export function Topline(handle: Handle<LayoutProps & { children?: RemixNode }>) {
+export function Topline(handle: Handle<BoardProps & { children?: RemixNode }>) {
   return () => {
     let { state, store, now, children } = handle.props
     let meta = state.meta
@@ -232,36 +210,6 @@ export function RowBody(handle: Handle<{ row: RowDoc; state: BoardState; store: 
           detailsOpen={detailsOpen}
         />
       </div>
-    )
-  }
-}
-
-/** A row that's one line until it's opened, then shows its body under it. */
-export function LineRow(
-  handle: Handle<{ row: RowDoc; state: BoardState; store: Store; lead?: RemixNode; tail?: RemixNode; showMove?: boolean; open?: boolean; onToggle?: () => void }>,
-) {
-  let openHere = false
-  return () => {
-    let { row, state, store, lead, tail, showMove, open, onToggle } = handle.props
-    let isOpen = open ?? openHere
-    return (
-      <li class={`line-row${isOpen ? ' open' : ''}${parts(row).mine ? ' mine' : ''}`} data-key={row.key}>
-        <button
-          type="button"
-          class="line"
-          aria-expanded={isOpen}
-          mix={on('click', () => {
-            if (onToggle) onToggle()
-            else openHere = !openHere
-            handle.update()
-          })}
-        >
-          {lead}
-          <span class="title">{row.item}</span>
-          {tail}
-        </button>
-        {isOpen ? <RowBody row={row} state={state} store={store} showMove={showMove} /> : null}
-      </li>
     )
   }
 }

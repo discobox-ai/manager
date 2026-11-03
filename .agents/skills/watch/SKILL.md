@@ -28,6 +28,8 @@ done
 discobox-monitor enable discobox-box --name workers -o created-by=me
 # The owner's buttons on the manager site (site/): one line per action.
 discobox-monitor enable file --name site-actions -o path=$HOME/.local/state/discobox-manager/actions.jsonl
+# The owner's chat on the site and artifact: one line per message (table skill, "Chat").
+discobox-monitor enable file --name site-chat -o path=$HOME/.local/state/discobox-manager/chat.jsonl
 # Disk.
 discobox-monitor enable command --name disk -o cmd='df -BG --output=avail / | tail -1' -o every=5m
 ```

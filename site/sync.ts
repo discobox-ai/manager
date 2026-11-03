@@ -15,11 +15,12 @@ import * as fsp from 'node:fs/promises'
 import * as path from 'node:path'
 
 import { appendAction, buildAction, readActions, ActionError } from './server/actions.ts'
-import { actionsDonePath, stateDir, tablePath } from './server/config.ts'
+import { actionsDonePath, chatPath, chatRepliesPath, stateDir, tablePath } from './server/config.ts'
+import { appendOwnerMessage, chatIds, readChat } from './server/chat.ts'
 import { diffFor } from './server/diff/index.ts'
 import { detailsDoc, doneDoc, metaDoc, rowDocs, wantedDetails } from './server/docs.ts'
 import { hasMove, readTable, type Row } from './server/table.ts'
-import type { DetailsDoc } from './app/shared/docs.ts'
+import { CHAT_KIND, type DetailsDoc } from './app/shared/docs.ts'
 
 const syncDir = process.env.SYNC_DIR ?? path.join(stateDir, 'artifact-sync')
 const docsDir = path.join(syncDir, 'docs')
@@ -139,6 +140,9 @@ async function buildDocs(state: SyncState): Promise<{ docs: Map<string, Record<s
     }),
   )
   for (let row of await rowDocs(table, details)) docs.set(`rows/${docId(row.key)}`, row)
+
+  // The chat thread, both sides; the page shows them in order.
+  for (let m of await readChat()) if (VALID_ID.test(m.id)) docs.set(`chat/${m.id}`, m)
 
   // The diff viewer's documents, for open PRs: one per PR, and one per file with its bulky views.
   await Promise.all(
@@ -265,7 +269,9 @@ async function cycle(state: SyncState) {
     let moveChanged = moveSet !== state.lastMoveSet
     let due = now - state.lastFlushAt >= FLUSH_MIN_MS
     let heartbeat = now - state.lastFlushAt >= HEARTBEAT_MS
-    if (ONCE || (pending && (due || moveChanged)) || heartbeat) {
+    // A chat message or reply goes out at once: someone is waiting on it.
+    let chatWaiting = Object.keys(state.pending).some((k) => k.startsWith('chat/'))
+    if (ONCE || (pending && (due || moveChanged || chatWaiting)) || heartbeat) {
       let batches = await flush(state, meta, moveSet, DRY)
       log(`${changed} changed; flushed ${batches.reduce((n, b) => n + b.length, 0)} writes in ${batches.length} batch(es)${moveChanged ? ' (Your move changed)' : ''}`)
       if (DRY) printQueue(batches)
@@ -311,7 +317,14 @@ async function ingestInbox(state: SyncState) {
       let id = String(doc.id ?? path.basename(file, '.json'))
       if (!VALID_ID.test(id)) throw new ActionError(`bad id ${JSON.stringify(id)}`)
       if (seen.has(id)) outcome = 'duplicate, skipped'
-      else {
+      else if (doc.kind === CHAT_KIND) {
+        // A chat message, not an action: it joins the thread the site-chat monitor watches.
+        if ((await chatIds()).has(id)) outcome = 'duplicate, skipped'
+        else await appendOwnerMessage(doc.text, { id, at: doc.at })
+        state.ingested.push(id)
+        seen.add(id)
+        outcome = outcome === 'ingested' ? 'chat message' : outcome
+      } else {
         let row: Row = table.rows.find((r) => r.key === doc.key) ?? syntheticRow(doc)
         let form = new FormData()
         for (let k of ['kind', 'reason', 'stateReason', 'priority', 'text']) if (doc[k] != null) form.set(k, String(doc[k]))
@@ -360,7 +373,7 @@ async function main() {
   await cycle(state)
   if (ONCE) return
 
-  for (let file of [tablePath, actionsDonePath]) {
+  for (let file of [tablePath, actionsDonePath, chatPath, chatRepliesPath]) {
     fs.watchFile(file, { interval: 1000 }, (cur, prev) => {
       if (cur.mtimeMs !== prev.mtimeMs || cur.ino !== prev.ino || cur.size !== prev.size) void cycle(state)
     })
