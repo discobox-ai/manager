@@ -55,7 +55,10 @@ export function BoardPage(handle: Handle<{ store: Store }>) {
             <span class={`glyph ${s}`} title={STAGE_LABEL[s]}>
               {STAGE_GLYPH[s]}
             </span>
-            <span class="title">{r.item}</span>
+            <span class="title">
+              {r.item}
+              {parts(r).mine ? <span class="need">{r.yourMove}</span> : null}
+            </span>
           </button>
         </li>
       )

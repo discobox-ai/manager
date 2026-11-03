@@ -188,9 +188,13 @@ function docFile(docPath: string) {
 /** Writes changed documents to disk and records them (and deletions) as pending writes. */
 async function stage(state: SyncState, docs: Map<string, Record<string, any>>): Promise<number> {
   let changed = 0
+  let byCollection = new Map<string, number>()
+  let sample: string | null = null
   for (let [docPath, doc] of docs) {
     let h = hashOf(doc)
     if (state.hashes[docPath] === h) continue
+    byCollection.set(docPath.split('/')[0], (byCollection.get(docPath.split('/')[0]) ?? 0) + 1)
+    if (!sample && state.hashes[docPath]) sample = `${docPath}: ${await whatChanged(docPath, doc)}`
     await writeAtomic(docFile(docPath), JSON.stringify(doc))
     state.hashes[docPath] = h
     state.pending[docPath] = 'set'
@@ -203,7 +207,32 @@ async function stage(state: SyncState, docs: Map<string, Record<string, any>>): 
     state.pending[docPath] = 'delete'
     changed++
   }
+  // A large change is worth a look: which collections, and one document's first difference.
+  if (changed > 20) log(`changed by collection: ${[...byCollection].map(([c, n]) => `${c} ${n}`).join(', ')}${sample ? `; e.g. ${sample}` : ''}`)
   return changed
+}
+
+/** The first field where a document differs from its last sent version on disk. */
+async function whatChanged(docPath: string, doc: Record<string, any>): Promise<string> {
+  let before: any
+  try {
+    before = JSON.parse(await fsp.readFile(docFile(docPath), 'utf8'))
+  } catch {
+    return 'no earlier file'
+  }
+  let walk = (a: any, b: any, at: string): string | null => {
+    if (typeof a !== typeof b || Array.isArray(a) !== Array.isArray(b)) return `${at} type`
+    if (a && typeof a === 'object') {
+      for (let k of new Set([...Object.keys(a), ...Object.keys(b)])) {
+        if (k === 'syncedAt') continue
+        let d = walk(a[k], b[k], `${at}.${k}`)
+        if (d) return d
+      }
+      return null
+    }
+    return a === b ? null : `${at}: ${JSON.stringify(a)?.slice(0, 60)} -> ${JSON.stringify(b)?.slice(0, 60)}`
+  }
+  return walk(before, doc, '') ?? 'same content, different hash'
 }
 
 function splitBatches(writes: Write[]): Write[][] {

@@ -506,6 +506,9 @@ pre.sig del, .md del { background: var(--bad-wash); color: var(--bad); border-ra
 .composer .send:hover { filter: brightness(0.92); border: 0; }
 .notice.warn { border-left-color: var(--warn); color: var(--ink); }
 .notice.warn strong { color: var(--warn); }
+.inbox-item .title { display: grid; gap: 2px; min-width: 0; }
+.inbox-item .need { color: var(--move); font: 400 10.5px/1.45 var(--font-mono); letter-spacing: 0.02em; text-transform: uppercase; opacity: 0.85; }
+.inbox-item.selected .need { opacity: 1; }
 </style>
   </head>
   <body>
