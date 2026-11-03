@@ -16,6 +16,8 @@ export interface RowControlsProps {
   pr: RefInfo | null
   merge: { href: string; prominent: boolean } | null // the PR on GitHub, when it's open
   store: Store
+  /** Show the GitHub details from the start (a layout's detail pane). */
+  detailsOpen?: boolean
 }
 
 const KIND_LABEL: Record<ActionKind, string> = {
@@ -32,7 +34,7 @@ type Values = Pick<ActionInput, 'reason' | 'stateReason' | 'priority' | 'text'>
  * action only records a line for the manager to carry out: pick one, fill it in, then confirm.
  */
 export function RowControls(handle: Handle<RowControlsProps>) {
-  let expanded = false
+  let expanded = handle.props.detailsOpen ?? false
   let open: ActionKind | null = null
   let confirming: Values | null = null
   let pending = false

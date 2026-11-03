@@ -3,14 +3,15 @@ name: validate-release
 description: Validate a discobox release in an empty (no-source) box, from the release site only — either a fresh install of one release, or an install of an older release, seeded with harnesses, pools (libkrun, container) and boxes, then upgraded to the new one. Records the onboarding experience step by step and compares it with the last recorded run, judging each difference against the release's changes. Reports one verdict comment on the release's tracking issue. Use when a worker box is launched to validate a release.
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write, Agent, Skill, Monitor, AskUserQuestion
 metadata:
-  discobox.role: github-triage
+  discobox.role: github-deliver
   argument-hint: "fresh <to> | upgrade <from> <to>   (e.g. upgrade v0.17.0 v0.18.0)"
 ---
 
 # Validate a release
 
-You are in an **empty box** (`--no-source`): nothing is checked out, and
-nothing of discobox is installed. You install it the way a user does, from the
+Your box is cut from **discobox-ai/release-validation**: its notes skill,
+its baselines and a flake of host prerequisites, and nothing of discobox
+itself. Nothing of discobox is installed. You install it the way a user does, from the
 release site, and check that it installs, onboards, and (in `upgrade` mode)
 upgrades cleanly with real state in it. You never build discobox from source,
 and you never fix anything: what you find goes in the report, and new work as
@@ -19,21 +20,21 @@ an "Issue to file" (`worker`).
 Your tags give the tracking issue (`repo`, `issue`); your prompt gives the
 mode and versions. Follow the `worker` skill for tags, power and comments.
 
-## 0. The baseline
+## 0. The notes and the baseline
 
-The last accepted onboarding record for your mode is kept in
-discobox-ai/manager (`release-validation/onboarding-<mode>.md`), which your
-role can't read. The manager posts it on your tracking issue before it starts
-you, as a comment headed `**Release validation baseline** (<mode>)`:
+Read, from your checkout, before anything else:
 
-```sh
-gh api "repos/$REPO/issues/$ISSUE/comments?per_page=100" \
-  --jq '[.[] | select(.body | startswith("**Release validation baseline** (<mode>)"))][-1].body' > ~/baseline.md
-# empty: no baseline yet, this run makes the first
-```
+- the **`validate-release-notes`** skill: checks carried forward from past
+  findings (run each, report each on its own line), recipes that worked,
+  environment quirks, and differences already explained;
+- **`baselines/onboarding-<mode>.md`**: the last accepted onboarding record.
+  Missing: this run sets the first.
 
-Read it before you start: it tells you what the experience was last time, so
-you notice what changed as it happens.
+For libkrun pools, the repo's flake holds the host prerequisites a user is
+expected to install (`nix develop` gives `LD_LIBRARY_PATH` with
+`libkrun.so.1`, and `passt`). Run the libkrun checks inside it, and run a
+`fresh` install once **without** it too, to see what onboarding tells a user
+who hasn't installed them.
 
 ## 1. Install (from the release site only)
 
@@ -138,9 +139,19 @@ and judge it:
 
 No baseline: say this run sets the first one.
 
-## 7. Report
+## 7. Report, and update what the next run reads
 
-One comment on the tracking issue (your `issue` tag), in this form:
+1. **One PR to discobox-ai/release-validation** (from your fork, `open-pr`
+   for the form), from branch `validate/<mode>-<to>`, holding:
+   - your record as `baselines/onboarding-<mode>.md`;
+   - edits to the notes skill, **only** where it steered you wrong, or where a
+     finding deserves a check next release (add it under "Checks carried
+     forward", naming the issue), or a check's issue is closed and it passed
+     here (drop it, saying so). Never rewrite it for style; never put method
+     there (that belongs in this skill).
+   Merging that PR is the owner accepting the run.
+2. **One report comment on your tracking issue** (your `issue` tag, in
+   discobox-ai/release-validation), in this form:
 
 ```markdown
 **Release validation** — <mode> <from →> <to>: PASS | FAIL
@@ -148,26 +159,22 @@ One comment on the tracking issue (your `issue` tag), in this form:
 | Check | Result | Evidence |
 |---|---|---|
 | ... | PASS | ... |
+| (each carried-forward check) | ... | ... |
 
-### Onboarding compared with the last run
-- Step 3 (Choose a pool): wording changed — expected, #498. ...
-- No baseline: this run sets the first.
+### Onboarding compared with the baseline
+- Step 3 (Choose a pool): wording changed — expected, discobox-ai/discobox#498. ...
 
 ### Findings
-(none) | each one, with an **Issue to file** comment posted separately (`worker`)
+(none) | each one, with an **Issue to file** comment posted separately (`worker`), for discobox-ai/discobox
 
-<details><summary>New onboarding record (onboarding-<mode>.md)</summary>
-
-...the whole file...
-
-</details>
+Run PR: #<P> (new baseline and note edits)
 ```
 
-then the footer. The manager commits the record as the new baseline once the
-owner accepts the run. Tag `ready` and power off (`worker`, Power).
+then the footer. Tag `ready` and power off (`worker`, Power).
 
 ## Done when
 
-The report comment is on the tracking issue, with every §5 check answered,
-every onboarding difference judged, the new record attached, and each
-finding posted as an Issue to file.
+The run PR is open with the new record and any note edits, and the report
+comment is on the tracking issue: every §5 and carried-forward check
+answered, every onboarding difference judged, each finding posted as an Issue
+to file.

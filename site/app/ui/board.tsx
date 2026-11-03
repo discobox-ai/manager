@@ -3,6 +3,8 @@ import type { Handle, RemixNode } from 'remix/component'
 import { hasMove } from '../shared/refs.ts'
 import type { BoardState, Store } from '../store/index.ts'
 import { ActionLine } from './actions.tsx'
+import { GroupedLayout, InboxLayout, KanbanLayout, KeysLayout, LinesLayout, NextLayout, RailLayout, SummaryLayout } from './layouts/layouts.tsx'
+import { layoutEvents, layoutNow } from './style-picker.tsx'
 import { RowCard } from './row-card.tsx'
 import { Page } from './shell.tsx'
 import { ago, stamp } from './time.ts'
@@ -15,6 +17,9 @@ export function BoardPage(handle: Handle<{ store: Store }>) {
   let { store } = handle.props
   let now = Date.now()
   let unsubscribe = store.subscribe(() => handle.update())
+  let onLayout = () => handle.update()
+  layoutEvents.addEventListener('change', onLayout)
+  handle.signal.addEventListener('abort', () => layoutEvents.removeEventListener('change', onLayout))
   // Relative times tick even when nothing else changes.
   let timer = setInterval(() => {
     now = Date.now()
@@ -34,12 +39,23 @@ export function BoardPage(handle: Handle<{ store: Store }>) {
     let others = rest.filter((r) => !hasMove(r))
     let pending = state.actions.filter((a) => a.status === 'pending').length
     let recent = [...state.actions].reverse().slice(0, 10)
+    let layout = store.host === 'box' ? layoutNow() : ''
+    let Layout = PROTOTYPES[layout]
+    if (Layout) {
+      return (
+        <Page title="Manager status" layouts>
+          <div class={`layout layout-${layout}`}>
+            <Layout key={layout} state={state} store={store} now={now} />
+          </div>
+        </Page>
+      )
+    }
     let card = (row: BoardState['rows'][number]) => (
       <RowCard key={row.key} row={row} actions={state.actions.filter((a) => a.key === row.key)} store={store} />
     )
 
     return (
-      <Page title="Manager status">
+      <Page title="Manager status" layouts>
         <header class="strip">
           <h1>Manager status</h1>
           <When state={state} store={store} now={now} />
@@ -118,6 +134,17 @@ export function BoardPage(handle: Handle<{ store: Store }>) {
       </Page>
     )
   }
+}
+
+const PROTOTYPES: Record<string, typeof InboxLayout> = {
+  inbox: InboxLayout,
+  lines: LinesLayout,
+  next: NextLayout,
+  grouped: GroupedLayout,
+  kanban: KanbanLayout,
+  keys: KeysLayout,
+  rail: RailLayout,
+  summary: SummaryLayout,
 }
 
 function When(handle: Handle<{ state: BoardState; store: Store; now: number }>) {

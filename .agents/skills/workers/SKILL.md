@@ -111,24 +111,22 @@ driving it. The only exception is "submit box X".
 ### Release validation boxes
 
 To validate a release (owner, 2026-11-03), open a tracking issue in
-discobox-ai/discobox ("Release validation: <from> → <to>"), then start two
-**empty** boxes with the `validate-release` skill, role `github-triage` on
-discobox-ai/discobox (they only comment):
+**discobox-ai/release-validation** ("<from> → <to>"), then start two boxes
+**cut from that repository** with the `validate-release` skill and its role
+(`github-deliver` on release-validation; they open one PR there each):
 
 ```sh
-discobox run -d --no-source --skills discobox-ai/manager//worker-skills \
-  --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-triage.json,owner=discobox-ai,repo=discobox" \
+discobox run -d --skills discobox-ai/manager//worker-skills \
+  --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-deliver.json,owner=discobox-ai,repo=release-validation,forkOwner=$FORK" \
+  https://github.com/discobox-ai/release-validation@main \
   -p '/validate-release upgrade <from> <to>'      # and a second box: '/validate-release fresh <to>'
-discobox tag <id> repo=discobox-ai/discobox issue=<N> job=validate
+discobox tag <id> repo=discobox-ai/release-validation issue=<N> job=validate fork=$FORK
 ```
 
-Before starting them, post each mode's baseline on the issue (workers can't
-read this repository): a comment headed `**Release validation baseline**
-(<mode>)` holding `release-validation/onboarding-<mode>.md`, if it exists.
-
-Each posts one report on the issue. When the owner accepts a run, commit its
-attached onboarding record to `release-validation/onboarding-<mode>.md` here
-(the next run's baseline), then retire the box.
+Each opens a run PR (new baseline, note edits) and posts one report on the
+issue. Findings come as "Issue to file" comments for discobox-ai/discobox:
+file them there. The owner merging a run PR accepts the run; then retire its
+box.
 
 ### Prototype boxes
 

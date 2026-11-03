@@ -6,13 +6,13 @@ import { host } from '../store/index.ts'
 import { StylePicker } from './style-picker.tsx'
 
 /** The page column every route renders into. */
-export function Page(handle: Handle<{ title: string; children?: RemixNode }>) {
+export function Page(handle: Handle<{ title: string; layouts?: boolean; children?: RemixNode }>) {
   return () => {
     document.title = handle.props.title
     return (
       <>
         <div class="wrap">{handle.props.children}</div>
-        {host === 'box' ? <StylePicker /> : null}
+        {host === 'box' ? <StylePicker layouts={handle.props.layouts} /> : null}
       </>
     )
   }

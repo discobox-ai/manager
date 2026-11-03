@@ -30,10 +30,24 @@ export function applyStyle(id: string) {
   } catch {}
 }
 
-export function StylePicker(handle: Handle) {
+export function StylePicker(handle: Handle<{ layouts?: boolean }>) {
+  let onLayout = () => handle.update()
+  layoutEvents.addEventListener('change', onLayout)
+  handle.signal.addEventListener('abort', () => layoutEvents.removeEventListener('change', onLayout))
   return () => {
     let current = document.documentElement.dataset.style ?? ''
+    let layout = layoutNow()
     return (
+      <div class="picker-dock">
+      {handle.props.layouts ? (
+        <div class="style-picker" role="group" aria-label="Prototype layout">
+          {LAYOUTS.map((l) => (
+            <button key={l.id || 'cards'} type="button" aria-pressed={layout === l.id} mix={on('click', () => setLayout(l.id))}>
+              {l.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div class="style-picker" role="group" aria-label="Prototype style">
         {STYLES.map((s) => (
           <button
@@ -49,6 +63,47 @@ export function StylePicker(handle: Handle) {
           </button>
         ))}
       </div>
+      </div>
     )
   }
+}
+
+// The same for the board's layout: eight prototypes over the current one.
+export const LAYOUTS = [
+  { id: '', label: 'Cards' },
+  { id: 'inbox', label: 'Inbox' },
+  { id: 'lines', label: 'Lines' },
+  { id: 'next', label: 'Next up' },
+  { id: 'grouped', label: 'Grouped' },
+  { id: 'kanban', label: 'Board' },
+  { id: 'keys', label: 'Keys' },
+  { id: 'rail', label: 'Rail' },
+  { id: 'summary', label: 'Summary' },
+] as const
+
+const LAYOUT_KEY = 'manager-site-layout'
+export const layoutEvents = new EventTarget()
+
+export function chosenLayout(): string {
+  let fromUrl = new URLSearchParams(location.search).get('layout')
+  if (fromUrl != null && LAYOUTS.some((l) => l.id === fromUrl)) return fromUrl
+  try {
+    return localStorage.getItem(LAYOUT_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+let currentLayout: string | null = null
+
+export function layoutNow(): string {
+  return (currentLayout ??= chosenLayout())
+}
+
+export function setLayout(id: string) {
+  currentLayout = id
+  try {
+    localStorage.setItem(LAYOUT_KEY, id)
+  } catch {}
+  layoutEvents.dispatchEvent(new Event('change'))
 }
