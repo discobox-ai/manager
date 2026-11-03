@@ -81,7 +81,8 @@ wakes you. Then:
 "Manager status" (https://claude.ai/code/artifact/21128720-e384-4249-a3d0-9b8b6b5e7923)
 shows the same view anywhere the owner is signed in to claude.ai. Its
 database is fed by `site/sync.ts` (service `manager-sync`) through a sync
-agent you run in the background (Agent tool): it watches
+agent you run in the background (Agent tool, `model: haiku`: the job is
+mechanical): it watches
 `artifact-sync/changed.log` with a Monitor, sends each outbox batch with the
 Artifact tool's `write_db` (`db_op` batch, the file's `writes`), deletes the
 file, then pulls `actions` with status `pending` into `artifact-sync/inbox/`
