@@ -131,7 +131,7 @@ job needs; don't ask for it.
   ```bash
   FORK=$(jq -r '.tags.fork // empty' ~/.discobox/meta.json)   # the bot account
   UP_URL=https://github.com/$REPO                  # read only: fetch BASE from here
-  GH_URL=https://github.com/$FORK/${REPO#*/}       # yours: push your branch here
+  GH_URL=https://github.com/$FORK/${REPO#*/}.git   # yours: push your branch here (the .git form: the role names it)
   git -c credential.helper= \
     -c credential.helper='!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
     push "$GH_URL" HEAD:refs/heads/<branch>
