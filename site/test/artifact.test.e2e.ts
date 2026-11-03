@@ -112,6 +112,23 @@ describe('artifact (vite build --mode artifact)', () => {
     await card.locator('.pill.done').waitFor()
   })
 
+  it('resolves a move as an actions document, and the manager can reopen it', async (t) => {
+    let page = await t.serve(await serve(() => artifactPage()))
+    await page.goto('/')
+    let list = page.getByRole('navigation', { name: 'Rows' })
+    let pane = page.locator('.inbox-pane')
+    await pane.getByRole('heading', { name: 'VM snapshots ADR' }).waitFor()
+    await pane.getByRole('button', { name: 'Resolved ✓' }).click()
+    await list.getByRole('heading', { name: 'Resolved · 1' }).waitFor()
+
+    let { data } = (await page.evaluate(() => (window as any).__writes)).at(-1)
+    assert.equal(data.kind, 'resolve')
+    assert.equal(data.move, 'Review and merge')
+    await page.evaluate((id) => (window as any).__put(`actionsDone/${id}`, { id, done: true, at: new Date().toISOString(), unresolved: true, note: 'PR 38 is still open' }), data.id)
+    await list.getByText('Reopened: PR 38 is still open').waitFor()
+    await list.getByRole('heading', { name: 'Your move · 1' }).waitFor()
+  })
+
   it('hides the action buttons from a view-only viewer', async (t) => {
     let page = await t.serve(await serve(() => artifactPage({ writable: false })))
     await page.goto('/')

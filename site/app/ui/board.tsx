@@ -2,7 +2,7 @@ import { on, type Handle } from 'remix/component'
 
 import type { RowDoc } from '../shared/docs.ts'
 import type { Store } from '../store/index.ts'
-import { groups, Notice, parts, RecentLine, RowBody, stage, STAGE_GLYPH, STAGE_LABEL, Topline } from './board-parts.tsx'
+import { groups, Notice, parts, RecentLine, reopenedNote, RowBody, stage, STAGE_GLYPH, STAGE_LABEL, Topline } from './board-parts.tsx'
 import { ChatPanel, hasUnread } from './chat.tsx'
 import { Page } from './shell.tsx'
 
@@ -37,27 +37,34 @@ export function BoardPage(handle: Handle<{ store: Store }>) {
   return () => {
     let state = store.board()
     now = Math.max(now, Date.now())
-    let { mine, others, finished } = groups(state)
-    let all = [...mine, ...others, ...finished]
+    let { mine, others, finished, resolved } = groups(state)
+    let all = [...mine, ...others, ...finished, ...resolved]
+    let isResolved = new Set(resolved.map((r) => r.key))
+    // The first row is chosen until the owner picks another, and stays chosen as the list
+    // reorders (a row the owner just resolved stays open where they were looking).
+    if (selected === null && all[0]) selected = all[0].key
     let row = selected === CHAT ? null : (all.find((r) => r.key === selected) ?? (selected === null ? all[0] : null))
     let chatOpen = selected === CHAT || !row
     let last = state.chat.at(-1)
     let item = (r: RowDoc) => {
+      let done = isResolved.has(r.key)
       let s = stage(r)
+      let reopened = !done && parts(r).mine ? reopenedNote(state, r) : null
       return (
         <li key={r.key}>
           <button
             type="button"
-            class={`inbox-item${r === row ? ' selected' : ''}`}
+            class={`inbox-item${r === row ? ' selected' : ''}${done ? ' resolved' : ''}`}
             aria-current={r === row}
             mix={on('click', () => choose(r.key))}
           >
-            <span class={`glyph ${s}`} title={STAGE_LABEL[s]}>
-              {STAGE_GLYPH[s]}
+            <span class={`glyph ${done ? 'done' : s}`} title={done ? 'Resolved' : STAGE_LABEL[s]}>
+              {done ? '✓' : STAGE_GLYPH[s]}
             </span>
             <span class="title">
               {r.item}
               {parts(r).mine ? <span class="need">{r.yourMove}</span> : null}
+              {reopened ? <span class="reopened">Reopened: {reopened}</span> : null}
             </span>
           </button>
         </li>
@@ -90,6 +97,12 @@ export function BoardPage(handle: Handle<{ store: Store }>) {
               <ul>{mine.map(item)}</ul>
               <h2>In progress · {others.length + finished.length}</h2>
               <ul>{[...others, ...finished].map(item)}</ul>
+              {resolved.length ? (
+                <>
+                  <h2>Resolved · {resolved.length}</h2>
+                  <ul>{resolved.map(item)}</ul>
+                </>
+              ) : null}
             </nav>
             <article class="inbox-pane">
               {chatOpen ? (
@@ -99,7 +112,15 @@ export function BoardPage(handle: Handle<{ store: Store }>) {
                 </>
               ) : (
                 <>
-                  {parts(row!).mine ? <div class="move">→ {row!.yourMove}</div> : null}
+                  {parts(row!).mine ? (
+                    <div class={`move${isResolved.has(row!.key) ? ' resolved' : ''}`}>
+                      {isResolved.has(row!.key) ? '✓ Resolved · ' : '→ '}
+                      {row!.yourMove}
+                    </div>
+                  ) : null}
+                  {reopenedNote(state, row!) && !isResolved.has(row!.key) ? (
+                    <p class="reopened-note">The manager reopened this: {reopenedNote(state, row!)}</p>
+                  ) : null}
                   <h2 class="pane-title">{row!.item}</h2>
                   <RowBody key={row!.key} row={row!} state={state} store={store} detailsOpen={Boolean(parts(row!).pr || parts(row!).issue)} />
                 </>

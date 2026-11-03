@@ -3,6 +3,8 @@
 
   action list [--all] [--json]   pending actions, one per line (--all: done ones too)
   action done ID [NOTE ...]      mark an action done, with an optional note the owner sees
+  action unresolve ID NOTE ...   reopen the owner's "Resolved" (a resolve action): the row goes back
+                                 to Your move on the page, with NOTE saying why it still needs them
 
 The site appends each action to actions.jsonl; done marks go to actions-done.jsonl, one JSON
 line each, in SITE_STATE_DIR (default ~/.local/state/discobox-manager).
@@ -47,6 +49,8 @@ def target(a):
         return f"label issue {ref(a.get('issue'))} {a.get('priority')}"
     if k == "instruct":
         return f"instruction: {a.get('text')!r}"
+    if k == "resolve":
+        return f"resolved, says the owner: move={a.get('move')!r}"
     return k or "?"
 
 
@@ -64,16 +68,23 @@ def main(argv):
             if "--json" in args:
                 print(json.dumps({**a, **({"done": True, "note": d.get("note")} if d else {})}))
                 continue
-            status = "done   " if d else "pending"
+            status = ("reopened" if d.get("unresolved") else "done   ") if d else "pending"
             print(f"{a.get('id')}  {status}  {a.get('at', '')[:16]}  [{a.get('key')}]  {target(a)}"
                   + (f"  -- {d.get('note')}" if d and d.get("note") else ""))
-    elif cmd == "done":
+    elif cmd in ("done", "unresolve"):
         if not args:
-            sys.exit("action: done needs an ID")
+            sys.exit(f"action: {cmd} needs an ID")
         aid, note = args[0], " ".join(args[1:])
-        if not any(a.get("id") == aid for a in read(ACTIONS)):
+        action = next((a for a in read(ACTIONS) if a.get("id") == aid), None)
+        if not action:
             sys.exit(f"action: no action {aid!r}")
+        if cmd == "unresolve" and action.get("kind") != "resolve":
+            sys.exit(f"action: {aid} is a {action.get('kind')}, not a resolve")
+        if cmd == "unresolve" and not note:
+            sys.exit("action: unresolve needs a NOTE: why the row still needs the owner")
         line = {"id": aid, "done": True, "at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")}
+        if cmd == "unresolve":
+            line["unresolved"] = True
         if note:
             line["note"] = note
         os.makedirs(DIR, exist_ok=True)

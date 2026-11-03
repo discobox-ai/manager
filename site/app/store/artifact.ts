@@ -233,7 +233,7 @@ export function createArtifactStore(): Store {
         pr: input.pr?.number ?? null,
         status: 'pending',
       }
-      for (let name of ['reason', 'stateReason', 'priority', 'text'] as const) {
+      for (let name of ['reason', 'stateReason', 'priority', 'text', 'move'] as const) {
         if (input[name]) doc[name] = input[name]
       }
       try {

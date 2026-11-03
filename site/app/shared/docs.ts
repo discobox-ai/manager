@@ -34,7 +34,7 @@ export interface RowDoc extends Row {
   prOpen: boolean | null
 }
 
-export type ActionKind = 'close-pr' | 'close-issue' | 'prioritize' | 'instruct'
+export type ActionKind = 'close-pr' | 'close-issue' | 'prioritize' | 'instruct' | 'resolve'
 
 /** An actions/<id> document the artifact writes for a chat message; the sync carries it to chat.jsonl. */
 export const CHAT_KIND = 'chat'
@@ -52,6 +52,8 @@ export interface ActionDoc {
   stateReason?: 'completed' | 'not_planned'
   priority?: 'priority/high' | 'priority/critical'
   text?: string
+  /** resolve: the move the owner says is handled, as the row said it then. */
+  move?: string
 }
 
 /** chat/<id>, and one line of chat.jsonl (the owner's) or chat-replies.jsonl (the manager's). */
@@ -72,6 +74,8 @@ export interface DoneDoc {
   note: string | null
   /** The box refused an action the artifact recorded; note says why. */
   rejected?: boolean
+  /** A resolve the manager reopened (scripts/action unresolve): it still needs the owner; note says why. */
+  unresolved?: boolean
 }
 
 export interface Label {

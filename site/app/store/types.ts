@@ -2,7 +2,8 @@ import type { ActionDoc, ActionKind, ChatDoc, AdrFileView, AdrIndexView, Details
 
 /** A recorded action with what became of it. */
 export interface ActionView extends ActionDoc {
-  status: 'pending' | 'done' | 'refused'
+  /** reopened: a resolve the manager says still needs the owner. */
+  status: 'pending' | 'done' | 'refused' | 'reopened'
   doneAt?: string | null
   note?: string | null
 }
@@ -49,6 +50,8 @@ export interface ActionInput {
   stateReason?: 'completed' | 'not_planned'
   priority?: 'priority/high' | 'priority/critical'
   text?: string
+  /** resolve: the move as the owner saw it. */
+  move?: string
 }
 
 /** How old the data may get before the strip says "stale", and which time it measures. */

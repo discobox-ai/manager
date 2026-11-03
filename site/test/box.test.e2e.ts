@@ -95,6 +95,30 @@ describe('box (vite build)', () => {
     assert.equal(await chat.getByText('The manager has it').count(), 0)
   })
 
+  it('resolves a move to the bottom of the list, until the manager reopens it', async (t) => {
+    let page = await t.serve(await createTestServer(createAppRouter({ buildDir }).fetch))
+    await page.goto('/')
+    let list = page.getByRole('navigation', { name: 'Rows' })
+    let pane = page.locator('.inbox-pane')
+    await pane.getByRole('heading', { name: 'VM snapshots ADR' }).waitFor()
+    await pane.getByRole('button', { name: 'Resolved ✓' }).click()
+    await list.getByRole('heading', { name: 'Resolved · 1' }).waitFor()
+    await list.getByRole('heading', { name: 'Your move · 0' }).waitFor()
+    await pane.locator('.move.resolved').waitFor()
+
+    let action = fs.readFileSync(path.join(stateDir, 'actions.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l)).at(-1)
+    assert.equal(action.kind, 'resolve')
+    assert.equal(action.key, 'vm 33')
+    assert.equal(action.move, 'Answer the box: snapshot format')
+
+    // scripts/action unresolve appends this: back to Your move, with the manager's reason.
+    let line = { id: action.id, done: true, at: new Date().toISOString(), unresolved: true, note: 'The box is still asking' }
+    fs.appendFileSync(path.join(stateDir, 'actions-done.jsonl'), JSON.stringify(line) + '\n')
+    await list.getByRole('heading', { name: 'Your move · 1' }).waitFor({ timeout: 10_000 })
+    await list.getByText('Reopened: The box is still asking').waitFor()
+    await pane.getByRole('button', { name: 'Resolved ✓' }).waitFor()
+  })
+
   it('says so when the artifact sync agent has stopped sending', async (t) => {
     fs.mkdirSync(path.join(stateDir, 'artifact-sync'), { recursive: true })
     let relay = { waiting: 12, oldestAt: Date.now() - 42 * 60_000, checkedAt: Date.now(), stalled: true }

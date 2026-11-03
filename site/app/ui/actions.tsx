@@ -15,6 +15,8 @@ export function describeAction(a: ActionView): string {
       return `${a.priority} on ${target('issue', a.issue)}`
     case 'instruct':
       return `Instruction: “${a.text}”`
+    case 'resolve':
+      return `Resolved: “${a.move ?? ''}”`
     default:
       return String((a as { kind: string }).kind)
   }

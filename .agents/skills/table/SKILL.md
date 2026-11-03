@@ -81,6 +81,16 @@ wakes you. Then:
    as if they had typed it to you.
 3. `scripts/action done <id> "<what you did>"`; the site shows it done.
 
+**Resolved.** A row with a move also has a "Resolved ✓" button: the owner
+says that move is handled, and the page moves the row to a Resolved group at
+the bottom at once. It arrives as a `resolve` action carrying the move as the
+owner saw it. Check it: if it is handled (the PR merged, the box answered),
+update the row (`scripts/table set … move=–`, or its next move) and
+`scripts/action done <id>`. If it still needs the owner, say why:
+`scripts/action unresolve <id> "<what's still needed>"`; the row goes back to
+Your move with that note. A new move on the row is a new ask, so a changed
+move ends the resolve without either.
+
 ## Chat
 
 The site and the artifact both open on an inbox whose first entry is a chat

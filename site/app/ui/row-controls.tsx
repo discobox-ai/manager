@@ -18,6 +18,8 @@ export interface RowControlsProps {
   store: Store
   /** Show the GitHub details from the start (a layout's detail pane). */
   detailsOpen?: boolean
+  /** The row's move, when the owner can mark it resolved (it asks something, and isn't resolved). */
+  resolvable?: string | null
 }
 
 const KIND_LABEL: Record<ActionKind, string> = {
@@ -25,6 +27,7 @@ const KIND_LABEL: Record<ActionKind, string> = {
   'close-issue': 'Close issue',
   prioritize: 'Prioritize',
   instruct: 'Instruction',
+  resolve: 'Resolved ✓',
 }
 
 type Values = Pick<ActionInput, 'reason' | 'stateReason' | 'priority' | 'text'>
@@ -61,6 +64,8 @@ export function RowControls(handle: Handle<RowControlsProps>) {
         return `Label issue ${issue?.fullName}#${issue?.number} ${v.priority}`
       case 'instruct':
         return `Instruction for ${rowKey}: “${v.text}”`
+      case 'resolve':
+        return `Resolved: ${handle.props.resolvable ?? ''}`
     }
   }
 
@@ -87,8 +92,24 @@ export function RowControls(handle: Handle<RowControlsProps>) {
     handle.update()
   }
 
+  /** Resolved takes no form: one press records it, and the row moves down the list. */
+  async function resolve() {
+    let { rowKey, issue, pr, store, resolvable } = handle.props
+    if (!resolvable) return
+    pending = true
+    error = null
+    handle.update()
+    try {
+      await store.record({ key: rowKey, kind: 'resolve', issue, pr, move: resolvable })
+    } catch (caught) {
+      error = caught instanceof Error ? caught.message : String(caught)
+    }
+    pending = false
+    handle.update()
+  }
+
   return () => {
-    let { issue, pr, rowKey, merge, store } = handle.props
+    let { issue, pr, rowKey, merge, store, resolvable } = handle.props
     let kinds: ActionKind[] = store.canRecord()
       ? [...(pr ? (['close-pr'] as const) : []), ...(issue ? (['close-issue', 'prioritize'] as const) : []), 'instruct']
       : []
@@ -107,6 +128,17 @@ export function RowControls(handle: Handle<RowControlsProps>) {
             >
               Merge on GitHub ↗
             </a>
+          ) : null}
+          {resolvable && store.canRecord() ? (
+            <button
+              type="button"
+              class="resolve"
+              disabled={pending}
+              title="Moves this row to Resolved. The manager hears about it, and reopens it if it still needs you."
+              mix={on('click', resolve)}
+            >
+              {KIND_LABEL.resolve}
+            </button>
           ) : null}
           {ids.length ? (
             <button

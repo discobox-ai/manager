@@ -131,10 +131,10 @@ export function metaDoc(table: Table): MetaDoc {
 }
 
 export function actionDoc(a: ActionWithStatus): ActionDoc {
-  let { done: _d, doneAt: _a, note: _n, ...doc } = a
+  let { done: _d, doneAt: _a, note: _n, unresolved: _u, ...doc } = a
   return doc
 }
 
 export function doneDoc(a: ActionWithStatus): DoneDoc | null {
-  return a.done ? { id: a.id, done: true, at: a.doneAt ?? null, note: a.note ?? null } : null
+  return a.done ? { id: a.id, done: true, at: a.doneAt ?? null, note: a.note ?? null, ...(a.unresolved ? { unresolved: true } : {}) } : null
 }

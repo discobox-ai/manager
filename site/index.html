@@ -509,6 +509,13 @@ pre.sig del, .md del { background: var(--bad-wash); color: var(--bad); border-ra
 .inbox-item .title { display: grid; gap: 2px; min-width: 0; }
 .inbox-item .need { color: var(--move); font: 400 10.5px/1.45 var(--font-mono); letter-spacing: 0.02em; text-transform: uppercase; opacity: 0.85; }
 .inbox-item.selected .need { opacity: 1; }
+.inbox-item.resolved .title { color: var(--ink-soft); }
+.inbox-item.resolved .need { color: var(--ink-soft); text-decoration: line-through; opacity: 0.7; }
+.inbox-item .reopened { color: var(--bad); font: 400 11px/1.45 var(--font-body); }
+.glyph.done { color: var(--good); }
+.layout .move.resolved { color: var(--good); }
+.reopened-note { margin: 0; color: var(--bad); font-size: var(--step--1); }
+.layout .controls button.resolve { color: var(--good); font-weight: 600; }
 </style>
   </head>
   <body>

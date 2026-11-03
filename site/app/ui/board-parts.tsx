@@ -7,6 +7,7 @@ import { hasMove, parseRef, refUrl } from '../shared/refs.ts'
 import { routes } from '../routes.ts'
 import { href } from '../routing.ts'
 import type { ActionView, BoardState, Store } from '../store/index.ts'
+import { reopening, resolutions } from '../store/merge.ts'
 import { ActionLine } from './actions.tsx'
 import { RowControls, type RefInfo } from './row-controls.tsx'
 import { ago, stamp } from './time.ts'
@@ -198,6 +199,7 @@ export function RowBody(handle: Handle<{ row: RowDoc; state: BoardState; store: 
     let { row, state, store, detailsOpen, showMove } = handle.props
     let p = parts(row)
     let acts = actionsFor(state, row)
+    let resolved = p.mine && resolutions([row], state.actions).has(row.key)
     return (
       <div class="row-body">
         {showMove && p.mine ? <div class="move">→ {row.yourMove}</div> : null}
@@ -220,15 +222,32 @@ export function RowBody(handle: Handle<{ row: RowDoc; state: BoardState; store: 
           merge={p.pr && row.prOpen !== false ? { href: p.pr.href, prominent: /^review and merge/i.test(row.yourMove.trim()) } : null}
           store={store}
           detailsOpen={detailsOpen}
+          resolvable={p.mine && !resolved ? row.yourMove : null}
         />
       </div>
     )
   }
 }
 
-/** The rows in the board's three groups. */
+/**
+ * The rows in the board's groups: the owner's moves, work in progress, finished boxes, and moves the
+ * owner marked resolved (at the bottom, until the manager reopens one or the move changes).
+ */
 export function groups(state: BoardState) {
   let finished = state.rows.filter((r) => r.key === 'finished')
   let rest = state.rows.filter((r) => r.key !== 'finished')
-  return { mine: rest.filter(hasMove), others: rest.filter((r) => !hasMove(r)), finished }
+  let asks = rest.filter(hasMove)
+  let done = resolutions(asks, state.actions)
+  return {
+    mine: asks.filter((r) => !done.has(r.key)),
+    others: rest.filter((r) => !hasMove(r)),
+    finished,
+    resolved: asks.filter((r) => done.has(r.key)),
+  }
+}
+
+/** Why the manager reopened this row's resolve, if it did. */
+export function reopenedNote(state: BoardState, row: RowDoc): string | null {
+  let a = reopening(row, state.actions)
+  return a ? a.note || 'The manager says this still needs you.' : null
 }

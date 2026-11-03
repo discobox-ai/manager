@@ -3,7 +3,7 @@ import * as fs from 'node:fs/promises'
 
 import { actionsDonePath, actionsPath, stateDir } from './config.ts'
 import type { ActionDoc, ActionKind } from '../app/shared/docs.ts'
-import { parseRef, type Row } from '../app/shared/refs.ts'
+import { hasMove, parseRef, type Row } from '../app/shared/refs.ts'
 
 export type { ActionKind }
 export type RecordedAction = ActionDoc
@@ -12,6 +12,7 @@ export interface ActionWithStatus extends RecordedAction {
   done: boolean
   doneAt?: string
   note?: string
+  unresolved?: boolean
 }
 
 async function readJsonl(path: string): Promise<any[]> {
@@ -41,7 +42,7 @@ export async function readActions(): Promise<ActionWithStatus[]> {
     .filter((a) => a && a.id && a.kind)
     .map((a) => {
       let d = doneById.get(String(a.id))
-      return { ...a, done: Boolean(d), doneAt: d?.at, note: d?.note }
+      return { ...a, done: Boolean(d), doneAt: d?.at, note: d?.note, ...(d?.unresolved ? { unresolved: true } : {}) }
     })
 }
 
@@ -94,6 +95,13 @@ export function buildAction(form: FormData, row: Row): RecordedAction {
       if (!text) throw new ActionError('Write the instruction.')
       let repo = (issue ?? pr)?.fullName
       return line(kind, repo, { text })
+    }
+    case 'resolve': {
+      // The owner says the row's move is handled. It's tied to the move as it reads now: a new move
+      // on the row is a new ask.
+      let move = row.yourMove.trim()
+      if (!hasMove(row)) throw new ActionError('This row asks nothing of you.')
+      return line(kind, (issue ?? pr)?.fullName, { move })
     }
     default:
       throw new ActionError(`Unknown action kind ${JSON.stringify(kind)}.`)
