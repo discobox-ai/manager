@@ -1,6 +1,6 @@
 import * as fs from 'node:fs'
 
-import { actionsDonePath, actionsPath, tablePath } from '../config.ts'
+import { actionsDonePath, actionsPath, tablePath } from './config.ts'
 
 // One poll per file for the whole process. watchFile, not watch: scripts/table replaces the file
 // by rename, which an inode watch loses, and watchFile also copes with a file that doesn't exist yet.

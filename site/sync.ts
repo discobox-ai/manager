@@ -7,17 +7,18 @@
 // `actions` documents into inbox/, and this script appends each one, once, to the real
 // actions.jsonl in the site's own line format.
 //
-// It reuses the site's modules (table, GitHub, markdown, actions) so both views say the same thing.
+// The documents come from server/docs.ts, the same builders the box's API serves, so both views
+// say the same thing.
 import { createHash } from 'node:crypto'
 import * as fs from 'node:fs'
 import * as fsp from 'node:fs/promises'
 import * as path from 'node:path'
 
-import { actionsDonePath, stateDir, tablePath } from './app/config.ts'
-import { appendAction, buildAction, readActions, ActionError } from './app/data/actions.ts'
-import { getIssue, getPull, pullIsOpen, type IssueDetails, type PullDetails } from './app/data/github.ts'
-import { renderMarkdown, rewriteGithubHtml } from './app/data/markdown.ts'
-import { hasMove, parseRef, readTable, type Row } from './app/data/table.ts'
+import { appendAction, buildAction, readActions, ActionError } from './server/actions.ts'
+import { actionsDonePath, stateDir, tablePath } from './server/config.ts'
+import { detailsDoc, doneDoc, metaDoc, rowDocs, wantedDetails } from './server/docs.ts'
+import { hasMove, readTable, type Row } from './server/table.ts'
+import type { DetailsDoc } from './app/shared/docs.ts'
 
 const syncDir = process.env.SYNC_DIR ?? path.join(stateDir, 'artifact-sync')
 const docsDir = path.join(syncDir, 'docs')
@@ -121,56 +122,6 @@ function fit(doc: Record<string, any>): Record<string, any> {
   return doc
 }
 
-function detailsId(repo: string, kind: 'pull' | 'issues', n: number) {
-  return `${repo}~${kind}~${n}`
-}
-
-const ghOpts = { adrLinks: 'github' as const }
-
-function issueDoc(repo: string, n: number, d: IssueDetails) {
-  return {
-    kind: 'issue',
-    repo,
-    number: n,
-    title: d.title,
-    state: d.state,
-    stateReason: d.stateReason,
-    author: d.author,
-    url: d.url,
-    labels: d.labels,
-    bodyHtml: rewriteGithubHtml(d.bodyHtml, repo, ghOpts),
-    comments: d.comments.map((c) => ({ author: c.author, at: c.at, url: c.url, html: rewriteGithubHtml(c.bodyHtml, repo, ghOpts) })),
-  }
-}
-
-function pullDoc(repo: string, n: number, d: PullDetails) {
-  return {
-    ...issueDoc(repo, n, d),
-    kind: 'pull',
-    draft: d.draft,
-    merged: d.merged,
-    mergeable: d.mergeable,
-    mergeableState: d.mergeableState,
-    headSha: d.headSha,
-    headRef: d.headRef,
-    baseRef: d.baseRef,
-    checks: d.checks,
-    files: d.files.map(({ patch: _p, ...f }) => f),
-    filesTruncated: d.filesTruncated,
-    additions: d.additions,
-    deletions: d.deletions,
-    adrs: d.adrs.map((a) => ({
-      path: a.path,
-      filename: a.filename,
-      status: a.status,
-      title: a.title,
-      html: a.error ? '' : renderMarkdown(a.markdown, { repo, ref: d.headSha, dir: 'docs/adr', adrLinks: 'github' }),
-      ...(a.patch ? { patch: a.patch } : {}),
-      ...(a.error ? { error: a.error } : {}),
-    })),
-  }
-}
-
 async function buildDocs(state: SyncState): Promise<{ docs: Map<string, Record<string, any>>; moveSet: string; meta: Record<string, any> }> {
   let table = await readTable()
   if (table.error) throw new Error(table.error)
@@ -178,68 +129,27 @@ async function buildDocs(state: SyncState): Promise<{ docs: Map<string, Record<s
   let need = table.rows.filter((r) => r.key !== 'finished' && hasMove(r))
 
   // Details first, so each row can say whether its PR is open (the merge button).
-  let wanted = new Map<string, { repo: string; kind: 'pull' | 'issues'; n: number }>()
-  for (let row of table.rows) {
-    let pr = parseRef(row.pr)
-    let issue = parseRef(row.issue)
-    if (pr) wanted.set(detailsId(pr.repo, 'pull', pr.number), { repo: pr.repo, kind: 'pull', n: pr.number })
-    if (issue) wanted.set(detailsId(issue.repo, 'issues', issue.number), { repo: issue.repo, kind: 'issues', n: issue.number })
-  }
+  let details = new Map<string, DetailsDoc>()
   await Promise.all(
-    [...wanted].map(async ([id, w]) => {
-      let ref = { repo: w.repo, fullName: `discobox-ai/${w.repo}`, number: w.n }
-      try {
-        let doc = w.kind === 'pull' ? pullDoc(w.repo, w.n, await getPull(ref)) : issueDoc(w.repo, w.n, await getIssue(ref))
-        docs.set(`details/${id}`, fit(doc))
-      } catch (error: any) {
-        docs.set(`details/${id}`, {
-          kind: w.kind === 'pull' ? 'pull' : 'issue',
-          repo: w.repo,
-          number: w.n,
-          error: String(error?.message ?? error).slice(0, 500),
-        })
-      }
+    [...wantedDetails(table.rows)].map(async ([id, w]) => {
+      let doc = await detailsDoc(w.repo, w.kind, w.n, 'github')
+      details.set(id, doc)
+      docs.set(`details/${id}`, 'error' in doc ? doc : fit(doc))
     }),
   )
-
-  for (let [rank, row] of table.rows.entries()) {
-    let pr = parseRef(row.pr)
-    let prDoc = pr ? docs.get(`details/${detailsId(pr.repo, 'pull', pr.number)}`) : undefined
-    let prOpen: boolean | null = null
-    if (prDoc && !prDoc.error) prOpen = prDoc.state === 'open' && !prDoc.merged
-    else if (pr) prOpen = await pullIsOpen(pr)
-    docs.set(`rows/${docId(row.key)}`, { ...rowFields(row), rank, prOpen })
-  }
+  for (let row of await rowDocs(table, details)) docs.set(`rows/${docId(row.key)}`, row)
 
   for (let a of await readActions()) {
-    if (!a.done || !VALID_ID.test(a.id)) continue
-    docs.set(`actionsDone/${a.id}`, { id: a.id, done: true, at: a.doneAt ?? null, note: a.note ?? null })
+    let done = doneDoc(a)
+    if (done && VALID_ID.test(a.id)) docs.set(`actionsDone/${a.id}`, done)
   }
   // An action the page recorded but this box refused: closed on the page with the reason.
   for (let [id, r] of Object.entries(state.rejected)) {
     docs.set(`actionsDone/${id}`, { id, done: true, rejected: true, at: r.at, note: `Not recorded: ${r.note}` })
   }
 
-  let meta = {
-    postedAt: table.postedAt,
-    rowCount: table.rows.length,
-    needYou: need.length,
-    links: table.links,
-  }
+  let { error: _e, ...meta } = metaDoc(table)
   return { docs, moveSet: need.map((r) => r.key).join('\n'), meta }
-}
-
-function rowFields(row: Row) {
-  return {
-    key: row.key,
-    item: row.item,
-    agent: row.agent,
-    issue: row.issue,
-    pr: row.pr,
-    doing: row.doing,
-    yourMove: row.yourMove,
-    why: row.why,
-  }
 }
 
 function docFile(docPath: string) {

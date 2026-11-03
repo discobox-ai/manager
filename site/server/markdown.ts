@@ -2,7 +2,7 @@
 // link rewriting so ADR links open in this site's viewer.
 import { Marked, type Tokens } from 'marked'
 
-import { githubOrg } from '../config.ts'
+import { githubOrg } from './config.ts'
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')

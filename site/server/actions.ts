@@ -1,24 +1,12 @@
 import { randomBytes } from 'node:crypto'
 import * as fs from 'node:fs/promises'
 
-import { actionsDonePath, actionsPath, stateDir } from '../config.ts'
-import { parseRef, type Row } from './table.ts'
+import { actionsDonePath, actionsPath, stateDir } from './config.ts'
+import type { ActionDoc, ActionKind } from '../app/shared/docs.ts'
+import { parseRef, type Row } from '../app/shared/refs.ts'
 
-export type ActionKind = 'close-pr' | 'close-issue' | 'prioritize' | 'instruct'
-
-export interface RecordedAction {
-  id: string
-  at: string
-  kind: ActionKind
-  key: string
-  repo?: string
-  issue: number | null
-  pr: number | null
-  reason?: string
-  stateReason?: 'completed' | 'not_planned'
-  priority?: 'priority/high' | 'priority/critical'
-  text?: string
-}
+export type { ActionKind }
+export type RecordedAction = ActionDoc
 
 export interface ActionWithStatus extends RecordedAction {
   done: boolean

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs the manager site in the foreground on port 4400 (PORT overrides).
-# Remix 3 compiles TypeScript/JSX at runtime (remix/node-tsx and its asset server), so there is
-# no build step: installing dependencies is all the setup there is.
+# The browser app is built with Vite first (dist/ for this site, dist-artifact/artifact.html for
+# the claude.ai artifact); the server runs its TypeScript directly through remix/node-tsx.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -12,6 +12,8 @@ unset DISCOBOX_TOKEN
 if [ ! -d node_modules/remix ] || [ package-lock.json -nt node_modules/.package-lock.json ]; then
   npm ci --no-audit --no-fund
 fi
+
+npm run build --silent
 
 export NODE_ENV=production
 exec node --import remix/node-tsx server.ts

@@ -16,5 +16,4 @@ export const actionsDonePath = path.join(stateDir, 'actions-done.jsonl')
 export const port = Number.parseInt(process.env.PORT ?? '4400', 10)
 export const host = process.env.HOST ?? '0.0.0.0'
 
-export const githubOrg = 'discobox-ai'
-export const defaultRepo = 'discobox'
+export { defaultRepo, githubOrg } from '../app/shared/refs.ts'
