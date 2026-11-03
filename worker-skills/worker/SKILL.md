@@ -59,7 +59,7 @@ move it whenever the state changes:
 | `blocked` | You can't go on without someone else, and it isn't a question on screen: a refused credential, a check you can't make green, a conflict you can't resolve keeping both sides. Say why in a comment on the issue or PR. |
 | `ready` | Your job's end state is reached (the job skill says what that is; for a PR, green), and it needs only a human now. |
 
-Also yours to set: `pr=<P>` once your PR exists. Never change `repo`,
+Also yours to set: `pr=<P>` once your PR exists, and the box's name (below). Never change `repo`,
 `issue`, `job` or `to-delete`; those are the manager's, except that `submit`
 sets `issue` once it files one.
 
@@ -77,9 +77,34 @@ tag() {
 }
 ```
 
-The file holds only `description` and `tags`; anything else makes it
-invalid and it is ignored. At most 64 tags. If the merge fails, nothing is
+The file holds only `name`, `description` and `tags`; anything else makes
+it invalid and it is ignored. At most 64 tags. If the merge fails, nothing is
 written: say so and leave the file alone.
+
+## Name the box
+
+The box's `name` is what the owner sees in `discobox ls` and the window,
+followed by what you're doing. A box named only by a number tells them
+nothing, so **as soon as you know `REPO` and `N`, name the box for the work**:
+the repository, the issue, and its title in a few words (yours, if the title
+is long or vague). At most 128 bytes; aim for under 60.
+
+```bash
+# boxname <text>   set the box's name
+boxname() {
+  local M=~/.discobox/meta.json T; T=$(mktemp)
+  [ "$(printf %s "$1" | wc -c)" -le 128 ] || { echo "name too long"; return 1; }
+  { cat $M 2>/dev/null || echo '{}'; } | jq --arg n "$1" '.name = $n' > $T &&
+  cp $T $M; rm -f $T
+}
+gh api repos/$REPO/issues/$N --jq .title     # read it, then shorten it
+boxname "${REPO#*/}#$N Reconcile backs off superseded intents"
+```
+
+Rename it when what the box is for changes: once your PR is open, add it
+(`discobox#452 → PR 460: Reconcile backs off superseded intents`); a
+`submit` box once it has filed its issue. Don't put state in the name
+(`ready`, `blocked`); that's what the tags are for.
 
 ## Asking the owner
 

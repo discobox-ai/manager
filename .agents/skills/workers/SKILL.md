@@ -50,8 +50,10 @@ discobox run -d --skills discobox-ai/manager//worker-skills \
 - **Tag the box right away**, before anything else:
   `discobox tag <id> repo=<owner>/<name> issue=<N> job=<job> --description '<repo>#<N>: <title>'`.
   The worker reads `repo` and `issue` from its tags (`worker` skill), and
-  waits a little for them. Then set the issue to `status/in-progress`. Tags
-  are set only after launch; `discobox run` has no flag for them.
+  waits a little for them, then names the box for the issue and its title
+  (`worker`, Name the box; `discobox tag` can't set a name). Then set the
+  issue to `status/in-progress`. Tags are set only after launch; `discobox
+  run` has no flag for them.
 - **A launch that prints an error can still make a working box.** Seen with
   push rejections and decode errors. Before launching again, list the boxes
   you created and look for the new one. Two workers on one issue waste a slot

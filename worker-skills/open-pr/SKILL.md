@@ -57,7 +57,8 @@ gh api -X POST repos/$REPO/pulls -f base=$BASE -f head=<branch> -F draft=true \
 
 One PR per branch: if one is open, update its body instead (`gh api -X PATCH
 repos/$REPO/pulls/<pr> -F body=@…`). It stays a draft until green, so nobody
-reviews what CI hasn't passed. Tag the box `pr=<pr>` (`worker`, Tags).
+reviews what CI hasn't passed. Tag the box `pr=<pr>` (`worker`, Tags), and
+add the PR to its name (`worker`, Name the box).
 
 Title: the commit's subject when there's one commit, else a conventional
 subject covering them. Body:

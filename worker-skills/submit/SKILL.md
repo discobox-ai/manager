@@ -87,7 +87,8 @@ Search first: `gh api 'search/issues?q=repo:<repo>+is:issue+is:open+<terms>'`.
   conditional requests", not "ad-hoc work"). If the work is part of a
   tracking issue, say `Part of <repo>#<T>` at the top.
 
-Tag the box `issue=<N>` (`tag issue <N>`, `worker`, Tags). Status line: `issue <repo>#<N>`.
+Tag the box `issue=<N>` (`tag issue <N>`, `worker`, Tags). Name the box for it
+(`worker`, Name the box). Status line: `issue <repo>#<N>`.
 
 ## 3. The design gate
 
