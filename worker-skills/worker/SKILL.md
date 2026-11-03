@@ -199,7 +199,9 @@ whenever you wait, and power off when you're done.** Sleeping is
 
 - **Done** (your state tag is `ready` or `blocked`, or your job
   ended): finish your status line, then power off as the very last thing:
-  `discobox-power sleep --note '<repo>#<N>: <state>'`. The manager wakes you
+  `discobox-power sleep`, with no `--note` (a note needs a wake, and is
+  refused without one: discobox-ai/discobox#518). Your state tag and your
+  last comment are what the manager reads. The manager wakes you
   if there's more to do (a review comment, a conflict, a failing check).
 - **Waiting on something with a time** (CI, a rebuild somewhere else):
   don't poll and don't hold the box up. Sleep with a wake a little after it
