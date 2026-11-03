@@ -9,6 +9,7 @@ export interface Table {
   postedAt: number | null
   rows: Row[]
   links: { label: string; url: string }[]
+  slots?: { max: number; boxes: { id: string; label: string }[] }
   error?: string
 }
 
@@ -40,5 +41,9 @@ export async function readTable(): Promise<Table> {
     let i = String(l).indexOf(': ')
     return i < 0 ? { label: String(l), url: '' } : { label: l.slice(0, i), url: l.slice(i + 2) }
   })
-  return { postedAt: typeof raw.postedAt === 'number' ? raw.postedAt : null, rows, links }
+  let slots =
+    raw.slots && typeof raw.slots.max === 'number' && Array.isArray(raw.slots.boxes)
+      ? { max: raw.slots.max, boxes: raw.slots.boxes.map((b: any) => ({ id: String(b.id), label: String(b.label) })) }
+      : undefined
+  return { postedAt: typeof raw.postedAt === 'number' ? raw.postedAt : null, rows, links, ...(slots ? { slots } : {}) }
 }

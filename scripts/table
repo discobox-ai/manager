@@ -11,6 +11,7 @@ for a row with no issue, or a name for anything else ("finished").
   table link LABEL URL             add or replace a link under the table
   table unlink LABEL ...
   table show                       the rows, one per line
+  table slots                      refresh the slot list (running workers) from discobox ls
 
 Fields: item agent issue pr doing move why ("move" is "Your move"; "–" is none).
 Every write is atomic (a temp file, then a rename) and stamps postedAt.
@@ -91,6 +92,33 @@ def blank(key):
     return r
 
 
+def slots():
+    """Running workers this box created, for the header: {max, boxes: [{id, label}]}."""
+    import subprocess
+    out = subprocess.run(["discobox", "ls", "-o", "json"], capture_output=True, text=True, check=True).stdout
+    me = json.load(open(os.path.expanduser("~/.discobox/meta.json"))).get("id") if os.path.exists(os.path.expanduser("~/.discobox/meta.json")) else None
+    boxes = []
+    for b in json.loads(out).get("sandboxes", []):
+        tags = (b.get("meta") or {}).get("tags") or {}
+        state = (b.get("runtime") or {}).get("runtimeState")
+        if not tags.get("job") or state not in ("running", "starting"):
+            continue
+        if me and b.get("createdBySandboxId") not in (None, me):
+            continue
+        repo = tags.get("repo", "").split("/")[-1]
+        ref = (repo if repo != "discobox" else "") + (" " if repo != "discobox" and tags.get("issue") else "") + (tags.get("issue") or "")
+        label = f"{ref or repo} {tags['job']}".strip()
+        boxes.append({"id": b["id"], "label": label})
+    mx = 6
+    try:
+        for line in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "manager.yaml")):
+            if line.strip().startswith("max:"):
+                mx = int(line.split(":")[1]); break
+    except Exception:
+        pass
+    return {"max": mx, "boxes": boxes}
+
+
 def main(argv):
     if len(argv) < 2 or argv[1] in ("-h", "--help"):
         print(__doc__)
@@ -125,6 +153,8 @@ def main(argv):
     elif cmd == "link":
         label, url = args[0], args[1]
         d["links"] = [l for l in d["links"] if not l.startswith(label + ":")] + [f"{label}: {url}"]
+    elif cmd == "slots":
+        d["slots"] = slots()
     elif cmd == "unlink":
         d["links"] = [l for l in d["links"] if not any(l.startswith(a + ":") for a in args)]
     else:

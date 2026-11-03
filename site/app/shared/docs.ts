@@ -8,6 +8,8 @@ export interface MetaDoc {
   rowCount: number
   needYou: number
   links: { label: string; url: string }[]
+  /** Worker slots: the most allowed, and the workers running now, one line each. */
+  slots?: { max: number; boxes: { id: string; label: string }[] }
   /** When the box last sent this (the artifact); when this answer was built (the box). */
   syncedAt?: number
   /** The table couldn't be read. */

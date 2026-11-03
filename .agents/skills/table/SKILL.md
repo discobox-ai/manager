@@ -56,6 +56,11 @@ inline. The file is `~/.local/state/discobox-manager/table.json`; the
 command writes it atomically and stamps it, and the pane turns "Stale" when
 it's 15 minutes old.
 
+**Slots** (owner, 2026-11-03): the top of the pane, site and artifact shows
+"N/max running" and one line per running worker. Run `scripts/table slots`
+(it reads `discobox ls`) on every worker `box.state` event that starts or
+stops a box, and on each heartbeat.
+
 ## The manager site
 
 `site/` (Remix 3) serves the same table on port 4400, started at boot by

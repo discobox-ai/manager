@@ -125,6 +125,7 @@ export function metaDoc(table: Table): MetaDoc {
     rowCount: table.rows.length,
     needYou: table.rows.filter((r) => r.key !== 'finished' && hasMove(r)).length,
     links: table.links,
+    ...(table.slots ? { slots: table.slots } : {}),
     ...(table.error ? { error: table.error } : {}),
   }
 }

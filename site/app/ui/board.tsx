@@ -50,6 +50,20 @@ export function BoardPage(handle: Handle<{ store: Store }>) {
             </span>
           ) : null}
         </header>
+        {state.meta?.slots ? (
+          <section class="slots" aria-label="Worker slots">
+            <strong>
+              {state.meta.slots.boxes.length}/{state.meta.slots.max} running
+            </strong>
+            <ul>
+              {state.meta.slots.boxes.map((b) => (
+                <li key={b.id}>
+                  {b.label} <code>{b.id}</code>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         {state.notice ? (
           <div class="notice" role="status">
             <strong>{state.notice.lead}</strong> {state.notice.text}
