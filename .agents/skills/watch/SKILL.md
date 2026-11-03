@@ -34,15 +34,30 @@ event once (same `url` and `kind`). Add or drop a pair when `manager.yaml`'s
 repositories change. `discobox-monitor test <monitor> -o … --since 12h`
 replays a past window without enabling anything, to check an option.
 
-Then keep one `discobox-monitor pop --wait=4h` running in the background (the
-Bash tool's `run_in_background`, never a trailing `&`, which detaches it so it
-never wakes you). When it returns, handle each event by `docs/gates.md`, then
-start the next `pop --wait`. Timing out after 4h is the heartbeat: check disk
-and post a one-line "no change" if nothing moved. While a box waiting on the
-owner is due to be paused (`workers`, Power), wait no longer than the time
-left before it's due.
+Then stream the queue with **one** Monitor tool (owner, 2026-11-03), not a
+background `pop --wait`: each event arrives as it lands, with no gap between
+one pop returning and the next starting.
+
+```
+Monitor(
+  command: "export DISCOBOX_SERVER=https://api.discobox.internal; eval \"$(discobox-access env)\"; unset DISCOBOX_TOKEN; discobox-monitor pop --follow",
+  description: "discobox monitor events (manager: GitHub, workers, disk)",
+  timeout_ms: 1800000,
+)
+```
+
+- Handle each event by `docs/gates.md` as it arrives. `discobox-monitor read
+  ID` gives its body.
+- Only one pop at a time: never run a bare `discobox-monitor pop` while the
+  stream is up, or it takes events away from the stream.
+- The Monitor tool expires after 30 minutes. Re-arm it with the same
+  command straight away; events that came in meanwhile are still queued.
+  Each expiry is the heartbeat: check disk, and say nothing unless something
+  changed.
+- While a box waiting on the owner is due to be paused (`workers`, Power),
+  check it when it's due rather than waiting for an event.
 
 ## Start of every session
 
-The `start-loop` skill does it: status, drain, rebuild, then the waiting
-`pop`.
+The `start-loop` skill does it: status, drain, rebuild, then the Monitor
+stream.

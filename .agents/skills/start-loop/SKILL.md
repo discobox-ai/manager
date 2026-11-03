@@ -116,5 +116,5 @@ Re-post the table if a row changed.
 
 ## 7. Wait
 
-Start the waiting `discobox-monitor pop --wait=4h` in the background
-(`watch` skill), and go to the loop's step 2 (`AGENTS.md`).
+Start the Monitor tool streaming `discobox-monitor pop --follow` (`watch`
+skill), and go to the loop's step 2 (`AGENTS.md`).

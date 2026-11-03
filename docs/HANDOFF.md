@@ -82,9 +82,9 @@ target becomes real and nothing needs to poll.
     and one build at a time.
   - Stop dev image watchers a box doesn't need.
   - Check Go caches as well.
-- **Watching:** start a background waiter with the Bash tool's
-  `run_in_background`, never a trailing `&`. A detached one never wakes you;
-  this slipped several times.
+- **Watching:** stream events with Claude Code's Monitor tool running
+  `discobox-monitor pop --follow` (`watch` skill). Never a trailing `&`: a
+  detached waiter never wakes you; this slipped several times.
 - **Flakes:** on a loaded box, tests time out. Check `/proc/loadavg` before
   blaming code. A main-CI failure that's unrelated to its commit gets one
   re-run before a fix box.
