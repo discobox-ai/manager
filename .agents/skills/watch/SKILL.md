@@ -83,6 +83,11 @@ Monitor(
   line (SendMessage): re-arm the Monitor and do a pass. If it doesn't answer
   within a few minutes, start a new one with the same brief (the `table`
   skill, The status artifact). A `recovered:` line needs nothing.
+  Its context grows with every pass (about 70k tokens a pass when busy): when
+  a pass report shows it past ~400k, stop it (TaskStop) and start a fresh one
+  with the same brief before it stalls (2026-11-03). A big backlog can be
+  compacted first: each write names its document's current file, so keeping
+  only the last write per collection/doc_id reaches the same state.
 - While a box waiting on the owner is due to be paused (`workers`, Power),
   check it when it's due rather than waiting for an event.
 
