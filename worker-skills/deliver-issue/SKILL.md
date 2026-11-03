@@ -98,7 +98,7 @@ Invoke `open-pr` with branch `discobox/issue-N`, adding to its rules:
   `git push --force-with-lease=refs/heads/discobox/issue-N:<sha> "$GH_URL"
   HEAD:refs/heads/discobox/issue-N`. A bare `--force-with-lease` to a URL
   has no tracking ref and is always rejected.
-- The body's Testing section carries the review summary and what `verify`
+- The body's Evidence section carries the review summary and what `verify`
   observed, and what couldn't run here.
 
 Status line: `PR #P open, CI <state>`.

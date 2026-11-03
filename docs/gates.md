@@ -18,7 +18,7 @@ sets direction, trust or what ships goes to the owner, as a row on the table.
 | Triage verdict | Applies the labels the verdict proposes. Anything at `priority/medium` or below goes straight to `status/ready` (owner, 2026-11-01); a non-obvious design still gets an ADR first, when a worker picks it up | A choice of product direction (whether to do it at all, or which way), and anything at `priority/high` or `priority/critical`, become `status/needs-decision` |
 | `status/ready` and a free slot | Starts a worker: `propose-adr` if the design is non-obvious and no accepted ADR covers it, else `deliver-issue`. Sets `status/in-progress` | – |
 | An ADR PR is green | – | Accept or reject. Merging it is not acceptance; the owner says "accept", then a worker marks it Accepted in a PR of its own |
-| An implementation PR is green | Sets `status/in-review` | Review and merge |
+| An implementation PR is green | Reads its Evidence against the PR and the issue (`github` skill, The process comment). Something missing or not matching: sends the worker back to do it. Otherwise posts the process comment and sets `status/in-review` | Review and merge, after the comment |
 | A PR conflicts with its base | Has its worker rebase (`rebase-pr`) | – |
 | A PR's CI fails and its worker is stopped | Starts the worker again on `fix-ci` | "Look at it" if the worker says it can't make it green |
 | Main's CI fails | Re-runs once if it looks like a flake (unrelated to the commit). Otherwise, or if it fails twice, files an issue and starts a `fix-ci` worker | – |

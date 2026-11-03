@@ -68,13 +68,22 @@ reviewer should look at first.>
 
 Closes #<N>
 
-## Testing
+## Evidence
 
-- <what ran and its result; pre-existing failures named>
-- <what verify observed, and what couldn't run here>
+- **Review:** discobox-review to sign-off, <rounds> rounds, at `<sha>`: <what
+  it found and what changed>
+- **Verify:** PASS | FAIL | BLOCKED | SKIP: <what was observed at the
+  product's surface, or why there was nothing to run>; not run here:
+  <paths, or none>
+- **Tests:** <what ran and its result; pre-existing failures named>
+- **Done when:** <each item of the issue's Done when, and how it's met>
 
 <sub>From `<$DISCOBOX_ADDRESS>`</sub>
 ```
+
+Fill in every line of **Evidence**, and say plainly when a step wasn't done
+(`Verify: not run, because …`): the manager reads it before the PR reaches
+the owner, and sends back a PR whose Evidence is missing or doesn't match.
 
 `Closes #N` when it delivers the issue; `Part of #N` when it's one step of it
 (an ADR PR). End with whatever attribution line the harness asks PR

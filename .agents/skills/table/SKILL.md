@@ -16,7 +16,8 @@ Status and to-do are one table, ranked:
 - **Doing** says what the agent is doing logically: working, waiting for you,
   waiting on CI, done. Never whether its box is running or stopped.
 - **Your move** is `–` unless the owner has something to do:
-  - "Review and merge", only once every check on the PR's head is green.
+  - "Review and merge", only once every check on the PR's head is green and
+    the process comment for that head is posted (`github` skill).
     Never "review and merge once green".
   - "Look at it" for a failing PR its worker can't make green.
   - "Answer in the box" for a box tagged `needs-input` (or showing a question

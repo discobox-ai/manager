@@ -27,6 +27,44 @@ that could read stdin get `</dev/null` in loops.
   removing the old one in the same call:
   `--remove-label status/ready --add-label status/in-progress`.
 
+## The process comment
+
+Before a green PR goes to the owner as "Review and merge", check its body's
+**Evidence** section (`open-pr`) and comment once on the PR saying what you
+found. It isn't a gate: the owner can merge with or without it. It tells
+them, in one place, what the worker says it did and what's missing.
+
+Check:
+
+- **Head:** the Evidence's review SHA is the PR's head commit, or only
+  commits after it that the Evidence explains.
+- **Review:** discobox-review was driven to sign-off.
+- **Verify:** a verdict, and PASS or a SKIP with a reason; anything not run
+  is named.
+- **Tests and CI:** every check on the head commit is green.
+- **Done when:** every item in the issue's Done when is answered.
+- **ADR:** if the issue needed one, it's Accepted (not just merged).
+
+Anything missing or not matching goes back to the worker first (type it into
+its box: "The PR's Evidence is missing <x>; do it and update the body"). Once
+it's complete, comment:
+
+```markdown
+**Process check** at `<head sha>`
+
+- [x] discobox-review: <rounds>, signed off (worker's report)
+- [x] verify: <verdict> — <one line> (worker's report)
+- [x] CI: all <n> checks green
+- [x] Done when: <n>/<n> covered
+- [x] ADR <id>: Accepted | not needed
+
+Not verified here: <what the worker couldn't run, or "nothing">.
+These are the worker's reports; CI is the only independent check.
+```
+
+A box left unchecked says why. After a new push, check again and post a new
+comment for the new head.
+
 ## Closing
 
 Close through REST, not `gh issue close` or `gh pr close`: those run GraphQL
