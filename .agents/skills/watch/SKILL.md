@@ -26,6 +26,8 @@ for r in discobox vm manager review; do
 done
 # Workers: state, primary terminal busy/idle, secret requests.
 discobox-monitor enable discobox-box --name workers -o created-by=me
+# The owner's buttons on the manager site (site/): one line per action.
+discobox-monitor enable file --name site-actions -o path=$HOME/.local/state/discobox-manager/actions.jsonl
 # Disk.
 discobox-monitor enable command --name disk -o cmd='df -BG --output=avail / | tail -1' -o every=5m
 ```

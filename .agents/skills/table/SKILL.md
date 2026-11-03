@@ -57,6 +57,28 @@ inline. The file is `~/.local/state/discobox-manager/table.json`; the
 command writes it atomically and stamps it, and the pane turns "Stale" when
 it's 15 minutes old.
 
+## The manager site
+
+`site/` (Remix 3) serves the same table on port 4400, started at boot by
+`.discobox/services/manager-site`: "Your move" rows first, each issue and PR
+expandable to its body, checks, files and comments (read live from GitHub,
+read only). It also gives the owner buttons on each row: close or reject a
+PR, close an issue, prioritize, or a free-text instruction. A button only
+records the action, as one line in
+`~/.local/state/discobox-manager/actions.jsonl`; the `site-actions` monitor
+wakes you. Then:
+
+1. `scripts/action list`: the pending actions, with their row, repo, issue
+   or PR, and reason.
+2. Carry each out as the owner's own instruction (`github` skill for
+   closing; `docs/gates.md` for what follows, e.g. retiring a worker whose PR
+   was rejected). A free-text instruction is the owner speaking; act on it
+   as if they had typed it to you.
+3. `scripts/action done <id> "<what you did>"`; the site shows it done.
+
+The site keeps no state of its own and commits nothing: lose the box and
+`start-loop` rebuilds the table.
+
 ## When it changes
 
 Update the row every time it changes, including a worker resuming after the

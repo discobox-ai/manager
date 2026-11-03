@@ -1,0 +1,13 @@
+#!/bin/sh
+#---
+# id: manager-site
+# name: Manager site
+# description: The owner's view of the manager's status table, with GitHub details and recorded actions
+# ports: [4400]
+# protocol: http
+#---
+# Serves site/ (a Remix 3 app) on 0.0.0.0:4400. It reads the manager's table.json and records the
+# owner's actions to actions.jsonl in ~/.local/state/discobox-manager; it never writes to GitHub.
+root="$(cd "$(dirname "$0")/../.." 2>/dev/null && pwd)"
+[ -x "$root/site/start.sh" ] || root="$PWD"
+exec "$root/site/start.sh"
