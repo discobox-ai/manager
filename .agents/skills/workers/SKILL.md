@@ -108,6 +108,24 @@ working", Your move `–`. Count it against `workers.max` like any worker.
 Don't type into an ad-hoc box, and don't answer its prompts: the owner is
 driving it. The only exception is "submit box X".
 
+### Release validation boxes
+
+To validate a release (owner, 2026-11-03), open a tracking issue in
+discobox-ai/discobox ("Release validation: <from> → <to>"), then start two
+**empty** boxes with the `validate-release` skill, role `github-triage` on
+discobox-ai/discobox (they only comment):
+
+```sh
+discobox run -d --no-source --skills discobox-ai/manager//worker-skills \
+  --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-triage.json,owner=discobox-ai,repo=discobox" \
+  -p '/validate-release upgrade <from> <to>'      # and a second box: '/validate-release fresh <to>'
+discobox tag <id> repo=discobox-ai/discobox issue=<N> job=validate
+```
+
+Each posts one report on the issue. When the owner accepts a run, commit its
+attached onboarding record to `release-validation/onboarding-<mode>.md` here
+(the next run's baseline), then retire the box.
+
 ### Prototype boxes
 
 When the owner says they want to prototype something ("prototype X on
