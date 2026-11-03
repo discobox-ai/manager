@@ -78,6 +78,21 @@ working", Your move `–`. Count it against `workers.max` like any worker.
 Don't type into an ad-hoc box, and don't answer its prompts: the owner is
 driving it. The only exception is "submit box X".
 
+### Prototype boxes
+
+When the owner says they want to prototype something ("prototype X on
+discobox"), start an ad-hoc box with the `prototype` skill: same launch and
+role, prompt `/prototype <the idea, in a few words>`, tags `repo=<repo>
+job=prototype`. The box knows it's prototyping: something working fast, no
+tests, review or ADRs, and a `~/prototype.md` of decisions and shortcuts.
+Treat it as an ad-hoc box in everything else: on the table Doing "owner
+prototyping", and you don't type into it.
+
+It ends one of two ways, and the owner says which. **Submit**: "submit box X",
+below; the `submit` skill knows a prototype's code is never the PR as it
+stands. **Drop**: the idea didn't hold, and the owner says so (or the box
+ends on "nothing to submit"): retire the box, filing nothing.
+
 ### "Submit box X"
 
 The owner says it to you, or types "submit" in the box themselves. When it's

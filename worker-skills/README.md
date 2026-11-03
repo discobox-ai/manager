@@ -34,7 +34,8 @@ and skills (`verify-recipes`; `discobox-review` is in every box).
 | Fix CI | `fix-ci` | The fix is a PR, green; tagged `ready` |
 | Rebase | `rebase-pr` | The PR rebased keeping both sides, green; tagged `ready` |
 | Labels | `migrate-labels` | The repository has the `status/*` and `type/*` labels and every open issue is relabelled, after the owner approved the plan in the box; tagged `ready` |
-| Submit | `submit` | An ad-hoc box's work is an issue with a submit comment, then carried on as `deliver-issue`, parked on a pushed branch, or kept as design only |
+| Prototype | `prototype` | The owner has seen the idea working (or not), with `~/prototype.md` listing what was decided and every shortcut; then submitted or dropped |
+| Submit | `submit` | An ad-hoc or prototype box's work is an issue with a submit comment, then carried on as `deliver-issue`, parked on a pushed branch, or kept as design only |
 
 `worker`, `commit`, `open-pr` and `verify` are the building blocks those jobs
 use.

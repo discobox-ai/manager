@@ -17,8 +17,8 @@ The manager tagged the box at launch:
 | Tag | Means |
 |---|---|
 | `repo=<owner>/<name>` | The repository. Every `gh` call and push names it. |
-| `issue=<N>` | The issue, in that repository. Absent on an ad-hoc box until `submit` files one. |
-| `job=<triage\|adr\|deliver\|fix\|rebase\|adhoc>` | The job. |
+| `issue=<N>` | The issue, in that repository. Absent on an ad-hoc or prototype box until `submit` files one. |
+| `job=<triage\|adr\|deliver\|fix\|rebase\|adhoc\|prototype>` | The job. |
 
 ```bash
 REPO=$(jq -r '.tags.repo // empty' ~/.discobox/meta.json)

@@ -33,6 +33,9 @@ description: How the manager handles incoming work — a new issue, an issue the
 ## The owner wants to work on something by hand
 
 Start an ad-hoc box for them (`workers`, Ad-hoc boxes). Nothing is filed yet.
+When they say they want to **prototype** something, it's a prototype box
+(`workers`, Prototype boxes): the box knows to get it working fast, not
+properly.
 When they say "submit" (in the box, or "submit box X" to you), the box's
 `submit` skill files the issue and says what happens to the code; apply its
 comment by `docs/gates.md`.

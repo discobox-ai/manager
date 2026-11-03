@@ -6,6 +6,8 @@ sets direction, trust or what ships goes to the owner, as a row on the table.
 | Event | The manager does alone | Goes to the owner |
 |---|---|---|
 | The owner asks for a box to work in | Starts an ad-hoc box (`workers`, Ad-hoc boxes), within capacity | – |
+| The owner wants to prototype something | Starts a prototype box (`workers`, Prototype boxes), within capacity | – |
+| A prototype is dropped | Retires the box, files nothing | – |
 | The owner says "submit box X" | Types `/submit` into it once it's idle | Its questions, answered in the box |
 | A submit comment lands on an issue (`submit` §5) | Applies its proposed labels and a status: *carry-on* → `status/in-progress`, the box becomes its worker; *parked* → `status/ready`, or `status/blocked` on a Proposed ADR, and the box is retired; *design-only* → `status/ready`, the box is retired. The owner's own work skips triage and the priority gate | A Proposed ADR it opened: accept or reject |
 | A community PR (author not an owner, member or collaborator) with no issue it closes or is part of | Comments that every PR must be linked to an issue, and closes it (`github` skill, Closing) | – |

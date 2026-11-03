@@ -1,6 +1,6 @@
 ---
 name: submit
-description: Bring the work of an ad-hoc session into the process — take stock with the owner, file or find its issue, settle any design choice as an ADR, then either carry the code on to a PR in this box, park it on a pushed branch, or keep only the design. Use when the owner types "submit" (or /submit) in an ad-hoc box, or the manager types it on the owner's behalf.
+description: Bring the work of an ad-hoc or prototype session into the process — take stock with the owner, file or find its issue, settle any design choice as an ADR, then either carry the code on to a PR in this box, park it on a pushed branch, or keep only the design. Use when the owner types "submit" (or /submit) in an ad-hoc or prototype box, or the manager types it on the owner's behalf.
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write, Agent, Skill, Monitor, AskUserQuestion
 metadata:
   discobox.role: github-submit
@@ -15,6 +15,15 @@ skill turns whatever is here into the process's terms, so that from the end of
 it on, the work is like any other: **an issue, with every PR naming it.**
 
 It does not assume the work is finished, and often no PR comes out of it.
+
+**A prototype box** (tagged `job=prototype`, from the `prototype` skill) is
+the same, with two differences. Its `~/prototype.md` is your first source for
+§1: **Decided**, **Works**, and **Shortcuts**, every one of which goes into
+**Missing**. And its code was built to answer a question, not to ship: it is
+never the PR as it stands. *Carry on* (§4) means `deliver-issue` takes it the
+whole way, replacing each shortcut, with the tests, review and verify the
+prototype skipped; recommend *park* or *design only* when the shortcuts are
+most of it.
 
 **Read the `worker` skill first.** It gives you `REPO` and `BASE`, your tags,
 how to ask the owner, and your GitHub access (role `github-submit`). The
@@ -42,7 +51,8 @@ Status line: `submitting: <repo>`.
 
 ## 1. Take stock
 
-Read back the conversation and the working tree (`git status`, `git diff`
+Read back the conversation, `~/prototype.md` on a prototype box, and the
+working tree (`git status`, `git diff`
 against the default branch, `git log` of anything committed here), then run
 the tests of what was touched. Tell the owner, in at most ten lines:
 
@@ -138,7 +148,7 @@ set the issue's labels and decide what happens next, and a fresh session of
 the manager rebuilds from it:
 
 ```markdown
-**Submitted from an ad-hoc session** (box `<box id>`)
+**Submitted from an ad-hoc session** (box `<box id>`, ad-hoc | prototype)
 
 - **Outcome:** carry-on | parked | design-only
 - **Branch:** `discobox/issue-<N>` at `<sha>` | none
