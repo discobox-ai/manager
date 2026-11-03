@@ -36,7 +36,7 @@ you propose them in §5's comment, and it applies them.
 - **One submit per box.** An `issue` tag already set means this box has been
   submitted. Re-running is fine only to carry on what that issue says; never
   file a second issue from the same box.
-- Hold the box up (`worker`, Keeping the box up).
+- Never sit idle (`worker`, Power): when you end, power off.
 
 Status line: `submitting: <repo>`.
 

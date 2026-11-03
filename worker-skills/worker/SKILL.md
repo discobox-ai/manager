@@ -126,12 +126,38 @@ Every comment you post ends with a footer naming this box, so whoever reads
 the issue can find it: `<sub>From \`$DISCOBOX_ADDRESS\`</sub>`. Leave it off
 when `DISCOBOX_ADDRESS` is unset.
 
-## Keeping the box up
+## Power: never sit idle
 
-- A discobox stops after 30 minutes of a still screen, even while something
-  runs in the background. Before any long wait:
-  `touch -d '+2 hours' /run/discobox/keepalive/<job>`; refresh it as you
-  wait, and `rm` it when you finish.
+A box that's waiting costs the pool as much as one that's working. **Sleep
+whenever you wait, and power off when you're done.** Sleeping is
+`discobox-power` (the `discobox` skill, Sleep, and name when to wake):
+
+- **Done** (your state tag is `ready`, `merged` or `blocked`, or your job
+  ended): finish your status line, then power off as the very last thing:
+  `discobox-power sleep --note '<repo>#<N>: <state>'`. The manager wakes you
+  if there's more to do (a review comment, a conflict, a failing check).
+- **Waiting on something with a time** (CI, a rebuild somewhere else):
+  don't poll and don't hold the box up. Sleep with a wake a little after it
+  should be done:
+  `discobox-power sleep --wake-in 12m --note 'check CI on PR <P>'`. The
+  manager may wake you sooner when the event arrives.
+- **Waiting on the owner** (`needs-input`, a question on screen): you can't
+  sleep while the dialog is open. The manager stops the box after 5 still
+  minutes, and the owner opening it to answer starts it again.
+- **Working on something long and quiet** (a build or test run whose output
+  you aren't streaming): hold the box up only for that, with a lease
+  (`discobox-power keepalive <job> --for 1h`), and release it the moment the
+  work ends (`discobox-power keepalive rm <job>`). Never take a lease to
+  wait.
+
+**When you wake**, the clock has jumped. If the box was frozen you carry on
+where you were; read the wakes that fell due in `~/.discobox/wake/.done/`. If
+it was shut down, your session is relaunched: read those wakes, and your tags
+(`needs-input` still set means the owner's answer may be what woke you: if
+the question is gone from the screen, ask it again). Then check the state of
+what you were waiting on, act, and sleep again. When the manager wakes you,
+it types one line saying why.
+
 - Check the disk before anything heavy: `df -h /`. Under 50G free, run
   `docker builder prune -a -f` (this box's build cache only). Never
   `docker image prune -a`, and never delete a shared cache. On a full disk,

@@ -150,10 +150,42 @@ discobox secret request approve <id> --secret github
 - A role that keeps turning out too narrow is a change to its file in
   `roles/`, committed and pushed, not a habit of approving.
 
+## Power
+
+Workers sleep whenever they wait and power off when they're done (the
+`worker` skill, Power). You do the parts they can't:
+
+- **Pause a box waiting on the owner.** A box tagged `needs-input` or
+  `blocked` whose primary terminal has been idle for `workers.pauseAfter`
+  (the `workers` monitor reports busy/idle): `discobox stop <id>`. A question
+  dialog stops the agent from sleeping itself. Note the time it went idle
+  when the event comes, and while any such box is pending, keep the waiting
+  `pop` no longer than the time left (`watch`). The row stays "Answer in the
+  box": opening it starts it again.
+- **Wake a sleeping worker when its work needs it**: a review or comment on
+  its PR, a conflict, a failing check on its head, its PR merged or closed,
+  the owner's "accept" for its ADR. `discobox start <id>`, wait until its
+  terminal is idle at the prompt (`admin terminal screen`), then type one
+  line saying why, e.g. `PR #452 has a new review; carry on (deliver-issue
+  §6).`, then Enter.
+- **A box that woke on its own wake and sits idle at its prompt** (its
+  harness was relaunched and didn't take a turn): type `You woke: read
+  ~/.discobox/wake/.done/ and carry on.`, then Enter.
+- **A worker you find idle with no state tag and nothing on screen** for
+  `workers.pauseAfter`: it forgot to sleep. Type `Set your state tag and
+  sleep (worker skill, Power).`
+- **Capacity counts running workers.** Waking one of your workers for its
+  own PR comes before starting new work; at `workers.max`, it takes the next
+  free slot ahead of any launch.
+
+`discobox tag` starts a stopped box to write the tag, so a box you tag while
+it sleeps is awake afterwards: stop it again if it has nothing to do.
+
 ## Retire
 
 When a worker's PR merges or its job needs nothing more:
-`discobox tag <id> to-delete --rm ready --rm blocked`, then `discobox stop <id>`.
+`discobox tag <id> to-delete --rm ready --rm blocked --rm merged --rm needs-input`,
+then `discobox stop <id>` (tagging woke it).
 An archived box refuses tags (409). List it for deletion anyway. The owner
 deletes boxes, often before you get to them; a 404 means it's already gone.
 

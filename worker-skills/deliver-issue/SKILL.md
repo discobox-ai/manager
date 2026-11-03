@@ -42,7 +42,7 @@ asked.
   closes them once your PR is open.
 - **Read how the repository is built** (`worker`, The repository says how
   it's built), down to each package you'll touch.
-- Hold the box up and check the disk (`worker`, Keeping the box up).
+- Check the disk (`worker`), and never sit idle (`worker`, Power).
 
 ## 1. Implement
 
@@ -105,9 +105,10 @@ Status line: `PR #P open, CI <state>`.
 
 ## 6. Keep it mergeable until merged
 
-Arm a Monitor that checks every 5 minutes, refreshing the keepalive on each
-poll (or the box powers off after 30 still minutes and the Monitor dies with
-it), and react until the PR is merged or closed:
+Don't wait awake. Once the PR is `ready`, **power off** (`worker`, Power):
+the manager watches the PR and wakes you, with a line saying why, when it
+needs you (a review or comment, a conflict, a failing check, a merge). Each
+time you're woken, read the PR's state:
 
 ```bash
 gh api repos/$REPO/pulls/$P --jq '"\(.state) \(.merged_at != null) \(.mergeable_state) \(.head.sha)"'
@@ -134,7 +135,11 @@ gh pr checks $P --repo $REPO --json name,bucket
   top, push, get CI green again.
 - **A failing check on the head commit**: fix it as `open-pr` §4 says.
 - **Merged**: tag `merged`. **Closed without merging**: drop the state tag.
-  Either way stop the Monitor, remove the keepalive, and finish.
+  Either way finish, and power off.
+
+Whatever you did, end each waking by setting your state tag again and
+sleeping: with a wake if you pushed and CI is running, without one if the PR
+is `ready` again.
 
 **Your state tag through all of this** (`worker`, Tags):
 

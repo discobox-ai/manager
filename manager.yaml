@@ -17,9 +17,13 @@ repos:
     defaultBranch: main
 
 workers:
-  # Workers up at once, triage and delivery together. The owner set six for
-  # this host (2026-10-08); lower it when disk is tight.
+  # Workers running at once, triage and delivery together. A worker asleep
+  # doesn't count. The owner set six for this host (2026-10-08); lower it when
+  # disk is tight.
   max: 6
+  # A worker waiting on the owner (needs-input or blocked) whose screen has
+  # been still this long is stopped; the owner opening it starts it again.
+  pauseAfter: 5m
   # discobox server workers are created on. Inside a discobox the devShell may
   # point the CLI at a nested dev server; always pass this explicitly.
   server: https://api.discobox.internal

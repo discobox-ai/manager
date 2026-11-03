@@ -14,7 +14,8 @@ Status and to-do are one table, ranked:
 - **Agent** is the worker's box ID, **Issue** and **PR** are bare numbers
   (`vm 27` for another repository). Each is `-` when it doesn't apply.
 - **Doing** says what the agent is doing logically: working, waiting for you,
-  waiting on CI, done. Never whether its box is running or stopped.
+  waiting on CI, done. Never whether its box is running or stopped: workers
+  sleep whenever they wait, so asleep is normal.
 - **Your move** is `–` unless the owner has something to do:
   - "Review and merge", only once every check on the PR's head is green and
     the process comment for that head is posted (`github` skill).

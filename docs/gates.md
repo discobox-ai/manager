@@ -27,6 +27,8 @@ sets direction, trust or what ships goes to the owner, as a row on the table.
 | A worker stops on a question | Makes sure the box is tagged `needs-input` and its issue is `status/needs-input`, setting them if the box didn't (`workers`, A question without its tag) | "Answer in the box"; the owner answers in the box |
 | A worker shows a mechanical prompt (login expired, the first-run permission dialog) | Answers it (see `workers`) | – |
 | Disk below `disk.minFreeGiB` | Starts no workers; has idle workers free their build caches | Only if it can't recover |
+| A worker waiting on the owner, its screen still for `workers.pauseAfter` | Stops it (`workers`, Power) | "Answer in the box"; opening it starts it |
+| An event for a sleeping worker's PR or ADR (review, comment, conflict, failing check, merge, "accept") | Starts it and types one line saying why | – |
 | A finished worker | Tags it `to-delete` and stops it | Listed for deletion |
 
 Rank table rows by how much each unblocks downstream (critical path first), then

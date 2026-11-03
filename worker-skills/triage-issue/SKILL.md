@@ -190,4 +190,5 @@ another issue here, say it needs a new box.
 - The issue has one triage comment whose first line proposes its labels and
   size, with the reproduction (withheld for a security issue).
 - The box is tagged `ready` (or `blocked`, for a withheld security issue),
-  the keepalive is removed, and the last line on the screen is the verdict.
+  the last line on the screen is the verdict, and the box is powered off
+  (`worker`, Power).

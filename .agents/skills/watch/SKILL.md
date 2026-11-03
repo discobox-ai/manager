@@ -38,7 +38,9 @@ Then keep one `discobox-monitor pop --wait=4h` running in the background (the
 Bash tool's `run_in_background`, never a trailing `&`, which detaches it so it
 never wakes you). When it returns, handle each event by `docs/gates.md`, then
 start the next `pop --wait`. Timing out after 4h is the heartbeat: check disk
-and post a one-line "no change" if nothing moved.
+and post a one-line "no change" if nothing moved. While a box waiting on the
+owner is due to be paused (`workers`, Power), wait no longer than the time
+left before it's due.
 
 ## Start of every session
 

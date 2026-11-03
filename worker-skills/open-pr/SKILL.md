@@ -99,8 +99,9 @@ gh pr view <pr> --repo $REPO --json headRefOid -q .headRefOid
 gh pr checks <pr> --repo $REPO --json name,state,bucket,link
 ```
 
-Arm a Monitor that polls `gh pr checks` every 60 seconds and exits when
-nothing is `pending`, and keep working while it runs.
+While checks are pending, keep working if there's work; otherwise sleep with
+a wake for when CI should be done (`worker`, Power), check again on waking,
+and repeat.
 
 - **Green**: every check is `pass` or `skipping`, and the repository's
   required checks are among them.
