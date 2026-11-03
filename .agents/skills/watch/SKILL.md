@@ -30,6 +30,9 @@ discobox-monitor enable discobox-box --name workers -o created-by=me
 discobox-monitor enable file --name site-actions -o path=$HOME/.local/state/discobox-manager/actions.jsonl
 # The owner's chat on the site and artifact: one line per message (table skill, "Chat").
 discobox-monitor enable file --name site-chat -o path=$HOME/.local/state/discobox-manager/chat.jsonl
+# The artifact's sync agent stalling: site/sync.ts writes a line when nothing has left the
+# outbox for 10 minutes ("stalled: …"), and again when it moves ("recovered: …").
+discobox-monitor enable file --name artifact-sync -o path=$HOME/.local/state/discobox-manager/artifact-sync/alerts.log
 # Disk.
 discobox-monitor enable command --name disk -o cmd='df -BG --output=avail / | tail -1' -o every=5m
 ```
@@ -71,11 +74,15 @@ Monitor(
   by `site/sync.ts` (service `manager-sync`), which queues `write_db` batches
   in `~/.local/state/discobox-manager/artifact-sync/outbox/`, and by a
   background sync agent this session starts, which sends them and pulls the
-  owner's button presses into `inbox/`. On each heartbeat: if the outbox
-  holds files older than 10 minutes, the sync agent stopped listening: a
-  subagent isn't told when its Monitor expires (2026-11-03). Send it one
-  line (SendMessage): re-arm the Monitor and do a pass. If it doesn't answer,
-  start a new one with the same brief (the `table` skill, The status artifact).
+  owner's button presses and chat messages into `inbox/`. When it stops
+  (a subagent isn't told when its Monitor expires, 2026-11-03), nothing
+  reaches the artifact either way: the page goes stale and the owner's
+  artifact chat goes unanswered. The `artifact-sync` monitor says so: a
+  `stalled:` line means nothing has been sent for 10 minutes (sync.ts checks
+  every cycle; the box's own board shows it too). Then send the agent one
+  line (SendMessage): re-arm the Monitor and do a pass. If it doesn't answer
+  within a few minutes, start a new one with the same brief (the `table`
+  skill, The status artifact). A `recovered:` line needs nothing.
 - While a box waiting on the owner is due to be paused (`workers`, Power),
   check it when it's due rather than waiting for an event.
 

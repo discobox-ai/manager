@@ -64,7 +64,7 @@ export function BoardPage(handle: Handle<{ store: Store }>) {
       <Page title="Manager status">
         <div class="layout layout-inbox">
           <Topline state={state} store={store} now={now} />
-          <Notice state={state} />
+          <Notice state={state} now={now} />
           <div class="inbox">
             <nav class="inbox-list" aria-label="Rows">
               <ul>

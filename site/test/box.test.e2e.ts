@@ -95,6 +95,21 @@ describe('box (vite build)', () => {
     assert.equal(await chat.getByText('The manager has it').count(), 0)
   })
 
+  it('says so when the artifact sync agent has stopped sending', async (t) => {
+    fs.mkdirSync(path.join(stateDir, 'artifact-sync'), { recursive: true })
+    let relay = { waiting: 12, oldestAt: Date.now() - 42 * 60_000, checkedAt: Date.now(), stalled: true }
+    fs.writeFileSync(path.join(stateDir, 'artifact-sync', 'relay.json'), JSON.stringify(relay))
+    try {
+      let page = await t.serve(await createTestServer(createAppRouter({ buildDir }).fetch))
+      await page.goto('/')
+      let notice = page.locator('.notice.warn')
+      await notice.waitFor()
+      assert.match(await notice.innerText(), /12 batches have waited for the sync agent for 42 min/)
+    } finally {
+      fs.rmSync(path.join(stateDir, 'artifact-sync', 'relay.json'))
+    }
+  })
+
   it('answers an unknown path with the app, which says nothing is there', async (t) => {
     let page = await t.serve(await createTestServer(createAppRouter({ buildDir }).fetch))
     await page.goto('/no/such/page')

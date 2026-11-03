@@ -5,7 +5,9 @@ import { ActionError, appendAction, buildAction, readActions } from './actions.t
 import { api } from './api.ts'
 import { changes } from './changes.ts'
 import { appendOwnerMessage, ChatError, readChat } from './chat.ts'
-import { githubOrg } from './config.ts'
+import { githubOrg, relayStatusPath } from './config.ts'
+import * as fsp from 'node:fs/promises'
+import type { RelayStatus } from '../app/shared/docs.ts'
 import { actionDoc, detailsDoc, doneDoc, metaDoc, rowDocs } from './docs.ts'
 import { diffFor } from './diff/index.ts'
 import { adrTitle, getFileText, listDir } from './github.ts'
@@ -25,12 +27,21 @@ export interface StateResponse {
   chat: ChatDoc[]
 }
 
+/** Whether the artifact is getting updates (sync.ts's relay.json); nothing when there's no sync. */
+async function relayStatus(): Promise<{ relay?: RelayStatus }> {
+  try {
+    return { relay: JSON.parse(await fsp.readFile(relayStatusPath, 'utf8')) }
+  } catch {
+    return {}
+  }
+}
+
 export default createController(api, {
   actions: {
     async state() {
       let [table, actions, chat] = await Promise.all([readTable(), readActions(), readChat()])
       let body: StateResponse = {
-        meta: { ...metaDoc(table), syncedAt: Date.now() },
+        meta: { ...metaDoc(table), syncedAt: Date.now(), ...(await relayStatus()) },
         rows: await rowDocs(table),
         actions: actions.map(actionDoc),
         actionsDone: actions.map(doneDoc).filter((d) => d !== null),

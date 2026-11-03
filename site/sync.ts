@@ -15,12 +15,12 @@ import * as fsp from 'node:fs/promises'
 import * as path from 'node:path'
 
 import { appendAction, buildAction, readActions, ActionError } from './server/actions.ts'
-import { actionsDonePath, chatPath, chatRepliesPath, stateDir, tablePath } from './server/config.ts'
+import { actionsDonePath, chatPath, chatRepliesPath, relayAlertsPath, relayStatusPath, stateDir, tablePath } from './server/config.ts'
 import { appendOwnerMessage, chatIds, readChat } from './server/chat.ts'
 import { diffFor } from './server/diff/index.ts'
 import { detailsDoc, doneDoc, metaDoc, rowDocs, wantedDetails } from './server/docs.ts'
 import { hasMove, readTable, type Row } from './server/table.ts'
-import { CHAT_KIND, type DetailsDoc } from './app/shared/docs.ts'
+import { CHAT_KIND, type DetailsDoc, type RelayStatus } from './app/shared/docs.ts'
 
 const syncDir = process.env.SYNC_DIR ?? path.join(stateDir, 'artifact-sync')
 const docsDir = path.join(syncDir, 'docs')
@@ -36,6 +36,10 @@ const FLUSH_MIN_MS = Number(process.env.SYNC_FLUSH_MIN_MS ?? 120_000)
 // even when nothing else changed, so a quiet table isn't mistaken for a dead sync.
 const HEARTBEAT_MS = Number(process.env.SYNC_HEARTBEAT_MS ?? 30 * 60_000)
 const INBOX_POLL_MS = 3_000
+// The sync agent sends the outbox and deletes what it sent; a batch waiting longer than this means
+// it stopped. alerts.log then gets a line (and again every RELAY_REALERT_MS while it stays stuck).
+const RELAY_STALL_MS = Number(process.env.SYNC_RELAY_STALL_MS ?? 10 * 60_000)
+const RELAY_REALERT_MS = 30 * 60_000
 const MAX_DOC_BYTES = 200_000
 const MAX_BATCH_WRITES = Number(process.env.SYNC_MAX_BATCH_WRITES ?? 50)
 const MAX_BATCH_BYTES = Number(process.env.SYNC_MAX_BATCH_BYTES ?? 900_000)
@@ -53,6 +57,9 @@ interface SyncState {
   lastMoveSet: string // the "Your move" keys at the last flush
   ingested: string[] // inbound action ids already appended to actions.jsonl
   rejected: Record<string, { at: string; note: string }> // inbound actions refused, shown on the page
+  relayAlertAt?: number // when alerts.log last said the outbox was stuck; cleared once it moves
+  relayOldest?: number // the oldest waiting batch at the last check, and since when it's been that one
+  relayOldestSince?: number
 }
 
 const VALID_ID = /^[A-Za-z0-9_\-.~:@+]{1,200}$/
@@ -225,8 +232,9 @@ async function flush(state: SyncState, meta: Record<string, any>, moveSet: strin
   state.hashes['meta/state'] = hashOf(metaDoc)
   delete state.pending['meta/state']
 
-  // Deletes first, then sets in a stable order (rows before the bigger details), meta/state last.
-  let order = (p: string) => (p.startsWith('rows/') ? 0 : p.startsWith('actionsDone/') ? 1 : 2)
+  // Deletes first, then sets in a stable order (the chat and rows before the bigger details),
+  // meta/state last.
+  let order = (p: string) => (p.startsWith('chat/') ? 0 : p.startsWith('rows/') ? 1 : p.startsWith('actionsDone/') ? 2 : 3)
   let entries = Object.entries(state.pending).sort(
     ([a, oa], [b, ob]) => (oa === ob ? order(a) - order(b) || a.localeCompare(b) : oa === 'delete' ? -1 : 1),
   )
@@ -250,6 +258,47 @@ async function flush(state: SyncState, meta: Record<string, any>, moveSet: strin
   state.lastFlushAt = syncedAt
   state.lastMoveSet = moveSet
   return batches
+}
+
+/**
+ * Whether the sync agent is sending: the outbox's oldest batch (its name is when it was queued).
+ * Written to relay.json for the box's page; a stall, and its end, go to alerts.log for the manager.
+ */
+async function checkRelay(state: SyncState) {
+  let times: number[] = []
+  try {
+    for (let f of await fsp.readdir(outboxDir)) {
+      let t = Number(f.replace(/\.json$/, ''))
+      if (f.endsWith('.json') && Number.isFinite(t)) times.push(t)
+    }
+  } catch {}
+  let now = Date.now()
+  let oldestAt = times.length ? Math.min(...times) : null
+  // Stalled means nothing sent for RELAY_STALL_MS: the same oldest batch all that time. A long
+  // backlog that's draining isn't a stall, however old its oldest batch.
+  if ((oldestAt ?? undefined) !== state.relayOldest) {
+    // Seen first (an empty outbox before): it has waited since it was queued. A different oldest
+    // batch than last time: the agent sent something just now.
+    state.relayOldestSince = state.relayOldest === undefined ? (oldestAt ?? now) : now
+    state.relayOldest = oldestAt ?? undefined
+  }
+  let stuckSince = oldestAt == null ? null : Math.max(oldestAt, state.relayOldestSince ?? oldestAt)
+  let stalled = stuckSince != null && now - stuckSince > RELAY_STALL_MS
+  let status: RelayStatus = { waiting: times.length, oldestAt: stuckSince, checkedAt: now, stalled }
+  await writeAtomic(relayStatusPath, JSON.stringify(status))
+  if (stalled && (!state.relayAlertAt || now - state.relayAlertAt > RELAY_REALERT_MS)) {
+    let since = new Date(stuckSince!).toISOString()
+    await fsp.appendFile(
+      relayAlertsPath,
+      `${new Date(now).toISOString()} stalled: ${times.length} batches waiting in the outbox, nothing sent since ${since}; the artifact sync agent isn't sending (watch skill)\n`,
+    )
+    state.relayAlertAt = now
+    log(`relay stalled: ${times.length} batches since ${since}`)
+  } else if (!stalled && state.relayAlertAt) {
+    await fsp.appendFile(relayAlertsPath, `${new Date(now).toISOString()} recovered: ${times.length} batches waiting\n`)
+    delete state.relayAlertAt
+    log('relay recovered')
+  }
 }
 
 let running = false
@@ -278,6 +327,7 @@ async function cycle(state: SyncState) {
     } else if (changed) {
       log(`${changed} changed; ${pending} pending, next flush in ${Math.ceil((FLUSH_MIN_MS - (now - state.lastFlushAt)) / 1000)}s`)
     }
+    if (!DRY) await checkRelay(state).catch((e) => log('relay check failed:', e))
     await saveState(state)
   } catch (error) {
     log('cycle failed:', error)

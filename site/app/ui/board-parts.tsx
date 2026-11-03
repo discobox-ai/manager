@@ -108,15 +108,27 @@ export function Topline(handle: Handle<BoardProps & { children?: RemixNode }>) {
   }
 }
 
-/** A notice about the data, when there is one. */
-export function Notice(handle: Handle<{ state: BoardState }>) {
+/** A notice about the data, when there is one, and on the box, when the artifact isn't updating. */
+export function Notice(handle: Handle<{ state: BoardState; now?: number }>) {
   return () => {
-    let n = handle.props.state.notice
-    return n ? (
-      <div class="notice" role="status">
-        <strong>{n.lead}</strong> {n.text}
-      </div>
-    ) : null
+    let { state, now = Date.now() } = handle.props
+    let n = state.notice
+    let relay = state.meta?.relay
+    return (
+      <>
+        {n ? (
+          <div class="notice" role="status">
+            <strong>{n.lead}</strong> {n.text}
+          </div>
+        ) : null}
+        {relay?.stalled && relay.oldestAt ? (
+          <div class="notice warn" role="status">
+            <strong>The artifact isn’t getting updates.</strong> {relay.waiting} {relay.waiting === 1 ? 'batch has' : 'batches have'} waited
+            for the sync agent for {ago(now - relay.oldestAt).replace(/ ago$/, '')}; the manager has been told.
+          </div>
+        ) : null}
+      </>
+    )
   }
 }
 

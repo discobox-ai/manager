@@ -16,6 +16,11 @@ export const actionsDonePath = path.join(stateDir, 'actions-done.jsonl')
 // manager's replies apart, so its own replies don't wake it.
 export const chatPath = path.join(stateDir, 'chat.jsonl')
 export const chatRepliesPath = path.join(stateDir, 'chat-replies.jsonl')
+// The artifact sync's working directory (sync.ts); relay.json there says whether its outbox is
+// draining, and alerts.log gets a line when it stops (the artifact-sync monitor watches it).
+export const syncDir = expand(process.env.SYNC_DIR ?? path.join(stateDir, 'artifact-sync'))
+export const relayStatusPath = path.join(syncDir, 'relay.json')
+export const relayAlertsPath = path.join(syncDir, 'alerts.log')
 
 export const port = Number.parseInt(process.env.PORT ?? '4400', 10)
 export const host = process.env.HOST ?? '0.0.0.0'

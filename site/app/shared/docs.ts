@@ -14,6 +14,18 @@ export interface MetaDoc {
   syncedAt?: number
   /** The table couldn't be read. */
   error?: string
+  /** The box only: batches waiting for the sync agent to send to the artifact, and since when. */
+  relay?: RelayStatus
+}
+
+/** artifact-sync/relay.json, written by sync.ts each cycle. */
+export interface RelayStatus {
+  waiting: number
+  /** Since when nothing has been sent (ms): the oldest batch's queueing, or when it last moved; null when nothing waits. */
+  oldestAt: number | null
+  checkedAt: number
+  /** Nothing sent for longer than the alarm (10 minutes). */
+  stalled: boolean
 }
 
 /** rows/<id>: one table row, its place in the table, and whether its PR is open (null: unknown). */
