@@ -2,7 +2,8 @@
 
 The owner's view of the manager's status table, in two places from one app:
 
-- **The site** on the manager's box, port 4400 (service `manager-site`).
+- **The site** on the manager's box, port 4400 (service `manager-site`), in development mode: a
+  saved change is live at once, with no build or restart.
 - **The "Manager status" artifact** on claude.ai, for anywhere the owner is signed in.
 
 It's a client-rendered Remix 3 app (`remix/spa`), laid out like upstream's `demos/spa` and built
@@ -11,7 +12,7 @@ with Vite. The UI never knows which host it's on. It reads one set of documents
 
 | | Site (`vite build`) | Artifact (`vite build --mode artifact`) |
 |---|---|---|
-| Output | `dist/`, served by `server.ts` | `dist-artifact/artifact.html`, one file |
+| Output | served from source by Vite in `server.ts` (dev mode); `dist/` for `npm start` | `dist-artifact/artifact.html`, one file |
 | Data | `server.ts`'s JSON API, live over an event stream | the artifact's `db`, filled by `sync.ts` and its sync agent |
 | Buttons | `POST /api/actions`, appended to `actions.jsonl` | an `actions` document, carried to `actions.jsonl` by the sync |
 | Routes | real paths (`/adr/vm`) | the fragment (`#/adr/vm`); the viewer owns the URL |
@@ -64,11 +65,17 @@ The tests need Playwright's Chromium once: `npx playwright install chromium-head
 
 ## Shipping a change
 
-1. Change `app/` (or `server/`), then run `npm test` and `npm run typecheck`.
-2. Commit and push to `main` (this repository's rule).
-3. Restart the `manager-site` service. `start.sh` rebuilds on start.
-4. Republish the artifact: the Artifact tool on `site/dist-artifact/artifact.html` with `url` set
-   to the "Manager status" URL (the `table` skill), and no `capabilities`, so the stored `db` and
-   `user` grants carry forward. A new collection needs its rule added: then pass the whole
-   `capabilities` set (the `table` skill lists it).
-5. A change to `server/` or `sync.ts` also needs `manager-sync` restarted.
+1. Change `app/` (or `server/`). The site shows it as soon as it's saved: Vite hot-reloads
+   `app/`, and the server and the sync restart themselves when `server/`, `server.ts`,
+   `sync.ts` or `app/shared` change (`start.sh`, `sync.sh`).
+2. Run `npm test` and `npm run typecheck`, then commit and push to `main` (this repository's rule).
+3. Republish the artifact: `npm run build`, then the Artifact tool on
+   `site/dist-artifact/artifact.html` with `url` set to the "Manager status" URL (the `table`
+   skill), and no `capabilities`, so the stored `db` and `user` grants carry forward. A new
+   collection needs its rule added: then pass the whole `capabilities` set (the `table` skill
+   lists it).
+
+The services start at the box's boot. A box booted before they were declared doesn't run them
+until it reboots; start them by hand meanwhile, detached, from the repository root:
+`setsid nohup .discobox/services/manager-site > ~/.local/state/discobox-manager/site.log 2>&1 &`
+(and `manager-sync` into `sync.log`).

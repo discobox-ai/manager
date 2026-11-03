@@ -96,9 +96,9 @@ lines, so they reach you like the site's buttons.
 
 The site and the artifact are one app (`site/README.md`): `npm run build` in
 `site/` makes both, and the artifact is that build's
-`site/dist-artifact/artifact.html`, never hand-edited. After a change to
-`site/app/` is pushed, restart `manager-site` (it rebuilds on start), then
-republish: the Artifact tool on that file with `url` set to the artifact's
+`site/dist-artifact/artifact.html`, never hand-edited. The site runs in
+dev mode, so a saved change is live on it at once. After a change to
+`site/app/` is pushed, `npm run build` in `site/`, then republish: the Artifact tool on that file with `url` set to the artifact's
 URL and no `capabilities`, so its database and user grants carry forward.
 Its stored rules, to restate in full if a collection is ever added: `rows`,
 `details`, `meta`, `actionsDone`, `diffs` and `diffParts` read `view`, write

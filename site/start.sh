@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Runs the manager site in the foreground on port 4400 (PORT overrides).
-# The browser app is built with Vite first (dist/ for this site, dist-artifact/artifact.html for
-# the claude.ai artifact); the server runs its TypeScript directly through remix/node-tsx.
+# Runs the manager site in the foreground on port 4400 (PORT overrides), in development mode, so
+# a change in this checkout is live as soon as it's saved: Vite serves app/ from source with HMR,
+# and the server restarts itself when server/, server.ts or app/shared change (npm run dev).
+# The artifact isn't built here: `npm run build` makes dist-artifact/artifact.html to publish.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -13,7 +14,4 @@ if [ ! -d node_modules/remix ] || [ package-lock.json -nt node_modules/.package-
   npm ci --no-audit --no-fund
 fi
 
-npm run build --silent
-
-export NODE_ENV=production
-exec node --import remix/node-tsx server.ts
+exec npm run --silent dev
