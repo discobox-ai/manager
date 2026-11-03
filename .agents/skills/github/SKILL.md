@@ -43,7 +43,7 @@ Check:
   is named.
 - **Tests and CI:** every check on the head commit is green.
 - **Done when:** every item in the issue's Done when is answered.
-- **ADR:** if the issue needed one, it's Accepted (not just merged).
+- **ADR:** if the issue needed one, its PR merged and this PR marks it Accepted.
 
 Anything missing or not matching goes back to the worker first (type it into
 its box: "The PR's Evidence is missing <x>; do it and update the body"). Once

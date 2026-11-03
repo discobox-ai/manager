@@ -23,8 +23,8 @@ metadata:
    `discobox/issue-N-adr`, with `open-pr`. Title `docs(adr): propose <id>,
    <the decision in a phrase>`. The body says `Part of #N`, never `Closes`.
 5. **Stop** once it's green: tag `ready`. Don't implement, and don't mark it
-   Accepted. The owner accepts it; then the manager starts a worker for a
-   follow-up PR that marks it Accepted (and what it supersedes).
+   Accepted. The owner accepts it by merging the PR; then the manager starts
+   a `deliver-issue` worker that marks it Accepted and implements it.
 
 A question the ADR can't settle without the owner (a product or trust
 choice) is asked as `worker` says, and recorded in the PR body once

@@ -56,8 +56,10 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
   created, so that's what lets their work join the process.
 - **ADRs gate implementation.** Anything with a non-obvious design choice gets
   a Proposed ADR in its own PR first, and is implemented only after the owner
-  accepts it. A merged ADR still marked Proposed is not accepted. Ask, or wait
-  for the owner to say "accept".
+  accepts it. **The owner merging the ADR PR is the acceptance** (owner,
+  2026-11-03). Then one `deliver-issue` worker marks it Accepted, as its PR's
+  first commit, and implements it in the same PR. An ADR PR still open is not
+  accepted, whatever it says.
 - **Don't relay worker questions.** A worker stopped on a question goes on the
   table as "box needs input", with a few words on the topic. The owner answers
   in the box. Mechanical prompts you handle yourself (see `workers`).

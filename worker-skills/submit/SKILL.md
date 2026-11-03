@@ -113,7 +113,8 @@ written?"
   code, in §4's PR or parked branch.
 - **Not yet:** write it as `Proposed`, commit it on its own, and open it as
   its own PR (`propose-adr` §4) from `discobox/issue-<N>-adr`. The code can't
-  go further than a parked branch (§4) until the owner says "accept".
+  go further than a parked branch (§4) until the owner merges that PR, which
+  accepts it.
 
 No design choice, or only obvious ones: no ADR. Say which in §5.
 

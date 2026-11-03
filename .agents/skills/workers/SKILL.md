@@ -202,8 +202,7 @@ Workers sleep whenever they wait and power off when they're done (the
   box": opening it starts it again.
 - **Wake a sleeping worker when its work needs it**: a review or comment on
   its PR, a failing check on its head, Evidence missing (`github`, The
-  process comment), a rebase it's due (Rebases, below), the owner's "accept"
-  for its ADR. **Never for a merge or close**: retire it as it sleeps. `discobox start <id>`, wait until its
+  process comment), a rebase it's due (Rebases, below). **Never for a merge or close**: retire it as it sleeps. `discobox start <id>`, wait until its
   terminal is idle at the prompt (`admin terminal screen`), then type one
   line saying why, e.g. `PR #452 has a new review; carry on (deliver-issue
   §6).`, then Enter.

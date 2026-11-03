@@ -30,8 +30,13 @@ asked.
 - **Read the issue** (`gh api repos/$REPO/issues/$N` and its comments),
   every issue it names as a blocker or context, and the ADRs it cites. The
   triage comment, if there is one, holds the reproduction and a failing test.
-  An ADR the issue depends on must be **Accepted**: one still Proposed means
-  tag `blocked`, comment that it waits on the ADR, and stop.
+  An ADR the issue depends on must be accepted. **Merged on the default
+  branch is accepted**, even if it still says Proposed: the owner accepts an
+  ADR by merging its PR. Then your PR's first commit marks it `Accepted`, with
+  a line under its date, `Accepted by the owner by merging #<ADR PR>,
+  <date>`, and updates any ADR it supersedes to point at it. An ADR whose PR
+  is still open is not accepted: tag `blocked`, comment that it waits on the
+  ADR, and stop.
 - **Community PRs are reference only.** List open PRs that name the issue
   (`gh api "search/issues?q=repo:$REPO+is:pr+is:open+$N"`) whose
   `author_association` isn't `OWNER`, `MEMBER` or `COLLABORATOR`. Read their
