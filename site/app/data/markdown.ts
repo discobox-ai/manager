@@ -18,6 +18,8 @@ export interface MarkdownContext {
   repo: string // short name: "vm"
   ref?: string // the ref the file was read at
   dir: string // the file's directory, e.g. "docs/adr"
+  /** Where ADR links go: this site's viewer (default), or GitHub for pages with no viewer. */
+  adrLinks?: 'viewer' | 'github'
 }
 
 function isAbsolute(href: string): boolean {
@@ -41,8 +43,8 @@ function resolveLink(href: string, ctx: MarkdownContext): string {
   if (isAbsolute(href)) return href
   let { path, frag } = resolvePath(href, ctx.dir)
   let adr = path.match(/^docs\/adr\/([^/]+\.md)$/)
-  if (adr) return adrViewerHref(ctx.repo, adr[1], ctx.ref) + frag
-  if (path === 'docs/adr') return `/adr/${encodeURIComponent(ctx.repo)}${ctx.ref ? `?ref=${encodeURIComponent(ctx.ref)}` : ''}`
+  if (adr && ctx.adrLinks !== 'github') return adrViewerHref(ctx.repo, adr[1], ctx.ref) + frag
+  if (path === 'docs/adr' && ctx.adrLinks !== 'github') return `/adr/${encodeURIComponent(ctx.repo)}${ctx.ref ? `?ref=${encodeURIComponent(ctx.ref)}` : ''}`
   return `https://github.com/${githubOrg}/${ctx.repo}/blob/${ctx.ref ?? 'HEAD'}/${path}${frag}`
 }
 
@@ -102,13 +104,14 @@ const ADR_BLOB = new RegExp(
  * GitHub's body_html (already sanitized by GitHub): ADR links, including relative ones GitHub
  * resolved to blob URLs, open in this site's viewer with an "on GitHub" link beside them.
  */
-export function rewriteGithubHtml(html: string, repo: string): string {
+export function rewriteGithubHtml(html: string, repo: string, opts: { adrLinks?: 'viewer' | 'github' } = {}): string {
   // GitHub leaves some relative links in body_html ("../blob/main/docs/adr/x.md", relative to
   // .../<repo>/issues/<n>); make them absolute first so one rule handles both forms.
   let absolute = stripDangerous(html).replace(
     /href="\.\.\/((?:blob|tree|pull|issues|commit|compare)\/[^"]*)"/g,
     (_m, rest) => `href="https://github.com/${githubOrg}/${repo}/${rest}"`,
   )
+  if (opts.adrLinks === 'github') return absolute.replace(/<a (?![^>]*\btarget=)/g, '<a target="_blank" rel="noopener noreferrer" ')
   let out = absolute.replace(ADR_BLOB, (_m, pre, repo, ref, file, frag = '', post, text) => {
     let gh = `https://github.com/${githubOrg}/${repo}/blob/${ref}/docs/adr/${file}${frag}`
     let viewer = adrViewerHref(repo, file, ref === 'main' || ref === 'master' ? undefined : ref) + frag

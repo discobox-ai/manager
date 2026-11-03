@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Runs the artifact sync (sync.ts) in the foreground. Extra arguments pass through
+# (--once, --dry-run). SITE_STATE_DIR / SITE_TABLE / SYNC_DIR point it at test copies.
+set -euo pipefail
+cd "$(dirname "$0")"
+
+# GH_TOKEN for read-only GitHub calls; the box's own token is not the sync's to hold.
+eval "$(discobox-access env)"
+unset DISCOBOX_TOKEN
+
+if [ ! -d node_modules/remix ] || [ package-lock.json -nt node_modules/.package-lock.json ]; then
+  npm ci --no-audit --no-fund
+fi
+
+export NODE_ENV=production
+exec node --import remix/node-tsx sync.ts "$@"

@@ -16,9 +16,13 @@ export class GitHubError extends Error {
 interface Fetched {
   json: any
   link: string | null
+  etag?: string | null
 }
 
 let cache = new Map<string, { at: number; value: Promise<Fetched> }>()
+// The last good answer per path, kept past the TTL so a refresh can be a conditional request:
+// GitHub answers 304 when nothing changed, and a 304 doesn't count against the rate limit.
+let lastGood = new Map<string, Fetched>()
 
 async function get(path: string): Promise<Fetched> {
   let hit = cache.get(path)
@@ -32,7 +36,10 @@ async function get(path: string): Promise<Fetched> {
       'User-Agent': 'discobox-manager-site',
     }
     if (token) headers.Authorization = `Bearer ${token}`
+    let previous = lastGood.get(path)
+    if (previous?.etag) headers['If-None-Match'] = previous.etag
     let res = await fetch(API + path, { method: 'GET', headers, signal: AbortSignal.timeout(15_000) })
+    if (res.status === 304 && previous) return previous
     if (!res.ok) {
       let text = (await res.text()).slice(0, 300)
       let msg = text
@@ -41,7 +48,9 @@ async function get(path: string): Promise<Fetched> {
       } catch {}
       throw new GitHubError(`GET ${path}: ${res.status} ${msg}`.trim(), res.status)
     }
-    return { json: await res.json(), link: res.headers.get('link') }
+    let fetched = { json: await res.json(), link: res.headers.get('link'), etag: res.headers.get('etag') }
+    lastGood.set(path, fetched)
+    return fetched
   })()
   cache.set(path, { at: Date.now(), value })
   value.catch(() => cache.delete(path))

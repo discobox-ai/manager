@@ -1,0 +1,812 @@
+<title>Manager status</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=Public+Sans:ital,wght@0,400..700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column, a quiet sticky status strip, then the work as a ranked stack of
+   cards: what needs the owner first, in a warm band; everything else plain below. */
+:root {
+  --paper: #f3f5f8;      /* page */
+  --sheet: #ffffff;      /* cards */
+  --ink: #1a1f29;        /* text */
+  --ink-soft: #5b6475;   /* secondary text */
+  --rule: #d8dde6;       /* borders */
+  --wash: #e9edf3;       /* code, table heads */
+  --accent: #2456a8;     /* links, primary buttons */
+  --accent-wash: #e3ebf8;
+  --move: #8a4700;       /* "your move" */
+  --move-wash: #fff2dc;
+  --move-rule: #eabf78;
+  --good: #1c7a3c;
+  --good-wash: #e2f3e7;
+  --warn: #8f6200;
+  --warn-wash: #fdf4d2;
+  --bad: #b8282b;
+  --bad-wash: #fbe6e6;
+  --bad-solid: #b8282b;  /* filled destructive buttons, white text */
+  --merge: #1f7f3e;
+  --on-solid: #ffffff;
+  --shadow: 0 18px 48px rgba(16, 24, 40, 0.22);
+
+  --font-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.0625rem;
+  --step-2: 1.375rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #111419; --sheet: #191d24; --ink: #e4e7ed; --ink-soft: #9aa3b2; --rule: #2c323c;
+    --wash: #232933; --accent: #86adf5; --accent-wash: #1d2a42; --move: #ffc46e; --move-wash: #2c2213;
+    --move-rule: #6b4e1f; --good: #73d391; --good-wash: #15301f; --warn: #e6c25c; --warn-wash: #2d2611;
+    --bad: #ff8585; --bad-wash: #3a1b1c; --bad-solid: #c8373b; --merge: #2f9e55; --on-solid: #ffffff; --shadow: 0 18px 48px rgba(0,0,0,0.55);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #111419; --sheet: #191d24; --ink: #e4e7ed; --ink-soft: #9aa3b2; --rule: #2c323c;
+  --wash: #232933; --accent: #86adf5; --accent-wash: #1d2a42; --move: #ffc46e; --move-wash: #2c2213;
+  --move-rule: #6b4e1f; --good: #73d391; --good-wash: #15301f; --warn: #e6c25c; --warn-wash: #2d2611;
+  --bad: #ff8585; --bad-wash: #3a1b1c; --bad-solid: #c8373b; --merge: #2f9e55; --on-solid: #ffffff; --shadow: 0 18px 48px rgba(0,0,0,0.55);
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 var(--step-0)/1.55 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--paper);
+}
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.mono { font-family: var(--font-mono); font-size: 0.86em; }
+.wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 28px; }
+
+/* status strip */
+.strip {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--paper); border-bottom: 1px solid var(--rule);
+  padding-block: 14px 12px; display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: baseline;
+}
+.strip h1 {
+  margin: 0; font: 760 var(--step-2)/1.1 var(--font-display); font-stretch: 82%;
+  letter-spacing: 0.01em; text-wrap: balance;
+}
+.strip .when { color: var(--ink-soft); font-size: var(--step--1); font-variant-numeric: tabular-nums; }
+.strip .need { margin-left: auto; font-size: var(--step--1); color: var(--ink-soft); }
+.strip .need strong { font: 760 var(--step-1) var(--font-display); color: var(--move); }
+.stale {
+  display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 4px;
+  background: var(--bad-solid); color: var(--on-solid); font: 700 11px/1.6 var(--font-body);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.notice { padding: 12px 14px; border: 1px dashed var(--rule); border-radius: 8px; color: var(--ink-soft); }
+.notice strong { color: var(--ink); }
+
+/* sections */
+section { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+section > h2 {
+  margin: 0; font: 700 var(--step--1)/1.2 var(--font-display); font-stretch: 100%;
+  text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-soft);
+}
+section > h2 .count { font-weight: 500; letter-spacing: 0.04em; }
+.empty { margin: 0; color: var(--ink-soft); }
+
+/* row cards */
+.cards { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.card {
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px;
+  display: grid; grid-template-columns: minmax(0, 1fr); overflow: hidden;
+}
+.card.mine { border-color: var(--move-rule); }
+.move {
+  background: var(--move-wash); color: var(--move); border-bottom: 1px solid var(--move-rule);
+  padding: 8px 16px; font: 700 var(--step-1)/1.3 var(--font-display); font-stretch: 92%;
+}
+.body > div:empty { display: none; }
+.body { padding: 12px 16px 14px; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.head { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.head h3 { margin: 0; flex: 1 1 22rem; font: 650 var(--step-1)/1.35 var(--font-body); text-wrap: balance; }
+.refs { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: var(--step--1); }
+.refs .box { color: var(--ink-soft); }
+.doing { color: var(--ink); }
+.doing .why { color: var(--ink-soft); }
+.recorded { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: var(--step--1); }
+.pill {
+  display: inline-block; border-radius: 4px; padding: 0 6px; font: 700 10.5px/1.7 var(--font-body);
+  letter-spacing: 0.06em; text-transform: uppercase; vertical-align: 1px;
+}
+.pill.pending { background: var(--warn-wash); color: var(--warn); }
+.pill.done { background: var(--good-wash); color: var(--good); }
+.pill.refused { background: var(--bad-wash); color: var(--bad); }
+.recorded .meta { color: var(--ink-soft); }
+.recorded .note { color: var(--good); }
+
+/* controls */
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+button, .btn {
+  font: 500 var(--step--1)/1.4 var(--font-body); color: var(--ink); background: var(--sheet);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 4px 11px; cursor: pointer;
+  text-decoration: none; display: inline-block;
+}
+button:hover, .btn:hover { border-color: var(--accent); }
+button[aria-pressed="true"] { background: var(--accent-wash); border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--paper); font-weight: 600; }
+button.danger { background: var(--bad-solid); border-color: var(--bad-solid); color: var(--on-solid); font-weight: 650; }
+button:disabled { opacity: 0.6; cursor: default; }
+.btn.merge.big {
+  background: var(--merge); border-color: var(--merge); color: var(--on-solid); font-weight: 650; padding: 5px 15px;
+}
+.flash { color: var(--good); font-size: var(--step--1); }
+form.act {
+  display: grid; gap: 10px; padding: 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper);
+}
+form.act .choices { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+form.act input[type="text"], form.act textarea {
+  width: 100%; font: inherit; color: var(--ink); background: var(--sheet);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 7px 9px;
+}
+form.act .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.confirm {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 9px 11px;
+  border-radius: 6px; background: var(--warn-wash); border: 1px solid var(--move-rule);
+}
+.confirm span { flex: 1 1 16rem; }
+.error { color: var(--bad); margin: 0; }
+
+dialog {
+  max-width: min(32rem, calc(100vw - 32px)); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 0; background: var(--sheet); color: var(--ink); box-shadow: var(--shadow);
+}
+dialog::backdrop { background: rgba(10, 14, 20, 0.5); }
+dialog .top { height: 5px; background: var(--bad-solid); }
+dialog .in { padding: 18px 22px 20px; display: grid; gap: 10px; }
+dialog h2 { margin: 0; font: 700 var(--step-2)/1.25 var(--font-display); font-stretch: 88%; text-wrap: balance; }
+dialog p { margin: 0; }
+dialog .small { font-size: var(--step--1); color: var(--ink-soft); }
+dialog .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+
+/* details */
+.details { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.panel {
+  border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; background: var(--paper);
+  display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr);
+}
+.panel h4 { margin: 0; font: 650 var(--step-0)/1.35 var(--font-body); }
+.panel h5 { margin: 6px 0 0; font: 700 var(--step--1)/1.3 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.facts { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; color: var(--ink-soft); font-size: var(--step--1); }
+.state { border-radius: 999px; padding: 0 8px; font-weight: 650; font-size: 12px; }
+.state.open { color: var(--good); background: var(--good-wash); }
+.state.closed { color: var(--bad); background: var(--bad-wash); }
+.state.merged { color: #8250df; background: rgba(130, 80, 223, 0.15); }
+.state.draft { color: var(--ink-soft); background: var(--wash); }
+.label { border: 1px solid var(--rule); border-radius: 999px; padding: 0 8px; font-size: 12px; color: var(--ink); }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: var(--step--1); }
+.list .ok { color: var(--good); }
+.list .fail { color: var(--bad); }
+.list .run { color: var(--warn); }
+.list .neutral { color: var(--ink-soft); }
+.files li { display: flex; gap: 10px; font-family: var(--font-mono); font-size: 12px; }
+.files .n { min-width: 6.5em; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.plus { color: var(--good); }
+.minus { color: var(--bad); }
+details.adr { border: 1px solid var(--rule); border-radius: 6px; padding: 6px 10px; background: var(--sheet); min-width: 0; }
+details.adr > summary { cursor: pointer; }
+details.adr .sub { color: var(--ink-soft); font-size: var(--step--1); }
+details.diff { margin: 8px 0; }
+details.diff > summary { cursor: pointer; font-size: 12px; color: var(--ink-soft); }
+pre.patch {
+  margin: 0; padding: 8px 0; background: var(--wash); border-radius: 6px; overflow-x: auto;
+  font: 12px/1.45 var(--font-mono); max-width: 100%;
+}
+pre.patch span { display: block; padding: 0 10px; white-space: pre; }
+pre.patch .a { background: var(--good-wash); color: var(--good); }
+pre.patch .d { background: var(--bad-wash); color: var(--bad); }
+pre.patch .h { color: var(--ink-soft); }
+.comment { border-top: 1px solid var(--rule); padding-top: 8px; display: grid; gap: 4px; }
+.comment .who { font-size: var(--step--1); color: var(--ink-soft); }
+.comment .who strong { color: var(--ink); }
+
+/* rendered markdown */
+.md { overflow-wrap: anywhere; max-width: 72ch; }
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md h1, .md h2 { font-family: var(--font-display); font-stretch: 92%; border-bottom: 1px solid var(--rule); padding-bottom: 0.2em; }
+.md h1 { font-size: 1.4em; } .md h2 { font-size: 1.2em; } .md h3 { font-size: 1.05em; }
+.md code { font-family: var(--font-mono); font-size: 0.86em; background: var(--wash); padding: 1px 4px; border-radius: 4px; }
+.md pre { background: var(--wash); padding: 9px 11px; border-radius: 6px; overflow-x: auto; }
+.md pre code { background: none; padding: 0; }
+.md .tablewrap { overflow-x: auto; }
+.md table { border-collapse: collapse; overflow-wrap: normal; font-size: 0.92em; }
+.md th, .md td { border: 1px solid var(--rule); padding: 4px 10px; vertical-align: top; text-align: left; }
+.md th { background: var(--wash); }
+.md td:first-child { white-space: nowrap; }
+.md blockquote { margin: 0; padding-left: 12px; border-left: 3px solid var(--rule); color: var(--ink-soft); }
+.md hr { border: 0; border-top: 1px solid var(--rule); }
+.md .img { color: var(--ink-soft); font-size: var(--step--1); }
+
+.links { color: var(--ink-soft); font-size: var(--step--1); display: grid; gap: 2px; }
+@media (max-width: 520px) {
+  .strip .need { margin-left: 0; }
+  .body { padding: 10px 12px 12px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card { transition: border-color 160ms ease; }
+}
+</style>
+
+<div class="wrap">
+  <header class="strip" id="strip">
+    <h1>Manager status</h1>
+    <span class="when" id="when">Waiting for the manager's box…</span>
+    <span class="need" id="need"></span>
+  </header>
+  <div id="notice" class="notice" hidden></div>
+  <section id="sec-mine" aria-labelledby="h-mine">
+    <h2 id="h-mine">Your move <span class="count"></span></h2>
+    <p class="empty">Rows that need you appear here, with the move in the band on top.</p>
+    <div class="cards" hidden></div>
+  </section>
+  <section id="sec-rest" aria-labelledby="h-rest">
+    <h2 id="h-rest">In progress <span class="count"></span></h2>
+    <p class="empty">Work the manager's workers are doing appears here.</p>
+    <div class="cards" hidden></div>
+  </section>
+  <section id="sec-finished" aria-labelledby="h-finished" hidden>
+    <h2 id="h-finished">Finished boxes <span class="count"></span></h2>
+    <div class="cards"></div>
+  </section>
+  <section id="sec-recent" aria-labelledby="h-recent">
+    <h2 id="h-recent">Recent actions <span class="count"></span></h2>
+    <p class="empty">Nothing recorded from this page yet. A button on a row records an action; the manager carries it out and marks it done here.</p>
+    <ul class="recorded" id="recent"></ul>
+  </section>
+  <footer class="links" id="links"></footer>
+</div>
+
+<script>
+(() => {
+  const STALE_MS = 15 * 60 * 1000;
+  const ORG = "discobox-ai";
+  const $ = (sel, root = document) => root.querySelector(sel);
+
+  // ---- state ---------------------------------------------------------------
+  let db = null;
+  let meta = null;
+  let rows = [];
+  let actions = new Map();     // id -> action doc (recorded from this page)
+  let done = new Map();        // id -> actionsDone doc
+  let details = new Map();     // "vm~pull~38" -> doc data (frozen snapshot data)
+  let detailSubs = new Map();  // details id -> unsubscribe
+  let cards = new Map();       // row key -> card state
+  let gotData = false;
+  let canWrite = true;
+
+  function el(tag, attrs = {}, ...kids) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null || v === false) continue;
+      if (k === "class") n.className = v;
+      else if (k === "text") n.textContent = v;
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v === true ? "" : String(v));
+    }
+    for (const kid of kids.flat()) if (kid != null && kid !== false) n.append(kid instanceof Node ? kid : String(kid));
+    return n;
+  }
+
+  // ---- references: "454" is discobox-ai/discobox#454, "vm 33" is discobox-ai/vm#33 ----------
+  function parseRef(v) {
+    const m = String(v || "").trim().match(/^(?:(?:pr\s+)?([A-Za-z][\w.-]*)\s+)?#?(\d+)\b/);
+    if (!m) return null;
+    const repo = m[1] || "discobox";
+    return { repo, full: ORG + "/" + repo, n: Number(m[2]), label: String(v).trim() };
+  }
+  const ghUrl = (ref, kind) => `https://github.com/${ref.full}/${kind === "pull" ? "pull" : "issues"}/${ref.n}`;
+  const hasMove = (r) => { const m = String(r.yourMove || "").trim(); return m && m !== "–" && m !== "-" && m !== "—"; };
+
+  // ---- sanitizing: the documents arrive pre-sanitized; this is the page's own second pass --------
+  const ALLOWED = new Set("a p br hr h1 h2 h3 h4 h5 h6 ul ol li blockquote pre code em strong b i del s ins sup sub table thead tbody tfoot tr th td details summary span div kbd dl dt dd input g-emoji".split(" "));
+  const DROP = new Set("script style iframe object embed link meta base form frame frameset noscript template svg math textarea select button".split(" "));
+  function safeUrl(u) {
+    try { const url = new URL(u, "https://github.com/"); return /^(https?:|mailto:)$/.test(url.protocol) ? url.href : null; } catch { return null; }
+  }
+  function sanitize(html) {
+    const doc = new DOMParser().parseFromString("<div>" + String(html || "") + "</div>", "text/html");
+    const root = doc.body.firstElementChild;
+    const walk = (node) => {
+      for (const child of [...node.childNodes]) {
+        if (child.nodeType === 3) continue;
+        if (child.nodeType !== 1) { child.remove(); continue; }
+        const tag = child.tagName.toLowerCase();
+        if (DROP.has(tag)) { child.remove(); continue; }
+        if (tag === "img") {
+          // Outside images can't load in an artifact; keep a link to them instead.
+          const src = safeUrl(child.getAttribute("src") || "");
+          const alt = child.getAttribute("alt") || "image";
+          const rep = doc.createElement(src ? "a" : "span");
+          rep.className = "img"; rep.textContent = "[" + alt + "]";
+          if (src) rep.setAttribute("href", src);
+          child.replaceWith(rep);
+          if (src) clean(rep, "a");
+          continue;
+        }
+        if (!ALLOWED.has(tag)) { walk(child); child.replaceWith(...child.childNodes); continue; }
+        clean(child, tag);
+        walk(child);
+        if (tag === "table") { const w = doc.createElement("div"); w.className = "tablewrap"; child.replaceWith(w); w.append(child); }
+      }
+    };
+    const clean = (n, tag) => {
+      for (const a of [...n.attributes]) {
+        const name = a.name.toLowerCase();
+        const keep =
+          (tag === "a" && (name === "href" || name === "title")) ||
+          ((tag === "th" || tag === "td") && name === "align") ||
+          ((tag === "code" || tag === "pre" || tag === "span") && name === "class" && /^[\w\s-]*$/.test(a.value)) ||
+          (tag === "input" && (name === "type" || name === "checked" || name === "disabled")) ||
+          (tag === "details" && name === "open");
+        if (!keep) n.removeAttribute(a.name);
+      }
+      if (tag === "a") {
+        const href = safeUrl(n.getAttribute("href") || "");
+        if (href) { n.setAttribute("href", href); n.setAttribute("target", "_blank"); n.setAttribute("rel", "noopener noreferrer"); }
+        else n.removeAttribute("href");
+      }
+      if (tag === "input") { if (n.getAttribute("type") !== "checkbox") n.remove(); else n.setAttribute("disabled", ""); }
+    };
+    walk(root);
+    return root.innerHTML;
+  }
+  function md(html) { const d = el("div", { class: "md" }); d.innerHTML = sanitize(html); return d; }
+
+  // ---- time ----------------------------------------------------------------
+  function ago(ms) {
+    const s = Math.max(0, Math.round(ms / 1000));
+    if (s < 60) return s + "s ago";
+    const m = Math.round(s / 60);
+    if (m < 60) return m + " min ago";
+    const h = Math.floor(m / 60);
+    return h < 48 ? `${h} h ${m % 60} min ago` : Math.floor(h / 24) + " days ago";
+  }
+  const stamp = (t) => new Date(t).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  const utc = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toISOString().replace("T", " ").slice(0, 16) + "Z"; };
+
+  // ---- header ----------------------------------------------------------------
+  function renderStrip() {
+    const when = $("#when");
+    const need = $("#need");
+    when.replaceChildren();
+    need.replaceChildren();
+    if (!meta) { when.textContent = gotData ? "Waiting for the first sync from the manager's box." : "Loading…"; return; }
+    const now = Date.now();
+    const parts = [];
+    if (meta.postedAt) parts.push(el("span", { title: new Date(meta.postedAt).toISOString() }, `Table updated ${ago(now - meta.postedAt)} (${stamp(meta.postedAt)})`));
+    if (meta.syncedAt) parts.push(" · ", el("span", { title: new Date(meta.syncedAt).toISOString() }, `synced ${ago(now - meta.syncedAt)}`));
+    when.append(...parts);
+    if (!meta.syncedAt || now - meta.syncedAt > STALE_MS) when.append(el("span", { class: "stale", title: "No sync from the manager's box in over 15 minutes" }, "stale"));
+    const n = rows.filter((r) => r.key !== "finished" && hasMove(r)).length;
+    const pending = [...actions.values()].filter((a) => !done.has(a.id)).length;
+    need.append(el("strong", {}, String(n)), ` ${n === 1 ? "row needs" : "rows need"} you · ${rows.length} rows`, pending ? ` · ${pending} pending for the manager` : "");
+  }
+  setInterval(renderStrip, 15000);
+
+  function setNotice(html) {
+    const n = $("#notice");
+    if (!html) { n.hidden = true; n.replaceChildren(); return; }
+    n.hidden = false; n.replaceChildren(...html);
+  }
+
+  // ---- action lines ----------------------------------------------------------
+  function describe(a) {
+    const repo = String(a.repo || "").replace(/^discobox-ai\//, "");
+    const t = (k, n) => `${k} ${repo}#${n}`;
+    switch (a.kind) {
+      case "close-pr": return `Close ${t("PR", a.pr)}${a.reason ? ` — “${a.reason}”` : ""}`;
+      case "close-issue": return `Close ${t("issue", a.issue)} as ${a.stateReason === "not_planned" ? "not planned" : "completed"}${a.reason ? ` — “${a.reason}”` : ""}`;
+      case "prioritize": return `${a.priority} on ${t("issue", a.issue)}`;
+      case "instruct": return `Instruction: “${a.text}”`;
+      default: return String(a.kind);
+    }
+  }
+  function actionLine(a, showKey) {
+    const d = done.get(a.id);
+    const status = d ? (d.rejected ? "refused" : "done") : "pending";
+    return el("li", {},
+      el("span", { class: "pill " + status }, status), " ",
+      showKey ? [el("span", { class: "mono" }, a.key), " · "] : null,
+      describe(a), " ",
+      el("span", { class: "meta" }, el("span", { class: "mono" }, a.id), " · ", utc(a.at), d && d.at ? ` · ${status} ${utc(d.at)}` : ""),
+      d && d.note ? el("span", { class: d.rejected ? "error" : "note" }, " — " + d.note) : null);
+  }
+
+  // ---- row cards -------------------------------------------------------------
+  const KIND_LABEL = { "close-pr": "Close / reject PR", "close-issue": "Close issue", prioritize: "Prioritize", instruct: "Instruction" };
+
+  function cardFor(row) {
+    let c = cards.get(row.key);
+    if (c) return c;
+    c = { key: row.key, row, expanded: false, open: null, confirming: null, pending: false, error: null, flash: null, renderedDetails: new Map() };
+    c.root = el("article", { class: "card" });
+    c.band = el("div", { class: "move" });
+    c.body = el("div", { class: "body" });
+    c.summary = el("div", { class: "head" });
+    c.doing = el("div", { class: "doing" });
+    c.recorded = el("ul", { class: "recorded" });
+    c.controls = el("div", { class: "controls" });
+    c.formSlot = el("div");
+    c.detailsSlot = el("div", { class: "details" });
+    c.body.append(c.summary, c.doing, c.recorded, c.controls, c.formSlot, c.detailsSlot);
+    c.root.append(c.band, c.body);
+    cards.set(row.key, c);
+    return c;
+  }
+
+  function renderCard(c) {
+    const r = c.row;
+    const mine = r.key !== "finished" && hasMove(r);
+    c.root.classList.toggle("mine", mine);
+    c.band.hidden = !mine;
+    c.band.textContent = mine ? "→ " + r.yourMove : "";
+    const issue = parseRef(r.issue), pr = parseRef(r.pr);
+    c.issue = issue; c.pr = pr;
+    c.summary.replaceChildren(
+      el("h3", {}, r.item),
+      el("span", { class: "refs" },
+        issue ? el("a", { href: ghUrl(issue, "issue"), target: "_blank", rel: "noopener noreferrer" }, "issue " + issue.label) : null,
+        pr ? el("a", { href: ghUrl(pr, "pull"), target: "_blank", rel: "noopener noreferrer" }, "PR " + pr.label) : null,
+        r.agent && r.agent !== "-" ? el("span", { class: "mono box" }, r.agent) : null));
+    c.doing.replaceChildren(r.doing || "", r.why && r.why !== "-" ? el("span", { class: "why" }, " · " + r.why) : null);
+    const mineActions = [...actions.values()].filter((a) => a.key === r.key).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    c.recorded.replaceChildren(...mineActions.map((a) => actionLine(a)));
+    c.recorded.hidden = !mineActions.length;
+    renderControls(c);
+    renderDetails(c);
+  }
+
+  function renderControls(c) {
+    const r = c.row;
+    const kids = [];
+    if (c.pr && r.prOpen !== false) {
+      const big = /^review and merge/i.test(String(r.yourMove || "").trim());
+      kids.push(el("a", { class: "btn merge" + (big ? " big" : ""), href: ghUrl(c.pr, "pull"), target: "_blank", rel: "noopener noreferrer", title: "Opens the PR on GitHub; merge it there. Nothing is recorded." }, "Merge on GitHub ↗"));
+    }
+    if (c.issue || c.pr) {
+      kids.push(el("button", { type: "button", "aria-expanded": String(c.expanded), onclick: () => toggleDetails(c) }, c.expanded ? "▾ Hide details" : "▸ Details"));
+    }
+    if (canWrite) {
+      const kinds = [...(c.pr ? ["close-pr"] : []), ...(c.issue ? ["close-issue", "prioritize"] : []), "instruct"];
+      for (const k of kinds) kids.push(el("button", { type: "button", "aria-pressed": String(c.open === k), onclick: () => choose(c, k) }, KIND_LABEL[k]));
+    }
+    if (c.flash) kids.push(el("span", { class: "flash" }, c.flash));
+    c.controls.replaceChildren(...kids);
+  }
+
+  function choose(c, kind) {
+    c.open = c.open === kind ? null : kind;
+    c.confirming = null; c.error = null; c.flash = null;
+    renderControls(c);
+    renderForm(c);
+    const first = c.formSlot.querySelector("input[type=text], textarea");
+    if (first) first.focus();
+  }
+
+  function renderForm(c) {
+    if (!c.open) { c.formSlot.replaceChildren(); return; }
+    const k = c.open;
+    const id = (s) => `f-${c.key.replace(/[^\w-]/g, "_")}-${s}`;
+    const fields = [];
+    if (k === "close-pr") fields.push(el("input", { type: "text", name: "reason", id: id("reason"), placeholder: "Reason (optional), posted with the close", "aria-label": "Reason" }));
+    if (k === "close-issue") fields.push(
+      el("div", { class: "choices", role: "radiogroup", "aria-label": "Close as" },
+        el("label", {}, el("input", { type: "radio", name: "stateReason", value: "completed", id: id("completed"), checked: true }), " completed"),
+        el("label", {}, el("input", { type: "radio", name: "stateReason", value: "not_planned", id: id("notplanned") }), " not planned")),
+      el("input", { type: "text", name: "reason", id: id("reason"), placeholder: "Reason (optional), posted with the close", "aria-label": "Reason" }));
+    if (k === "prioritize") fields.push(
+      el("div", { class: "choices", role: "radiogroup", "aria-label": "Priority" },
+        el("label", {}, el("input", { type: "radio", name: "priority", value: "priority/high", id: id("high"), checked: true }), " priority/high"),
+        el("label", {}, el("input", { type: "radio", name: "priority", value: "priority/critical", id: id("critical") }), " priority/critical")));
+    if (k === "instruct") fields.push(el("textarea", { name: "text", id: id("text"), rows: 3, required: true, placeholder: `What should the manager do about ${c.key}?`, "aria-label": "Instruction" }));
+    const form = el("form", { class: "act", novalidate: false }, ...fields,
+      el("div", { class: "row" },
+        el("button", { type: "submit", class: "primary" }, KIND_LABEL[k] + "…"),
+        el("button", { type: "button", onclick: () => choose(c, k) }, "Cancel")),
+      c.error ? el("p", { class: "error", role: "alert" }, c.error) : null);
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!form.reportValidity()) return;
+      const fd = new FormData(form);
+      const values = Object.fromEntries([...fd].map(([a, b]) => [a, String(b).trim()]));
+      if (k === "close-pr" || k === "close-issue") openDialog(c, k, values);
+      else showLightConfirm(c, form, k, values);
+    });
+    c.formSlot.replaceChildren(form);
+  }
+
+  function summaryFor(c, k, v) {
+    if (k === "prioritize") return `Label issue ${c.issue.full}#${c.issue.n} ${v.priority}`;
+    return `Instruction for ${c.key}: “${v.text}”`;
+  }
+
+  function showLightConfirm(c, form, k, values) {
+    for (const f of form.querySelectorAll("input, textarea")) f.disabled = true;
+    const box = el("div", { class: "confirm", role: "alertdialog", "aria-label": "Confirm action" },
+      el("span", {}, "Record for the manager: ", el("strong", {}, summaryFor(c, k, values)), "?"),
+      el("button", { type: "button", class: "primary", onclick: async (e) => { e.target.disabled = true; e.target.textContent = "Recording…"; await record(c, k, values); } }, "Confirm"),
+      el("button", { type: "button", onclick: () => { box.remove(); for (const f of form.querySelectorAll("input, textarea")) f.disabled = false; form.hidden = false; } }, "Back"));
+    form.hidden = true;
+    c.formSlot.append(box);
+    box.querySelector("button").focus();
+  }
+
+  // A real modal for closing: showModal makes the page inert, Escape or Cancel record nothing,
+  // and Cancel has the first focus.
+  function openDialog(c, k, values) {
+    const isPr = k === "close-pr";
+    const target = isPr ? `PR ${c.pr.full}#${c.pr.n}` : `issue ${c.issue.full}#${c.issue.n}`;
+    const question = isPr ? `Close ${target} without merging?` : `Close ${target} as ${values.stateReason === "not_planned" ? "not planned" : "completed"}?`;
+    const consequence = isPr ? "Its branch is kept, and the PR can be reopened." : "Its labels and comments stay, and it can be reopened.";
+    const cancel = el("button", { type: "button" }, "Cancel");
+    const go = el("button", { type: "button", class: "danger" }, isPr ? "Close PR" : "Close issue");
+    const dlg = el("dialog", { "aria-labelledby": "dlg-title" },
+      el("div", { class: "top" }),
+      el("div", { class: "in" },
+        el("h2", { id: "dlg-title" }, question),
+        el("p", {}, consequence),
+        el("p", {}, values.reason ? ["Reason, posted with it: ", el("strong", {}, `“${values.reason}”`)] : el("span", { class: "small" }, "No reason given.")),
+        el("p", { class: "small" }, "This records the action; the manager carries it out on GitHub."),
+        el("div", { class: "buttons" }, cancel, go)));
+    const close = () => { if (dlg.open) dlg.close(); dlg.remove(); };
+    cancel.addEventListener("click", close);
+    dlg.addEventListener("cancel", (e) => { e.preventDefault(); if (!go.disabled) close(); });
+    dlg.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab") return;
+      const order = [cancel, go].filter((b) => !b.disabled);
+      if (!order.length) return;
+      const i = order.indexOf(document.activeElement);
+      e.preventDefault();
+      order[(i + (e.shiftKey ? -1 : 1) + order.length) % order.length].focus();
+    });
+    go.addEventListener("click", async () => {
+      go.disabled = true; cancel.disabled = true; go.textContent = "Recording…";
+      await record(c, k, values);
+      close();
+    });
+    document.body.append(dlg);
+    dlg.showModal();
+    cancel.focus();
+  }
+
+  function newId() {
+    const r = new Uint8Array(3); crypto.getRandomValues(r);
+    return Date.now().toString(36) + "-" + [...r].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function record(c, k, v) {
+    const target = k === "close-pr" ? c.pr : (c.issue || c.pr);
+    const doc = {
+      id: newId(), at: new Date().toISOString(), kind: k, key: c.key,
+      repo: target ? target.full : null, issue: c.issue ? c.issue.n : null, pr: c.pr ? c.pr.n : null,
+      status: "pending",
+    };
+    if (k === "close-pr" && v.reason) doc.reason = v.reason;
+    if (k === "close-issue") { doc.stateReason = v.stateReason === "not_planned" ? "not_planned" : "completed"; if (v.reason) doc.reason = v.reason; }
+    if (k === "prioritize") doc.priority = v.priority === "priority/critical" ? "priority/critical" : "priority/high";
+    if (k === "instruct") doc.text = v.text;
+    try {
+      await db.collection("actions").doc(doc.id).set(doc);
+      c.open = null; c.error = null;
+      c.flash = `Recorded ${doc.id}. The manager picks it up at the next sync.`;
+    } catch (e) {
+      c.error = e && e.code === "invalid_argument"
+        ? "This page can't record actions for you: your access to it is view-only."
+        : `Couldn't record it (${(e && e.code) || "error"}). Try again in a moment.`;
+      if (e && e.code === "invalid_argument") { canWrite = false; c.open = null; }
+    }
+    renderControls(c);
+    renderForm(c);
+    if (c.error && !c.open) c.formSlot.replaceChildren(el("p", { class: "error", role: "alert" }, c.error));
+  }
+
+  // ---- details (GitHub, pre-rendered by the sync) ------------------------------
+  function detailIds(c) {
+    const ids = [];
+    if (c.pr) ids.push(`${c.pr.repo}~pull~${c.pr.n}`);
+    if (c.issue) ids.push(`${c.issue.repo}~issues~${c.issue.n}`);
+    return ids;
+  }
+
+  function toggleDetails(c) {
+    c.expanded = !c.expanded;
+    renderControls(c);
+    syncDetailSubs();
+    renderDetails(c);
+  }
+
+  function syncDetailSubs() {
+    const want = new Set();
+    for (const c of cards.values()) if (c.expanded) detailIds(c).forEach((id) => want.add(id));
+    for (const [id, unsub] of detailSubs) if (!want.has(id)) { unsub(); detailSubs.delete(id); details.delete(id); }
+    for (const id of want) {
+      if (detailSubs.has(id) || !db) continue;
+      detailSubs.set(id, db.doc("details/" + id).onSnapshot(
+        (snap) => {
+          details.set(id, snap.exists ? snap.data() : { missing: true, fromCache: snap.metadata.fromCache });
+          for (const c of cards.values()) if (c.expanded && detailIds(c).includes(id)) renderDetails(c);
+        },
+        (e) => { details.set(id, { error: "Couldn't read these details (" + e.code + ")." }); for (const c of cards.values()) if (c.expanded) renderDetails(c); }));
+    }
+  }
+
+  function renderDetails(c) {
+    if (!c.expanded) { c.detailsSlot.replaceChildren(); c.renderedDetails.clear(); return; }
+    const ids = detailIds(c);
+    const panels = ids.map((id) => {
+      const d = details.get(id);
+      const prev = c.renderedDetails.get(id);
+      if (prev && prev.data === d) return prev.node; // unchanged: keep open ADRs and scroll
+      const node = panelFor(id, d);
+      c.renderedDetails.set(id, { data: d, node });
+      return node;
+    });
+    c.detailsSlot.replaceChildren(...panels);
+  }
+
+  function panelFor(id, d) {
+    const [repo, kind, n] = id.split("~");
+    const label = `${kind === "pull" ? "PR" : "Issue"} ${repo === "discobox" ? "" : repo + " "}#${n}`;
+    if (!d) return el("div", { class: "panel" }, el("p", { class: "empty" }, `Loading ${label}…`));
+    if (d.missing) return el("div", { class: "panel" }, el("p", { class: "empty" }, d.fromCache ? `Loading ${label}…` : `No details for ${label} yet; they arrive with the next sync.`));
+    if (d.error) return el("div", { class: "panel" }, el("p", { class: "error" }, `Couldn't load ${label} from GitHub: ${d.error}`));
+    const state = d.merged ? "merged" : d.state;
+    const p = el("div", { class: "panel" },
+      el("h4", {}, el("a", { href: d.url, target: "_blank", rel: "noopener noreferrer" }, label), ": " + d.title),
+      el("div", { class: "facts" },
+        el("span", { class: "state " + state }, state + (d.stateReason && state === "closed" ? ` (${String(d.stateReason).replace("_", " ")})` : "")),
+        d.draft ? el("span", { class: "state draft" }, "draft") : null,
+        el("span", {}, "by " + d.author),
+        d.headRef ? el("span", { class: "mono" }, `${d.headRef} → ${d.baseRef}`) : null,
+        d.kind === "pull" ? el("span", {}, d.mergeable == null ? `mergeability ${d.mergeableState} (computing)` : d.mergeable ? `mergeable (${d.mergeableState})` : `not mergeable (${d.mergeableState})`) : null,
+        ...(d.labels || []).map((l) => el("span", { class: "label" }, l.name))));
+    if (d.kind === "pull") {
+      const checks = d.checks || [];
+      p.append(el("h5", {}, `Checks on `, el("span", { class: "mono" }, String(d.headSha || "").slice(0, 8)), ` (${checks.length})`));
+      p.append(checks.length ? el("ul", { class: "list" }, ...checks.map((ch) => {
+        const res = ch.conclusion || ch.status;
+        const cls = res === "success" ? "ok" : ["failure", "error", "timed_out", "cancelled", "action_required", "startup_failure"].includes(res) ? "fail" : ch.conclusion == null ? "run" : "neutral";
+        const icon = cls === "ok" ? "✓" : cls === "fail" ? "✗" : cls === "run" ? "…" : "–";
+        return el("li", {}, el("span", { class: cls }, `${icon} ${String(res).replace("_", " ")}`), " ",
+          ch.url && safeUrl(ch.url) ? el("a", { href: safeUrl(ch.url), target: "_blank", rel: "noopener noreferrer" }, ch.name) : ch.name);
+      })) : el("p", { class: "empty" }, "No checks reported on the head commit."));
+      const files = d.files || [];
+      p.append(el("h5", {}, `Files (${files.length}${d.filesTruncated ? "+" : ""}) `, el("span", { class: "plus" }, "+" + d.additions), " ", el("span", { class: "minus" }, "−" + d.deletions)));
+      p.append(el("ul", { class: "list files" }, ...files.map((f) => el("li", {},
+        el("span", { class: "n" }, el("span", { class: "plus" }, "+" + f.additions), " ", el("span", { class: "minus" }, "−" + f.deletions)),
+        el("span", {}, f.filename, f.status !== "modified" ? el("span", { class: "neutral" }, ` (${f.status})`) : null)))));
+      const adrs = d.adrs || [];
+      if (adrs.length) {
+        p.append(el("h5", {}, `ADRs in this PR (${adrs.length})`));
+        for (const a of adrs) {
+          const box = el("details", { class: "adr" },
+            el("summary", {}, el("strong", {}, a.title), " ", el("span", { class: "sub" }, el("span", { class: "mono" }, a.filename), ` (${a.status})`)));
+          if (a.patch) box.append(el("details", { class: "diff" }, el("summary", {}, "diff"), patchView(a.patch)));
+          box.append(a.error ? el("p", { class: "error" }, "Couldn't read the file: " + a.error) : md(a.html));
+          p.append(box);
+        }
+      }
+    }
+    p.append(el("h5", {}, "Description"), md(d.bodyHtml || "<p><em>No description.</em></p>"));
+    const comments = d.comments || [];
+    if (comments.length) {
+      p.append(el("h5", {}, `Last ${comments.length} comments`));
+      for (const cm of comments) p.append(el("div", { class: "comment" },
+        el("div", { class: "who" }, el("strong", {}, cm.author), " · ", safeUrl(cm.url) ? el("a", { href: safeUrl(cm.url), target: "_blank", rel: "noopener noreferrer" }, utc(cm.at)) : utc(cm.at)),
+        md(cm.html)));
+    }
+    if (d.truncated) p.append(el("p", { class: "empty" }, "Some long text here was shortened; the full text is on GitHub."));
+    return p;
+  }
+
+  function patchView(patch) {
+    return el("pre", { class: "patch" }, ...String(patch).split("\n").map((line) =>
+      el("span", { class: line.startsWith("@@") ? "h" : line.startsWith("+") ? "a" : line.startsWith("-") ? "d" : null }, line || " ")));
+  }
+
+  // ---- board -------------------------------------------------------------------
+  function renderBoard() {
+    const sorted = [...rows].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
+    const finished = sorted.filter((r) => r.key === "finished");
+    const rest = sorted.filter((r) => r.key !== "finished");
+    const groups = { mine: rest.filter(hasMove), rest: rest.filter((r) => !hasMove(r)), finished };
+    const live = new Set(rows.map((r) => r.key));
+    for (const [key, c] of cards) if (!live.has(key)) { c.root.remove(); cards.delete(key); }
+    for (const [name, list] of Object.entries(groups)) {
+      const sec = $("#sec-" + name);
+      const box = $(".cards", sec);
+      $(".count", sec).textContent = `(${list.length})`;
+      const empty = $(".empty", sec);
+      if (empty) empty.hidden = list.length > 0 || !gotData;
+      box.hidden = !list.length;
+      if (name === "finished") sec.hidden = !list.length;
+      list.forEach((row, i) => {
+        const c = cardFor(row);
+        c.row = row;
+        renderCard(c);
+        if (box.children[i] !== c.root) box.insertBefore(c.root, box.children[i] || null);
+      });
+    }
+    syncDetailSubs();
+    renderRecent();
+    renderStrip();
+    renderLinks();
+  }
+
+  function renderRecent() {
+    const list = [...actions.values()].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 10);
+    const sec = $("#sec-recent");
+    $(".count", sec).textContent = `(${list.length})`;
+    $(".empty", sec).hidden = list.length > 0;
+    $("#recent").replaceChildren(...list.map((a) => actionLine(a, true)));
+  }
+
+  function renderLinks() {
+    const links = (meta && meta.links) || [];
+    $("#links").replaceChildren(...links.map((l) => el("div", {}, l.label + ": ",
+      safeUrl(l.url) && /^https?:/.test(l.url) ? el("a", { href: safeUrl(l.url), target: "_blank", rel: "noopener noreferrer" }, l.url) : l.url)));
+  }
+
+  // ---- start -------------------------------------------------------------------
+  renderStrip();
+  (async () => {
+    db = await window.claude?.use?.("db");
+    if (!db) {
+      setNotice([el("strong", {}, "This view can't read the status data. "), "Open the page on claude.ai while signed in to see the manager's rows."]);
+      $("#when").textContent = "No data in this view.";
+      return;
+    }
+    const user = await window.claude.use("user");
+    if (user) { const can = await user.can("data.write"); if (can === false) canWrite = false; }
+
+    let timer = setTimeout(() => {
+      setNotice([el("strong", {}, "The status data can't be reached yet. "), gotData ? "What's shown may be out of date." : "It appears here as soon as it loads."]);
+    }, 10000);
+    const settled = (snap) => { if (!snap.metadata.fromCache) { gotData = true; clearTimeout(timer); setNotice(null); } };
+    const failed = (what) => (e) => { clearTimeout(timer); setNotice([el("strong", {}, `Couldn't read ${what} (${e.code}). `), "Reload the page to try again."]); };
+
+    db.doc("meta/state").onSnapshot((snap) => {
+      settled(snap);
+      meta = snap.exists ? snap.data() : null;
+      renderStrip(); renderLinks();
+      if (!meta && gotData && !rows.length) setNotice([el("strong", {}, "Waiting for the first sync. "), "The manager's box hasn't sent its status table here yet; rows appear as soon as it does."]);
+    }, failed("the sync state"));
+    db.collection("rows").onSnapshot((snap) => {
+      settled(snap);
+      rows = snap.docs.map((d) => d.data());
+      renderBoard();
+    }, failed("the rows"));
+    db.collection("actions").onSnapshot((snap) => {
+      actions = new Map(snap.docs.map((d) => [d.id, d.data()]));
+      for (const c of cards.values()) renderCard(c);
+      renderRecent(); renderStrip();
+    }, failed("recorded actions"));
+    db.collection("actionsDone").onSnapshot((snap) => {
+      done = new Map(snap.docs.map((d) => [d.id, d.data()]));
+      for (const c of cards.values()) renderCard(c);
+      renderRecent(); renderStrip();
+    }, failed("finished actions"));
+  })();
+})();
+</script>
