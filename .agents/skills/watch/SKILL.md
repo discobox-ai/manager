@@ -57,6 +57,11 @@ Monitor(
   command straight away; events that came in meanwhile are still queued.
   Each expiry is the heartbeat: check disk, and say nothing unless something
   changed.
+  Also on each heartbeat: any worker PR that is green but still a draft, with
+  no push for 20 minutes, means its worker slept and wasn't woken (a
+  `discobox-power sleep --wake-in` timer has been seen not to fire, 2026-11-03).
+  Start that worker and type one line: its PR is green, finish it (`open-pr`)
+  and mark it ready.
 - While a box waiting on the owner is due to be paused (`workers`, Power),
   check it when it's due rather than waiting for an event.
 
