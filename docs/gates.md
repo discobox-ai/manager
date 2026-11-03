@@ -25,14 +25,14 @@ sets direction, trust or what ships goes to the owner, as a row on the table.
 | A PR conflicts with its base | Only if it's in the top 3 of the merge queue: wakes its worker to rebase. Further down, it waits its turn (`workers`, Rebases) | – |
 | A PR's CI fails and its worker is stopped | Starts the worker again on `fix-ci` | "Look at it" if the worker says it can't make it green |
 | Main's CI fails | If it looks like a flake (unrelated to the commit), files a `type/flake` issue (`priority/high`, `status/ready`); the manager can't re-run CI (the bot has Triage). Otherwise files an issue and starts a `fix-ci` worker | – |
-| A PR merges | Closes its issue if it's still open, and retires its worker as it sleeps: tagged `to-delete`, stopped, never woken to do anything | Listed for deletion |
+| A PR merges | Closes its issue if it's still open, and retires its worker as it sleeps: archived with `discobox rm`, never woken to do anything | – |
 | A worker asks for a credential | – | Every request: workers get GitHub from their role at launch (`roles/`), so a request is outside it |
 | A worker stops on a question | Makes sure the box is tagged `needs-input` and its issue is `status/needs-input`, setting them if the box didn't (`workers`, A question without its tag) | "Answer in the box"; the owner answers in the box |
 | A worker shows a mechanical prompt (login expired, the first-run permission dialog) | Answers it (see `workers`) | – |
 | Disk below `disk.minFreeGiB` | Starts no workers; has idle workers free their build caches | Only if it can't recover |
 | A worker waiting on the owner, its screen still for `workers.pauseAfter` | Stops it (`workers`, Power) | "Answer in the box"; opening it starts it |
 | An event for a sleeping worker's PR or ADR (review, comment, failing check, a rebase it's due) | Starts it and types one line saying why. Not for a merge | – |
-| A finished worker | Tags it `to-delete` and stops it | Listed for deletion |
+| A finished worker | Archives it (`discobox rm`) | – |
 
 Rank table rows by how much each unblocks downstream (critical path first), then
 by how hard the decision is to reverse (trust roots and stored credentials rank

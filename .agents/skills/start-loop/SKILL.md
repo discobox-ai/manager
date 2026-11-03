@@ -94,8 +94,8 @@ Match them up by `repo` and `issue`. Then:
 - **A PR from a box of yours that merged, with its issue still open:** close
   the issue (`github` skill) and retire the box.
 - **A finished box** (its PR merged or closed, a triage or job `ready` with
-  nothing left, or `to-delete`):
-  a row for the owner to delete.
+  nothing left, or tagged `to-delete` by an older manager): archive it
+  (`workers`, Retire).
 
 Write the table (`scripts/table`, `table` skill), with its links; the owner reads it in the side pane.
 

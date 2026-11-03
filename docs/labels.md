@@ -41,7 +41,7 @@ direction change is a comment on it. Each issue in the effort says
   `issue=<N>` and `job=<triage|adr|deliver|fix|rebase|adhoc|prototype>` set by the
   manager at launch (an ad-hoc or prototype box gets its `issue` from `submit`); `pr=<P>`
   and one state tag (`needs-input`, `blocked`, `ready`) set by the
-  box; `to-delete` set by the manager on retirement.
+  box. Retired boxes are archived (`discobox rm`), not tagged.
 - An implementation PR says `Closes #N`; an ADR PR says `Part of #N`.
 - Issues are written as `## Today` / `## Wanted` / `## Done when`, citing files
   and ADRs, so a worker can start from the issue alone.

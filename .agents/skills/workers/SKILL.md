@@ -253,12 +253,15 @@ each rebase reruns CI, and the next merge makes most of them conflict again.
 ## Retire
 
 When a worker's PR merges or closes, or its job needs nothing more, retire
-it right away, without waking it to do anything:
-`discobox tag <id> to-delete --rm ready --rm blocked --rm needs-input`,
-then `discobox stop <id>` (writing the tag starts a sleeping box; stop it
-straight after).
-An archived box refuses tags (409). List it for deletion anyway. The owner
-deletes boxes, often before you get to them; a 404 means it's already gone.
+it right away, without waking it to do anything: **archive it**,
+`discobox rm <id>` (owner, 2026-11-03; the sandbox role archives the boxes
+you created, ADR 26-11-03-724). No tag first: writing a tag starts a
+sleeping box. Archiving keeps its workspace for the retention period, so
+`discobox admin box unarchive <id>` brings it back if needed; then it's
+purged. A 404 means it's already gone.
+
+Don't archive a box the owner is working in (its screen shows their
+session, or they opened it): leave it and say so.
 
 ## Disk
 

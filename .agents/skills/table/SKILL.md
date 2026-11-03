@@ -33,8 +33,7 @@ the table. Each row has:
   then by how hard the decision is to reverse.
 - **Ad-hoc boxes** get a row too: Item is the owner's topic, Doing "owner
   working" ("owner prototyping" for a prototype box), Your move `–`, until `submit` gives it an issue.
-- **Finished boxes** the owner should delete get one row of their own. Check
-  that each still exists first.
+- **Finished boxes** get no row: you archive them yourself (`workers`, Retire).
 
 ## Editing it: `scripts/table`
 
