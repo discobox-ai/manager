@@ -35,6 +35,8 @@ release:
     - discobox-ai/site#2
     - discobox-ai/site#3
     - discobox-ai/site#4
+  # The release after it (owner created it 2026-11-04): what's decided, but later.
+  next: v0.20 Release
 
 workers:
   # The harness every new worker box runs (`discobox run -H`; owner, 2026-11-04).

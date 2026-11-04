@@ -28,7 +28,7 @@ none, which means new). The other groups describe it.
 
 ## Next up (owner, 2026-11-04)
 
-What starts next, and how the table ranks, in three groups, each by
+What starts next, and how the table ranks, in four groups, each by
 `priority/*` within it:
 
 1. **Blockers:** `type/flake`, release-validation findings, anything that
@@ -36,8 +36,19 @@ What starts next, and how the table ranks, in three groups, each by
 2. **The release milestone** (`release.milestone` in `manager.yaml`, in
    `release.repo`): its issues, and the parts in other repositories
    `release.alsoIn` lists.
-3. **Everything else**, including background streams the owner keeps out of
-   the release (disco-vm drivers).
+3. **The next release** (`release.next`): what the owner has decided to
+   deliver, but after this release.
+4. **Everything else already triaged**, including background streams the
+   owner keeps out of the release (disco-vm drivers).
+
+**The untriaged backlog waits** (owner, 2026-11-04): open issues that were
+never triaged (no `status/*` label, filed before today) are triaged only
+when a slot is free with nothing in groups 1-4 ready to start. A newly
+filed issue is still triaged when it arrives (`triage-intake`).
+
+What goes in `release.next`: an issue already triaged with a `priority/*`,
+outside the current release, not a background stream, not waiting on an
+owner decision. The manager moves those there itself and tells the owner.
 
 A release is a GitHub milestone, created by the owner (the bot has Triage
 and can only apply one). Its title says enough; it needs no description
