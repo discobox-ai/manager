@@ -28,6 +28,13 @@ repos:
 release:
   repo: discobox-ai/discobox
   milestone: v0.19 Release
+  # Its parts in other repositories, which a discobox milestone can't hold.
+  alsoIn:
+    - discobox-ai/manager#2
+    - discobox-ai/manager#4
+    - discobox-ai/site#2
+    - discobox-ai/site#3
+    - discobox-ai/site#4
 
 workers:
   # The harness every new worker box runs (`discobox run -H`; owner, 2026-11-04).
