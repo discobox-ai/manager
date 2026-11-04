@@ -64,11 +64,12 @@ need a Proposed ADR before the work goes on, or a decision from the owner.
 ## 5. Tags
 
 ```sh
-discobox tag <id> repo=<owner>/<name> issue=<N> job=<deliver|adr> fork=$FORK \
+discobox tag <id> repo=<owner>/<name> issue=<N> job=<deliver|adr> fork=$FORK base=<defaultBranch> \
   --description '<name>#<N>: <title>'
 ```
 
-`job=deliver` when the issue is ready to implement; `job=adr` when it needs
+`base` is the repository's `defaultBranch` in `manager.yaml` (what its PR
+targets; `preview` for discobox-ai/site). `job=deliver` when the issue is ready to implement; `job=adr` when it needs
 an ADR first; `job=adhoc` while it waits on the owner.
 
 ## 6. Its credential
@@ -100,10 +101,10 @@ discobox send-key <id> Enter`:
 > You've joined the manager's process for <owner>/<name> issue #<N>
 > (<link>). Your GitHub credential is GH_TOKEN, bound for this job; use it
 > and no other for anything on GitHub. Next: <deliver: rebase on
-> <default branch>, push branch discobox/issue-<N> to <fork>/<name>, and open
+> <base>, push branch discobox/issue-<N> to <fork>/<name>, and open
 > a PR into <owner>/<name> whose body says Closes #<N>; get every check green
 > | adr: write a Proposed ADR for #<N> in its own PR, and stop there>. Never
-> merge, never push to <default branch>, never change labels or close issues.
+> merge, never push to <base>, never change labels or close issues.
 > If you need a decision, tag this box needs-input, ask the owner here, and
 > wait.
 

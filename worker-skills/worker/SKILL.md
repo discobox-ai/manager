@@ -19,11 +19,13 @@ The manager tagged the box at launch:
 | `repo=<owner>/<name>` | The repository. Every `gh` call and push names it. |
 | `issue=<N>` | The issue, in that repository. Absent on an ad-hoc or prototype box until `submit` files one. |
 | `job=<triage\|adr\|deliver\|fix\|rebase\|adhoc\|prototype>` | The job. |
+| `base=<branch>` | The branch you start from and your PR targets. It can differ from GitHub's default branch (discobox-ai/site: `preview`). |
 
 ```bash
 REPO=$(jq -r '.tags.repo // empty' ~/.discobox/meta.json)
 N=$(jq -r '.tags.issue // empty' ~/.discobox/meta.json)
-BASE=$(gh api repos/$REPO --jq .default_branch)
+BASE=$(jq -r '.tags.base // empty' ~/.discobox/meta.json)
+[ -n "$BASE" ] || BASE=$(gh api repos/$REPO --jq .default_branch)
 ```
 
 The manager tags the box just after creating it, so on a fresh box the tags

@@ -123,6 +123,7 @@ ID=$(echo "$OUT" | grep -o 'sbx_[a-z0-9]*' | head -1)
 TAGS=(repo="$REPO" job="$JOB")
 [ -z "$ISSUE" ] || TAGS+=(issue="$ISSUE")
 [ -z "$PUSHES" ] || TAGS+=(fork="$FORK")
+TAGS+=(base="$BRANCH")
 DESC=""
 if [ -n "$ISSUE" ]; then
   TITLE=$(gh api "repos/$REPO/issues/$ISSUE" --jq .title 2>/dev/null || true)

@@ -4,7 +4,8 @@
 owner: darren@obot.ai
 
 # Repositories the manager watches and works in. `defaultBranch` is what
-# workers branch from and PRs target.
+# workers branch from and PRs target (the box's `base` tag), even when it
+# isn't GitHub's default branch.
 repos:
   - name: discobox-ai/discobox
     defaultBranch: main
@@ -20,7 +21,9 @@ repos:
   # Added by the owner 2026-11-04: the docs site, blog and home page.
   # defaultBranch main checked 2026-11-04.
   - name: discobox-ai/site
-    defaultBranch: main
+    # PRs go to preview; the owner merges preview into main (owner, 2026-11-04).
+    # A PR into preview doesn't close its issue: the manager closes it on merge.
+    defaultBranch: preview
   # Added by the owner 2026-11-04: #602 is blocked on a fix here.
   # defaultBranch assumed; check once the bot can read it.
   - name: discobox-ai/hooks

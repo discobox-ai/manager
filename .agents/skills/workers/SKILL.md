@@ -108,7 +108,7 @@ discobox run -d -H "$HARNESS" --skills discobox-ai/manager//worker-skills \
 - **Name the job's limits in the prompt** when they differ from the skill:
   "ADR only: draft it as Proposed, stop when its PR is green".
 - **Tag the box right away**, before anything else:
-  `discobox tag <id> repo=<owner>/<name> issue=<N> job=<job> fork=$FORK --description '<repo>#<N>: <title>'`
+  `discobox tag <id> repo=<owner>/<name> issue=<N> job=<job> fork=$FORK base=<defaultBranch> --description '<repo>#<N>: <title>'`
   (`fork` only for a role that pushes: deliver, ADR, fix, rebase, ad-hoc).
   The worker reads `repo` and `issue` from its tags (`worker` skill), and
   waits a little for them, then names the box for the issue and its title
@@ -131,7 +131,7 @@ owner's own work join the process.
 discobox run -d -H "$HARNESS" --skills discobox-ai/manager//worker-skills \
   --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-submit.json,owner=<owner>,repo=<name>,forkOwner=$FORK" \
   https://github.com/<repo>@<defaultBranch> -p '<the owner's topic, or nothing>'
-discobox tag <id> repo=<repo> job=adhoc fork=$FORK
+discobox tag <id> repo=<repo> job=adhoc fork=$FORK base=<defaultBranch>
 ```
 
 Give the owner the box ID. On the table it is one row, Doing "owner
@@ -151,7 +151,7 @@ since this box's credential has no git route to it, and opens one PR there):
 discobox run -d -H "$HARNESS" --skills discobox-ai/manager//worker-skills \
   --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-deliver.json,owner=discobox-ai,repo=release-validation,forkOwner=$FORK" \
   --no-source -p '/validate-release upgrade <from> <to>'      # and a second box: '/validate-release fresh <to>'
-discobox tag <id> repo=discobox-ai/release-validation issue=<N> job=validate fork=$FORK
+discobox tag <id> repo=discobox-ai/release-validation issue=<N> job=validate fork=$FORK base=main
 ```
 
 Each opens a run PR (new baseline, note edits) and posts one report on the
