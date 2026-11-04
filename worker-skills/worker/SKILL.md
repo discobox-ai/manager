@@ -44,6 +44,11 @@ Build, test, lint and run the way they say, with the repository's own skills
 worker skills is about one repository; when they and the repository
 disagree on how to build or test, the repository wins.
 
+**No ADR numbers or references in anything user-facing** (owner, 2026-11-04):
+the API documentation and the OpenAPI spec, CLI help, console text, error
+messages, release notes. Say what the behaviour is instead. ADRs belong in code
+comments, `DESIGN.md`/`REVIEW.md` files, ADR files and PR bodies.
+
 **Clean up with literal paths.** `rm -rf $(cat file)`, or any `rm` whose target
 comes from command substitution or a variable read at run time, is refused
 as "statically-unresolvable" and stops you at a prompt only the manager can
