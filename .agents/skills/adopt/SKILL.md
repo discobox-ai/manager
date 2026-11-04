@@ -83,10 +83,13 @@ discobox secret bind "$GH_SECRET" <id> --as GH_TOKEN --for 2w \
   --policy-arg repo=<name> --policy-arg forkOwner=$FORK
 ```
 
-(`discobox secret bind --help` for the exact argument order.) If the
-server refuses that for an adopted box, the box asks instead (step 7 tells
-it how) and you approve its request as its parent: it is exactly what you
-would have bound at launch.
+(`discobox secret bind --help` for the exact argument order.) Today the
+server refuses a direct bind by any box (`403 ... not in the sandbox role`,
+discobox#616). When it does, the box asks instead (step 7 tells it how), and
+you approve its request as its parent with `discobox secret request approve
+<id>`, **without `--secret`** (`workers`, Credential requests). It is exactly
+what you would have bound at launch. Check it asks for its job's role, not a
+wider one; a wider request goes to the owner.
 
 ## 7. Brief it
 

@@ -253,12 +253,17 @@ and why (owner, 2026-11-04). To approve:
 
 ```sh
 discobox secret request ls -o json            # .secretRequests[] with status pending
-discobox secret request approve <id> --secret github
+discobox secret request approve <id>
 ```
 
-- The approve call can print `403 ... not in the sandbox role` while the
-  approval succeeded. It's the CLI's follow-up GET of the binding. Re-read the
-  request's `status` before calling it refused.
+- Approve **without `--secret`**. With it, the CLI first reads the box's
+  bindings (GET `/secret-bindings`), which a box's role refuses (`403 ... not
+  in the sandbox role`), and never sends the approval. Without it, the
+  approval goes straight through (2026-11-04; discobox#616).
+- `secret request get` and `ls` can't decode an approved request today
+  (`unexpected field "approvedAs"`). Read a pending request before approving.
+  Afterwards, the box's own `discobox-access list` or the workers monitor
+  tells you it landed.
 - A role that keeps turning out too narrow is a change to its file in
   `roles/`, committed and pushed, not a habit of approving.
 
