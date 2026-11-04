@@ -29,6 +29,8 @@ const inboxDir = path.join(syncDir, 'inbox')
 const inboxDoneDir = path.join(inboxDir, 'done')
 const changedLog = path.join(syncDir, 'changed.log')
 const statePath = path.join(syncDir, 'state.json')
+// Written by the sender mod: which document ids the artifact's database holds, per collection.
+const remoteIdsPath = path.join(syncDir, 'remote.json')
 
 const CYCLE_MS = Number(process.env.SYNC_CYCLE_MS ?? 60_000)
 const FLUSH_MIN_MS = Number(process.env.SYNC_FLUSH_MIN_MS ?? 120_000)
@@ -40,6 +42,9 @@ const INBOX_POLL_MS = 3_000
 // it stopped. alerts.log then gets a line (and again every RELAY_REALERT_MS while it stays stuck).
 const RELAY_STALL_MS = Number(process.env.SYNC_RELAY_STALL_MS ?? 10 * 60_000)
 const RELAY_REALERT_MS = 30 * 60_000
+// The small collections are resent whole this often, so a lost or stale write can't last.
+const RESYNC_MS = Number(process.env.SYNC_RESYNC_MS ?? 10 * 60_000)
+const RESYNC_PREFIXES = ['rows/', 'chat/', 'actionsDone/']
 const MAX_DOC_BYTES = 200_000
 const MAX_BATCH_WRITES = Number(process.env.SYNC_MAX_BATCH_WRITES ?? 50)
 const MAX_BATCH_BYTES = Number(process.env.SYNC_MAX_BATCH_BYTES ?? 900_000)
@@ -57,6 +62,8 @@ interface SyncState {
   lastMoveSet: string // the "Your move" keys at the last flush
   ingested: string[] // inbound action ids already appended to actions.jsonl
   rejected: Record<string, { at: string; note: string }> // inbound actions refused, shown on the page
+  remoteAt?: number // the remote.json already reconciled
+  lastResyncAt?: number
   relayAlertAt?: number // when alerts.log last said the outbox was stuck; cleared once it moves
   relayOldest?: number // the oldest waiting batch at the last check, and since when it's been that one
   relayOldestSince?: number
@@ -368,6 +375,41 @@ async function checkRelay(state: SyncState) {
   }
 }
 
+/**
+ * Compares the ids the artifact holds (remote.json, from the sender) with the documents this box
+ * expects: ids it shouldn't have are deleted, documents it lacks are set again. A delete lost
+ * anywhere along the way (a restart that forgot what was sent, a refused batch) then heals.
+ */
+async function reconcileRemote(state: SyncState, docs: Map<string, Record<string, any>>): Promise<number> {
+  let remote: { at: number; ids: Record<string, string[]> }
+  try {
+    remote = JSON.parse(await fsp.readFile(remoteIdsPath, 'utf8'))
+  } catch {
+    return 0
+  }
+  if (!remote?.at || remote.at === state.remoteAt) return 0
+  state.remoteAt = remote.at
+  let n = 0
+  for (let [collection, ids] of Object.entries(remote.ids ?? {})) {
+    let have = new Set(ids)
+    for (let id of ids) {
+      let p = `${collection}/${id}`
+      if (docs.has(p) || p === 'meta/state') continue
+      state.pending[p] = 'delete'
+      delete state.hashes[p]
+      n++
+    }
+    for (let p of docs.keys()) {
+      if (!p.startsWith(`${collection}/`) || have.has(p.slice(collection.length + 1))) continue
+      if (!fs.existsSync(docFile(p))) continue
+      state.pending[p] = 'set'
+      n++
+    }
+  }
+  if (n) log(`reconciled with the artifact: ${n} documents corrected`)
+  return n
+}
+
 let running = false
 let again = false
 
@@ -380,8 +422,13 @@ async function cycle(state: SyncState) {
   try {
     let { docs, meta, moveSet } = await buildDocs(state)
     let changed = await stage(state, docs)
-    let pending = Object.keys(state.pending).length
+    changed += await reconcileRemote(state, docs)
     let now = Date.now()
+    if (now - (state.lastResyncAt ?? 0) >= RESYNC_MS) {
+      for (let p of docs.keys()) if (RESYNC_PREFIXES.some((x) => p.startsWith(x)) && fs.existsSync(docFile(p))) state.pending[p] = 'set'
+      state.lastResyncAt = now
+    }
+    let pending = Object.keys(state.pending).length
     let moveChanged = moveSet !== state.lastMoveSet
     let due = now - state.lastFlushAt >= FLUSH_MIN_MS
     let heartbeat = now - state.lastFlushAt >= HEARTBEAT_MS
