@@ -268,6 +268,12 @@ Workers sleep whenever they wait and power off when they're done (the
   terminal is idle at the prompt (`admin terminal screen`), then type one
   line saying why, e.g. `PR #452 has a new review; carry on (deliver-issue
   §6).`, then Enter.
+- **A conflict or rebase nudge** says what to do and nothing about the PR's
+  draft state: `PR N conflicts with main (PR M merged). Rebase, re-run checks,
+  push to your fork.` Never write "keep it a draft": two workers took it for
+  the owner's order and asked for a credential to turn a ready PR back into a
+  draft (2026-11-04). If one asks for a credential anyway, deny the request
+  (`discobox secret request deny ID`) and tell it none is needed.
 - **A box stopped on an API error** (owner, 2026-11-04): the monitor says `stopped
   on an error`, and its screen ends with `API Error: The response stopped
   arriving. The response above may be incomplete.` Type `continue`, then Enter
