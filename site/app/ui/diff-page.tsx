@@ -180,8 +180,18 @@ function DeclsTab(
           <section key={file.filename} class="diff-file">
             <FileHeader doc={doc} file={file} />
             <div class="decls">
-              {changes.map((c) => (
-                <DeclItem key={c.key} id={id} index={index} doc={doc} file={file} change={c} store={store} bodies={bodies} />
+              {changes.map((c, i) => (
+                <DeclItem
+                  key={c.key}
+                  id={id}
+                  index={index}
+                  doc={doc}
+                  file={file}
+                  change={c}
+                  store={store}
+                  bodies={bodies}
+                  startsGroup={i > 0 && leadingKeyword(c) !== leadingKeyword(changes[i - 1])}
+                />
               ))}
             </div>
           </section>
@@ -220,14 +230,35 @@ function FileHeader(handle: Handle<{ doc: DiffDoc; file: DiffFileDoc }>) {
   }
 }
 
+/**
+ * The keyword a declaration starts with (func, type, const, var, class, def…), past modifiers
+ * and decorators: declarations in a row with the same one are set together, and a new one starts
+ * a new group after a blank line.
+ */
+function leadingKeyword(c: DeclChangeDoc): string {
+  let text = (c.after ?? c.before ?? '').split('\n').find((l) => !l.trim().startsWith('@')) ?? ''
+  let words = text.trim().split(/[\s(]+/)
+  while (words.length > 1 && /^(export|default|async|declare|public|private|protected|static|readonly|abstract)$/.test(words[0])) words.shift()
+  return words[0] ?? ''
+}
+
 /** One declaration: its code, colored by what changed; on Implementation, its body's diff below. */
 function DeclItem(
-  handle: Handle<{ id: string; index: number; doc: DiffDoc; file: DiffFileDoc; change: DeclChangeDoc; store: Store; bodies: boolean }>,
+  handle: Handle<{
+    id: string
+    index: number
+    doc: DiffDoc
+    file: DiffFileDoc
+    change: DeclChangeDoc
+    store: Store
+    bodies: boolean
+    startsGroup?: boolean
+  }>,
 ) {
   return () => {
-    let { change: c, id, index, store, bodies } = handle.props
+    let { change: c, id, index, store, bodies, startsGroup } = handle.props
     return (
-      <div class={`decl ${c.status}`} title={`${c.kind} ${c.container ? c.container + '.' : ''}${c.name}${c.movedFrom ? `, moved from ${c.movedFrom}` : ''}`}>
+      <div class={`decl ${c.status}${startsGroup ? ' group-start' : ''}`} title={`${c.kind} ${c.container ? c.container + '.' : ''}${c.name}${c.movedFrom ? `, moved from ${c.movedFrom}` : ''}`}>
         <Signature change={c} language={handle.props.file.language} />
         {bodies && c.hasBodyPatch ? <Part id={id} index={index} store={store} view="body" declKey={c.key} language={handle.props.file.language} /> : null}
       </div>
