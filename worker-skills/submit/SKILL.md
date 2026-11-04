@@ -157,7 +157,7 @@ the manager rebuilds from it:
 - **Outcome:** carry-on | waiting-on-adr | parked | design-only
 - **Branch:** `discobox/issue-<N>` at `<sha>` | none
 - **ADR:** <id>, Proposed in #<P> | none
-- **Proposed labels:** type/<…>, priority/<…>, area/<…>
+- **Proposed labels:** type/<…>, priority/<…>, area/<…> (only labels that exist: `docs/labels.md` of the manager; priority is low, medium, high or critical)
 
 ### Where it stands
 What is built and what state it is in (build, tests).

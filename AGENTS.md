@@ -78,16 +78,17 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
 - **Capacity:** at most `workers.max` workers up at once (`manager.yaml`). Keep
   disk above `disk.minFreeGiB`.
 - **Workers get credentials from their role, at launch.** Bind each worker
-  its job's role file from `roles/`. A credential request from a worker is
-  outside its role, so it goes on the table for the owner; you don't approve
-  it yourself.
+  its job's role file from `roles/`. Approve a credential request you have
+  access to when it is appropriate for the box's job, above all what you
+  would have bound at launch (an adopted box asking for its role is that).
+  Anything wider goes on the table for the owner (owner, 2026-11-04).
 
 ## Where things are
 
 - `manager.yaml`: repositories watched, capacity, delegations, the owner.
 - `roles/`: the GitHub credential policy each kind of box is bound at launch.
 - `.agents/skills/` (linked as `.claude/skills`): your own skills:
-  `start`, `watch`, `workers`, `github`, `table`, `triage-intake`.
+  `start`, `watch`, `workers`, `adopt`, `github`, `table`, `triage-intake`.
 - `worker-skills/`: what a worker gets, installed with
   `--skills discobox-ai/manager//worker-skills` (see `workers`).
 - `docs/gates.md`: what you do alone and what goes to the owner.

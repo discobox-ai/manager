@@ -174,6 +174,13 @@ below; the `submit` skill knows a prototype's code is never the PR as it
 stands. **Drop**: the idea didn't hold, and the owner says so (or the box
 ends on "nothing to submit"): retire the box, filing nothing.
 
+### Pulling a box in (adoption)
+
+A box the owner started on their own, not through you, joins by adoption:
+the `adopt` skill (`/adopt <id or description>`). You find it, lead it,
+write its issue, tag it, give it its role's credential and brief it. The box
+itself runs no process step and asks for nothing.
+
 ### "Submit box X"
 
 The owner says it to you, or types "submit" in the box themselves. When it's
@@ -234,10 +241,12 @@ dialog.
 
 ## Credential requests
 
-Workers get GitHub from their role at launch and don't ask for it. So any
-request a worker makes is outside its role: put it on the table for the owner,
-with what it asked for and why, and don't approve it yourself. If the owner
-says to approve it:
+Workers get GitHub from their role at launch and usually don't ask for it.
+Approve a request when it is appropriate for the box's job: what you would
+have bound at launch, such as an adopted box asking for its job's role
+(`adopt`). Anything wider (another repository, merge, labels, a draft token,
+any other secret) goes on the table for the owner, with what it asked for
+and why (owner, 2026-11-04). To approve:
 
 ```sh
 discobox secret request ls -o json            # .secretRequests[] with status pending
