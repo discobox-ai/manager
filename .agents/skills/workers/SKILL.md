@@ -268,6 +268,12 @@ Workers sleep whenever they wait and power off when they're done (the
   terminal is idle at the prompt (`admin terminal screen`), then type one
   line saying why, e.g. `PR #452 has a new review; carry on (deliver-issue
   §6).`, then Enter.
+- **A box stopped on an API error** (owner, 2026-11-04): the monitor says `stopped
+  on an error`, and its screen ends with `API Error: The response stopped
+  arriving. The response above may be incomplete.` Type `continue`, then Enter
+  (the dialog sometimes already holds `continue`: just Enter). Look at its
+  screen again after 20 seconds; if the error repeats three times, put it on
+  the table for the owner.
 - **A box that woke on its own wake and sits idle at its prompt** (its
   harness was relaunched and didn't take a turn): type `You woke: read
   ~/.discobox/wake/.done/ and carry on.`, then Enter.
