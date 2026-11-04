@@ -28,7 +28,10 @@ the table. Each row has:
   - A concrete decision ("Decide A or B on the issue").
   - An ADR PR that's green is "Review and merge": merging it accepts it.
 - **The merge queue** is the rows at "Review and merge", in rank order. Only
-  its top 3 get rebased when they conflict (`workers`, Rebases).
+  its top 3 get rebased when they conflict (`workers`, Rebases). After every
+  merge or close, recompute the order and rebase at once any conflicting PR
+  now in the top 3, even with every slot full: the rebase wakes its own
+  worker (owner, 2026-11-04; PR 613 sat in the top 3 unrebased).
 - **Why this rank:** blockers first (a flake, a release-validation finding,
   broken CI, anything holding up a milestone issue), then the release
   milestone's rows, then the rest (`docs/labels.md`, Next up). Within each,
