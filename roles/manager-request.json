@@ -50,6 +50,13 @@
         "owner": "discobox-ai",
         "repo": "site"
       }
+    },
+    {
+      "file": "roles/github-manager.json",
+      "args": {
+        "owner": "discobox-ai",
+        "repo": "hooks"
+      }
     }
   ],
   "delegate": {
@@ -224,6 +231,36 @@
         "args": {
           "owner": "discobox-ai",
           "repo": "site"
+        }
+      },
+      {
+        "file": "roles/github-deliver.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "hooks",
+          "forkOwner": "ibuildthecloud-bot"
+        }
+      },
+      {
+        "file": "roles/github-submit.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "hooks",
+          "forkOwner": "ibuildthecloud-bot"
+        }
+      },
+      {
+        "file": "roles/github-triage.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "hooks"
+        }
+      },
+      {
+        "file": "roles/github-labels.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "hooks"
         }
       }
     ]

@@ -21,6 +21,10 @@ repos:
   # defaultBranch main checked 2026-11-04.
   - name: discobox-ai/site
     defaultBranch: main
+  # Added by the owner 2026-11-04: #602 is blocked on a fix here.
+  # defaultBranch assumed; check once the bot can read it.
+  - name: discobox-ai/hooks
+    defaultBranch: main
 
 # The release being worked toward (owner, 2026-11-04). Its milestone's issues
 # come next after blockers (docs/labels.md, Next up). The owner creates the
