@@ -117,13 +117,21 @@ also goes on the table if it holds up work.
 "Manager status" (https://claude.ai/code/artifact/21128720-e384-4249-a3d0-9b8b6b5e7923)
 shows the same view anywhere the owner is signed in to claude.ai. Its
 database is fed by `site/sync.ts` (service `manager-sync`) through a sync
-agent you run in the background (Agent tool, `model: haiku`: the job is
-mechanical): it watches
-`artifact-sync/changed.log` with a Monitor, sends each outbox batch with the
-Artifact tool's `write_db` (`db_op` batch, the file's `writes`), deletes the
-file, then pulls `actions` with status `pending` into `artifact-sync/inbox/`
-and marks them `received`. `sync.ts` turns inbox files into `actions.jsonl`
-lines, so they reach you like the site's buttons.
+agent you run in the background, one pass at a time (Agent tool, `model:
+haiku`: the job is mechanical). Brief for a pass:
+
+> Send every file in `artifact-sync/outbox/`, oldest first (names are
+> epoch-ms). Each holds `{"writes":[...]}`. Send it with ONE Artifact call:
+> action `write_db`, the artifact URL, `db_op` `batch`, `writes` as-is (keep
+> each set's `file_path`, never inline documents), then delete the file. A
+> batch refused because a `file_path` changed: retry once unchanged. Then pull
+> `actions` with status `pending` (`read_db` query), write each to
+> `inbox/<id>.json`, and mark it `received` (`update`). A `kind: chat` action
+> is a chat message: same handling. Keep tool output small. Reply in one line:
+> `Pass: <writes> writes, <actions> actions.` Then stop; don't watch.
+
+`sync.ts` turns inbox files into `actions.jsonl` and `chat.jsonl` lines, so
+they reach you like the site's buttons.
 
 The site and the artifact are one app (`site/README.md`): `npm run build` in
 `site/` makes both, and the artifact is that build's

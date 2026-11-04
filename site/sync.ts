@@ -235,6 +235,23 @@ async function whatChanged(docPath: string, doc: Record<string, any>): Promise<s
   return walk(before, doc, '') ?? 'same content, different hash'
 }
 
+/** The batches still waiting in the outbox, oldest first. */
+async function readOutbox(): Promise<{ name: string; writes: Write[] }[]> {
+  let out: { name: string; writes: Write[] }[] = []
+  let names: string[] = []
+  try {
+    names = (await fsp.readdir(outboxDir)).filter((f) => /^\d+\.json$/.test(f))
+  } catch {}
+  names.sort((a, b) => Number(a.replace('.json', '')) - Number(b.replace('.json', '')))
+  for (let name of names) {
+    try {
+      let parsed = JSON.parse(await fsp.readFile(path.join(outboxDir, name), 'utf8'))
+      if (Array.isArray(parsed?.writes)) out.push({ name, writes: parsed.writes })
+    } catch {} // half-written or already taken by the agent: leave it
+  }
+  return out
+}
+
 function splitBatches(writes: Write[]): Write[][] {
   let batches: Write[][] = []
   let cur: Write[] = []
@@ -272,6 +289,25 @@ async function flush(state: SyncState, meta: Record<string, any>, moveSet: strin
     return op === 'set' ? { op, collection, doc_id, file_path: docFile(docPath) } : { op, collection, doc_id }
   })
   writes.push({ op: 'set', collection: 'meta', doc_id: 'state', file_path: metaPath })
+
+  // Fold in what the sync agent hasn't sent yet: a document's last write is all the page needs
+  // (a set names the document's current file, so an older set of it is redundant, and a delete
+  // after a set, or the reverse, leaves only the later one). A backlog then stays as small as the
+  // table, however long the agent was away.
+  let carried = dry ? [] : await readOutbox()
+  if (carried.length) {
+    let last = new Map<string, Write>()
+    for (let w of [...carried.flatMap((c) => c.writes), ...writes]) last.set(`${w.collection}/${w.doc_id}`, w)
+    let merged = [...last.values()]
+    let rank = (w: Write) => (w.collection === 'chat' ? 0 : w.collection === 'rows' ? 1 : w.collection === 'actionsDone' ? 2 : 3)
+    merged.sort((a, b) => {
+      if (a.collection === 'meta' && a.doc_id === 'state') return 1
+      if (b.collection === 'meta' && b.doc_id === 'state') return -1
+      if (a.op !== b.op) return a.op === 'delete' ? -1 : 1
+      return rank(a) - rank(b) || `${a.collection}/${a.doc_id}`.localeCompare(`${b.collection}/${b.doc_id}`)
+    })
+    writes = merged
+  }
   let batches = splitBatches(writes)
   if (dry) return batches
 
@@ -282,6 +318,8 @@ async function flush(state: SyncState, meta: Record<string, any>, moveSet: strin
     await writeAtomic(path.join(outboxDir, name), JSON.stringify({ writes: batch }, null, 1))
     names.push(name)
   }
+  // The new batches are down; only now drop the ones they replace (a crash never loses a write).
+  for (let c of carried) await fsp.rm(path.join(outboxDir, c.name), { force: true })
   await fsp.appendFile(changedLog, `${new Date(syncedAt).toISOString()} ${writes.length} writes in ${names.join(' ')}\n`)
   state.pending = {}
   state.lastFlushAt = syncedAt

@@ -70,24 +70,20 @@ Monitor(
   `discobox-power sleep --wake-in` timer has been seen not to fire, 2026-11-03).
   Start that worker and type one line: its PR is green, finish it (`open-pr`)
   and mark it ready.
-- **The status artifact's sync agent.** The "Manager status" artifact is fed
-  by `site/sync.ts` (service `manager-sync`), which queues `write_db` batches
-  in `~/.local/state/discobox-manager/artifact-sync/outbox/`, and by a
-  background sync agent this session starts, which sends them and pulls the
-  owner's button presses and chat messages into `inbox/`. When it stops
-  (a subagent isn't told when its Monitor expires, 2026-11-03), nothing
-  reaches the artifact either way: the page goes stale and the owner's
-  artifact chat goes unanswered. The `artifact-sync` monitor says so: a
-  `stalled:` line means nothing has been sent for 10 minutes (sync.ts checks
-  every cycle; the box's own board shows it too). Then send the agent one
-  line (SendMessage): re-arm the Monitor and do a pass. If it doesn't answer
-  within a few minutes, start a new one with the same brief (the `table`
-  skill, The status artifact). A `recovered:` line needs nothing.
-  Its context grows with every pass (about 70k tokens a pass when busy): when
-  a pass report shows it past ~400k, stop it (TaskStop) and start a fresh one
-  with the same brief before it stalls (2026-11-03). A big backlog can be
-  compacted first: each write names its document's current file, so keeping
-  only the last write per collection/doc_id reaches the same state.
+- **The status artifact's sync passes** (owner, 2026-11-04). The "Manager
+  status" artifact is fed by `site/sync.ts` (service `manager-sync`), which
+  queues `write_db` batches in
+  `~/.local/state/discobox-manager/artifact-sync/outbox/` and appends a line to
+  `changed.log` on each flush (the `artifact-flush` monitor reports it). It
+  folds what hasn't been sent yet into the new batches, so the outbox stays as
+  small as the table. Sending is **one-shot passes, not a watcher**: a
+  watching subagent can't outlive its Monitor's 30 minutes and isn't told when
+  that ends. On an `artifact-flush` event, or an `artifact-sync` `stalled:`
+  line (nothing sent for 10 minutes), start a pass (Agent, `model: haiku`,
+  `run_in_background`, the brief in the `table` skill, The status artifact)
+  unless one is already running; when it reports, start another if the outbox
+  is not empty. It sends the outbox, pulls the owner's presses and chat into
+  `inbox/`, and exits. No pass is ever stopped, nudged or replaced.
 - While a box waiting on the owner is due to be paused (`workers`, Power),
   check it when it's due rather than waiting for an event.
 
