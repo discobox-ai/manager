@@ -565,6 +565,36 @@ pre.sig del, .md del { background: var(--bad-wash); color: var(--bad); border-ra
 .decl .del-all .tk-com, .decl del .tk-com, .code-diff .del .tk-com { color: #8a4a4a; font-style: italic; }
 .decl:has(.code-diff) { margin-bottom: 14px; }
 .decl.group-start { margin-top: 1.6em; }
+
+/* ---- Summary: the diffstat ---- */
+.diffstat { border-collapse: collapse; font: 12.5px/1.7 var(--font-mono); width: auto; max-width: 100%; }
+.diffstat td { padding: 0 14px 0 0; vertical-align: baseline; white-space: nowrap; }
+.diffstat td.name { white-space: normal; overflow-wrap: anywhere; }
+.diffstat td.name a { color: var(--ink); text-decoration: none; }
+.diffstat td.name a:hover { text-decoration: underline; }
+.diffstat td.name .fstatus { margin-left: 8px; }
+.diffstat td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.diffstat td.bar { letter-spacing: -0.5px; }
+.diffstat tr.quiet td.name a { color: var(--ink-soft); }
+.diffstat-total { margin: 10px 0 0; color: var(--ink-soft); font: 12px var(--font-mono); }
+/* ---- Trimmed and Full: syntax shades inside the line diff ---- */
+.patch-table tr.ctx .tk-kw { color: #c9c6bf; }
+.patch-table tr.ctx .tk-type { color: #a7b3c2; }
+.patch-table tr.ctx .tk-fn { color: #e9e7e2; }
+.patch-table tr.ctx .tk-str, .patch-table tr.ctx .tk-num { color: #b8ad92; }
+.patch-table tr.ctx .tk-com { color: #5c5e65; font-style: italic; }
+.patch-table tr.add .code { color: #6fd39b; }
+.patch-table tr.add .tk-kw { color: #b9f2cf; }
+.patch-table tr.add .tk-type { color: #49c9a6; }
+.patch-table tr.add .tk-fn { color: #9ff5bd; }
+.patch-table tr.add .tk-str, .patch-table tr.add .tk-num { color: #c3db78; }
+.patch-table tr.add .tk-com { color: #3f7a57; font-style: italic; }
+.patch-table tr.del .code { color: #ff7a7a; }
+.patch-table tr.del .tk-kw { color: #ffc0bd; }
+.patch-table tr.del .tk-type { color: #f58fb0; }
+.patch-table tr.del .tk-fn { color: #ffa3a3; }
+.patch-table tr.del .tk-str, .patch-table tr.del .tk-num { color: #ffaa72; }
+.patch-table tr.del .tk-com { color: #8a4a4a; font-style: italic; }
 </style>
   </head>
   <body>

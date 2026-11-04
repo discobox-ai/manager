@@ -1,9 +1,9 @@
 // A PR's diff document (app/shared/docs.ts DiffDoc): per file, the declarations whose signature or
 // body changed (tree-sitter, server/diff/declarations.ts), markdown rendered with its changes
 // inline, and GitHub's line patch. Built from the merge base and the head, like GitHub's own diff.
-import type { DeclChangeDoc, DiffDoc, DiffErrorDoc, DiffFileDoc, DiffPartDoc } from '../../app/shared/docs.ts'
+import type { DeclChangeDoc, DiffDoc, DiffErrorDoc, DiffFileDoc, DiffPartDoc, TrimmedRow } from '../../app/shared/docs.ts'
 import { githubOrg } from '../../app/shared/refs.ts'
-import { unifiedDiff } from '../../app/shared/sequence.ts'
+import { diffSequence } from '../../app/shared/sequence.ts'
 import type { AdrLinks } from '../docs.ts'
 import { createHash } from 'node:crypto'
 import * as fs from 'node:fs/promises'
@@ -11,7 +11,7 @@ import * as nodePath from 'node:path'
 
 import { diffCacheDir } from '../config.ts'
 import { getFileText, getFileTexts, getMergeBase, getPullFiles, getPullHead, type PullFile } from '../github.ts'
-import { declarations, languageFor, type Decl } from './declarations.ts'
+import { codeLines, declarations, languageFor, type CodeLine, type Decl } from './declarations.ts'
 import { markdownDiff } from './markdown-diff.ts'
 
 const MAX_PARSED_FILES = 150
@@ -45,7 +45,7 @@ const GENERATED_HEADER = /^(\/\/|#) Code generated .* DO NOT EDIT\.$/m
 const MARKDOWN = /\.(md|markdown)$/i
 
 // Part of a built diff's cache key: bump it when what a build produces changes.
-const BUILD_VERSION = 3
+const BUILD_VERSION = 4
 
 // File texts at a commit never change, and diffs of a given head and base don't either.
 let texts = new Map<string, Promise<string>>()
@@ -220,21 +220,12 @@ async function build(
       doc.note = `Not parsed: the PR changes more than ${MAX_PARSED_FILES} source files.`
       return doc
     }
-    await fillDecls(doc, f, ref.fullName, baseSha, head.headSha, lang)
+    await fillDecls(doc, part, f, ref.fullName, baseSha, head.headSha, lang)
     return doc
   })
   findMoves(docs)
-  // Body diffs go in each file's part, so the PR's document stays small.
-  for (let [i, file] of docs.entries()) {
-    for (let c of file.decls ?? []) {
-      let patch = bodyPatchOf.get(c)
-      if (!patch) continue
-      parts[i].bodyPatches = { ...parts[i].bodyPatches, [c.key]: patch }
-      c.hasBodyPatch = true
-    }
-  }
   let partsOut = parts.map((p, i) => {
-    let has = p.patch != null || p.docHtml != null || p.bodyPatches != null
+    let has = p.patch != null || p.docHtml != null || p.trimmed != null
     docs[i].hasPart = has
     return has ? p : null
   })
@@ -272,7 +263,7 @@ async function fillDocs(doc: DiffFileDoc, part: DiffPartDoc, f: PullFile, ref: {
   }
 }
 
-async function fillDecls(doc: DiffFileDoc, f: PullFile, fullName: string, baseSha: string, headSha: string, lang: NonNullable<ReturnType<typeof languageFor>>) {
+async function fillDecls(doc: DiffFileDoc, part: DiffPartDoc, f: PullFile, fullName: string, baseSha: string, headSha: string, lang: NonNullable<ReturnType<typeof languageFor>>) {
   let before: string
   let after: string
   try {
@@ -295,12 +286,53 @@ async function fillDecls(doc: DiffFileDoc, f: PullFile, fullName: string, baseSh
     return
   }
   doc.decls = compareDecls(a, b)
+  let [ca, cb] = await Promise.all([before ? codeLines(before, lang) : [], after ? codeLines(after, lang) : []])
+  if (ca && cb) {
+    let rows = trimmedDiff(ca, cb)
+    if (rows.length) {
+      part.trimmed = rows
+      doc.trimmed = { additions: rows.filter((r) => r.k === '+').length, deletions: rows.filter((r) => r.k === '-').length }
+    }
+  }
 }
 
-// The declaration behind an "added" or "removed" change, for matching moves across files, and a
-// changed body's diff, until it's moved into the file's part.
+/**
+ * The code-only diff of two versions' comment-free lines (codeLines): lines compared with their
+ * spacing ignored, shown as the head has them, with 3 lines of context and a break between hunks.
+ */
+export function trimmedDiff(a: CodeLine[], b: CodeLine[], context = 3, maxRows = 1500): TrimmedRow[] {
+  // Spacing only matters between two words, as for signatures: "{   }" is "{}".
+  let key = (l: CodeLine) => l.text.replace(/\s+/g, ' ').replace(/ ?([^\p{L}\p{N}_ ]) ?/gu, '$1').trim()
+  let ka = a.map(key)
+  let kb = b.map(key)
+  let all: TrimmedRow[] = []
+  for (let r of diffSequence(ka, kb)) {
+    if (r.op === 'equal') for (let i = 0; i < r.aEnd - r.aStart; i++) all.push({ k: ' ', o: a[r.aStart + i].n, n: b[r.bStart + i].n, t: b[r.bStart + i].text })
+    else if (r.op === 'delete') for (let i = r.aStart; i < r.aEnd; i++) all.push({ k: '-', o: a[i].n, t: a[i].text })
+    else for (let i = r.bStart; i < r.bEnd; i++) all.push({ k: '+', n: b[i].n, t: b[i].text })
+  }
+  if (!all.some((r) => r.k !== ' ')) return []
+  let keep = all.map(() => false)
+  all.forEach((r, i) => {
+    if (r.k === ' ') return
+    for (let j = Math.max(0, i - context); j <= Math.min(all.length - 1, i + context); j++) keep[j] = true
+  })
+  let out: TrimmedRow[] = []
+  let skipping = false
+  all.forEach((r, i) => {
+    if (!keep[i]) {
+      skipping = true
+      return
+    }
+    if (skipping || out.length === 0) out.push({ k: '@' })
+    skipping = false
+    out.push(r)
+  })
+  return out.length > maxRows ? [...out.slice(0, maxRows), { k: '@', t: `… ${out.length - maxRows} more lines on GitHub` }] : out
+}
+
+// The declaration behind an "added" or "removed" change, for matching moves across files.
 let declOf = new WeakMap<DeclChangeDoc, Decl>()
-let bodyPatchOf = new WeakMap<DeclChangeDoc, string>()
 
 /** What changed between two versions of one file's declarations, in the head's order. */
 export function compareDecls(before: Decl[], after: Decl[]): DeclChangeDoc[] {
@@ -330,10 +362,6 @@ function compareOne(was: Decl, now: Decl, movedFrom?: string): DeclChangeDoc | n
   let signatureChanged = was.signatureKey !== now.signatureKey
   let bodyChanged = was.bodyKey !== now.bodyKey
   if (!signatureChanged && !bodyChanged && !movedFrom) return null
-  let bodyPatch =
-    bodyChanged && was.body != null && now.body != null
-      ? unifiedDiff(was.body, now.body, { startA: was.bodyLine ?? 1, startB: now.bodyLine ?? 1, maxLines: 300 })
-      : null
   let c = change(now, movedFrom ? 'moved' : 'changed', {
     signatureChanged,
     bodyChanged,
@@ -342,7 +370,6 @@ function compareOne(was: Decl, now: Decl, movedFrom?: string): DeclChangeDoc | n
     ...(movedFrom ? { movedFrom } : {}),
     exported: now.exported || was.exported,
   })
-  if (bodyPatch) bodyPatchOf.set(c, bodyPatch)
   return c
 }
 

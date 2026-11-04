@@ -33,15 +33,18 @@ replies wake nothing (the `table` skill, "Chat").
 
 ## The diff viewer
 
-Each PR has a diff page (`/diff/:repo/:number`, the row's "diff" link) with four tabs:
+Each PR has a diff page (`/diff/:repo/:number`, the row's "diff" link) with five tabs:
 
-- **Contract**: declarations added, removed, or with a changed signature. A type's whole
-  definition is its signature, so a new struct field or interface method shows here.
+- **Summary**: the diffstat, each changed file with its lines added and removed.
+- **Contract**: declarations added, removed, or with a changed signature, as plain code without
+  comments, by file, green where added and red where removed. A type's whole definition is its
+  signature, so a new struct field or interface method shows here.
 - **Docs**: the PR's markdown files rendered, with changed words marked and unchanged blocks
   (and table rows) folded.
-- **Implementation**: the contract, plus every declaration whose body changed, each with its
-  body's diff.
-- **Lines**: GitHub's patch, with old and new line numbers.
+- **Trimmed**: a unified diff of code only: parsed source files (no text, tests or generated
+  files), compared with comments and blank lines taken out of both versions and spacing ignored,
+  so a comment-only change doesn't show.
+- **Full**: GitHub's patch for every file, with old and new line numbers.
 
 `server/diff/` builds it on the server from the merge base and the head, reading both versions
 of each file from GitHub. `declarations.ts` parses Go, TypeScript/TSX/JavaScript and Python with

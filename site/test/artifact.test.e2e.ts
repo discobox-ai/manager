@@ -29,7 +29,7 @@ const seed = {
     baseSha: 'aaaaaaaaaaaaaaaa', headSha: '0123456789abcdef', filesTruncated: false,
     files: [
       {
-        filename: 'snap/snap.go', status: 'modified', additions: 3, deletions: 1, kind: 'code', language: 'go', hasPart: true,
+        filename: 'snap/snap.go', status: 'modified', additions: 3, deletions: 1, kind: 'code', language: 'go', hasPart: true, trimmed: { additions: 2, deletions: 1 },
         decls: [
           { key: 'func:Take', kind: 'func', name: 'Take', status: 'changed', signatureChanged: true, bodyChanged: false, before: 'func Take(id string) error', after: 'func Take(id string, opts Options) error', line: 12, exported: true },
           { key: 'func:compress', kind: 'func', name: 'compress', status: 'changed', signatureChanged: false, bodyChanged: true, before: 'func compress(b []byte) []byte', after: 'func compress(b []byte) []byte', line: 30, exported: false, hasBodyPatch: true },
@@ -41,7 +41,7 @@ const seed = {
   'diffParts/vm~pull~38~0': {
     headSha: '0123456789abcdef', filename: 'snap/snap.go',
     patch: '@@ -12,2 +12,4 @@\n-func Take(id string) error {\n+func Take(id string, opts Options) error {\n+\t// qcow2\n+\treturn nil\n }',
-    bodyPatches: { 'func:compress': '@@ -30,1 +30,1 @@\n-\treturn zstd(b)\n+\treturn lz4(b)' },
+    trimmed: [{ k: '@' }, { k: '-', o: 12, t: 'func Take(id string) error {' }, { k: '+', n: 12, t: 'func Take(id string, opts Options) error {' }, { k: '+', n: 14, t: '\treturn nil' }, { k: ' ', o: 13, n: 15, t: '}' }],
   },
   'diffParts/vm~pull~38~1': {
     headSha: '0123456789abcdef', filename: 'docs/adr/0007-snapshots.md',
@@ -158,26 +158,35 @@ describe('artifact (vite build --mode artifact)', () => {
     await frame.locator('.inbox-pane').getByRole('heading', { name: 'VM snapshots ADR' }).waitFor()
   })
 
-  it('opens a PR’s diff from its row, with contract, docs, implementation and lines tabs', async (t) => {
+  it('opens a PR’s diff from its row, with summary, contract, docs, trimmed and full tabs', async (t) => {
     let page = await t.serve(await serve(() => artifactPage()))
     await page.goto('/')
     await page.locator('.inbox-pane').getByRole('link', { name: 'diff', exact: true }).click()
     await page.getByRole('heading', { name: 'ADR 0007: snapshot format' }).waitFor()
     assert.match(page.url(), /#\/diff\/vm\/38$/)
 
+    // Summary: the diffstat.
+    let stat = page.locator('.diffstat tr', { hasText: 'snap/snap.go' })
+    await stat.waitFor()
+    assert.match(await stat.innerText(), /\+3\s+−1/)
+    assert.match(await page.locator('.diffstat-total').innerText(), /2 files changed, 83 insertions\(\+\), 1 deletions/)
+
     // Contract: only the signature change, merged word by word.
+    await page.getByRole('tab', { name: /Contract/ }).click()
     let contract = page.getByRole('tabpanel')
     await contract.locator('.decl', { hasText: 'Take' }).waitFor()
     assert.equal(await contract.locator('.decl').count(), 1)
     assert.equal(await contract.locator('pre.sig ins').innerText(), ', opts Options')
     assert.match(await page.getByRole('tab', { name: /Contract/ }).innerText(), /1/)
 
-    // Implementation: the body-only change too, its body's diff under it.
-    await page.getByRole('tab', { name: /Implementation/ }).click()
-    let body = page.locator('.decl', { hasText: 'compress' })
-    await body.locator('.code-diff .add', { hasText: 'lz4' }).waitFor()
-    assert.match(await body.locator('.code-diff .del').innerText(), /zstd/)
-    assert.match(page.url(), /tab=implementation/)
+    // Trimmed: code files only, with the comment line gone and the head's line numbers.
+    await page.getByRole('tab', { name: /Trimmed/ }).click()
+    let trimmed = page.locator('section', { hasText: 'snap/snap.go' })
+    await trimmed.locator('tr.add', { hasText: 'return nil' }).waitFor()
+    assert.equal(await trimmed.locator('tr.add', { hasText: 'qcow2' }).count(), 0)
+    assert.equal(await trimmed.locator('tr.add', { hasText: 'return nil' }).locator('.ln').nth(1).innerText(), '14')
+    assert.equal(await page.locator('section', { hasText: '0007-snapshots.md' }).count(), 0)
+    assert.match(page.url(), /tab=trimmed/)
 
     // Docs: the rendered markdown with its changes inline, sanitized.
     await page.getByRole('tab', { name: /Docs/ }).click()
@@ -185,8 +194,8 @@ describe('artifact (vite build --mode artifact)', () => {
     await page.locator('.doc-diff .md-skip', { hasText: '3 unchanged blocks' }).waitFor()
     assert.equal(await page.evaluate(() => (window as any).__pwned), undefined)
 
-    // Lines: GitHub's patch with old and new line numbers.
-    await page.getByRole('tab', { name: /Lines/ }).click()
+    // Full: GitHub's patch with old and new line numbers.
+    await page.getByRole('tab', { name: /Full/ }).click()
     let added = page.locator('section', { hasText: 'snap/snap.go' }).locator('tr.add').first()
     await added.waitFor()
     assert.equal(await added.locator('.ln').nth(1).innerText(), '12')

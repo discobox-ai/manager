@@ -1,6 +1,6 @@
 import { on, type Handle } from 'remix/component'
 
-import type { DeclChangeDoc, DiffDoc, DiffFileDoc, DiffPartDoc } from '../shared/docs.ts'
+import type { DeclChangeDoc, DiffDoc, DiffFileDoc, DiffPartDoc, TrimmedRow } from '../shared/docs.ts'
 import { githubOrg } from '../shared/refs.ts'
 import { diffSequence } from '../shared/sequence.ts'
 import { routes } from '../routes.ts'
@@ -10,17 +10,22 @@ import { highlight, langOf, runs, type Classes } from './highlight.ts'
 import { Markdown } from './html.tsx'
 import { Page } from './shell.tsx'
 
-export type Tab = 'contract' | 'docs' | 'implementation' | 'lines'
+export type Tab = 'summary' | 'contract' | 'docs' | 'trimmed' | 'full'
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
+  { id: 'summary', label: 'Summary', hint: 'The changed files, with lines added and removed' },
   { id: 'contract', label: 'Contract', hint: 'Declarations added, removed, or with a changed signature' },
   { id: 'docs', label: 'Docs', hint: 'Markdown files, rendered, with their changes inline' },
-  { id: 'implementation', label: 'Implementation', hint: 'The contract, plus every declaration whose body changed' },
-  { id: 'lines', label: 'Lines', hint: 'Every changed line, as GitHub shows it' },
+  { id: 'trimmed', label: 'Trimmed', hint: 'The code only: no text files, tests or generated files, and no comment changes' },
+  { id: 'full', label: 'Full', hint: 'Every changed line of every file, as GitHub shows it' },
 ]
 
-export function isTab(value: string | null): value is Tab {
-  return TABS.some((t) => t.id === value)
+// Links from before the tabs were renamed.
+const OLD_TABS: Record<string, Tab> = { implementation: 'trimmed', lines: 'full' }
+
+export function tabFrom(value: string | null): Tab {
+  if (value && OLD_TABS[value]) return OLD_TABS[value]
+  return TABS.find((t) => t.id === value)?.id ?? 'summary'
 }
 
 /** The diff viewer for one PR (id: "vm~pull~38"), on the tab in the URL. */
@@ -99,12 +104,14 @@ export function DiffPage(handle: Handle<{ id: string; tab: Tab; store: Store }>)
             <p class="empty">No diff for PR {label} yet. It arrives with the next sync, while the PR is open.</p>
           ) : 'error' in state.doc ? (
             <p class="error">Couldn’t build the diff: {state.doc.error}</p>
-          ) : tab === 'contract' || tab === 'implementation' ? (
+          ) : tab === 'summary' ? (
+            <SummaryTab doc={state.doc} />
+          ) : tab === 'contract' ? (
             <DeclsTab
               id={handle.props.id}
               doc={state.doc}
               store={handle.props.store}
-              bodies={tab === 'implementation'}
+              bodies={false}
               exportedOnly={exportedOnly}
               onExportedOnly={(v: boolean) => {
                 exportedOnly = v
@@ -114,7 +121,7 @@ export function DiffPage(handle: Handle<{ id: string; tab: Tab; store: Store }>)
           ) : tab === 'docs' ? (
             <DocsTab id={handle.props.id} doc={state.doc} store={handle.props.store} />
           ) : (
-            <LinesTab id={handle.props.id} doc={state.doc} store={handle.props.store} />
+            <LinesTab key={tab} id={handle.props.id} doc={state.doc} store={handle.props.store} trimmed={tab === 'trimmed'} />
           )}
         </div>
       </Page>
@@ -129,10 +136,55 @@ function inContract(c: DeclChangeDoc): boolean {
 function tabCounts(doc: DiffDoc): Record<Tab, number> {
   let decls = doc.files.flatMap((f) => f.decls ?? [])
   return {
+    summary: doc.files.length,
     contract: decls.filter(inContract).length,
-    implementation: decls.length,
     docs: doc.files.filter((f) => f.kind === 'docs').length,
-    lines: doc.files.length,
+    trimmed: doc.files.filter((f) => f.trimmed).length,
+    full: doc.files.length,
+  }
+}
+
+/** The diffstat: every changed file with its lines added and removed, and a bar to scale. */
+function SummaryTab(handle: Handle<{ doc: DiffDoc }>) {
+  return () => {
+    let { doc } = handle.props
+    let most = Math.max(1, ...doc.files.map((f) => f.additions + f.deletions))
+    let adds = doc.files.reduce((n, f) => n + f.additions, 0)
+    let dels = doc.files.reduce((n, f) => n + f.deletions, 0)
+    let width = 14
+    return (
+      <>
+        <table class="diffstat">
+          <tbody>
+            {doc.files.map((f) => {
+              let total = f.additions + f.deletions
+              let cells = total ? Math.max(1, Math.round((total / most) * width)) : 0
+              let plus = total ? Math.round((f.additions / total) * cells) : 0
+              return (
+                <tr key={f.filename} class={f.test || f.generated ? 'quiet' : undefined}>
+                  <td class="name">
+                    <a href={blobHref(doc, f.filename, undefined, f.status === 'removed' ? doc.baseSha : doc.headSha)} target="_blank" rel="noopener noreferrer">
+                      {f.filename}
+                    </a>
+                    {f.status !== 'modified' ? <span class={`fstatus ${f.status}`}>{f.status}</span> : null}
+                  </td>
+                  <td class="num plus">+{f.additions}</td>
+                  <td class="num minus">−{f.deletions}</td>
+                  <td class="bar" aria-hidden="true">
+                    <span class="plus">{'+'.repeat(plus)}</span>
+                    <span class="minus">{'−'.repeat(cells - plus)}</span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        <p class="diffstat-total">
+          {doc.files.length} {doc.files.length === 1 ? 'file' : 'files'} changed{doc.filesTruncated ? ' (GitHub lists only the first 300)' : ''},{' '}
+          <span class="plus">{adds} insertions(+)</span>, <span class="minus">{dels} deletions(−)</span>
+        </p>
+      </>
+    )
   }
 }
 
@@ -212,9 +264,9 @@ function DeclsTab(
   }
 }
 
-function FileHeader(handle: Handle<{ doc: DiffDoc; file: DiffFileDoc }>) {
+function FileHeader(handle: Handle<{ doc: DiffDoc; file: DiffFileDoc; counts?: { additions: number; deletions: number } }>) {
   return () => {
-    let { doc, file } = handle.props
+    let { doc, file, counts } = handle.props
     return (
       <h2 class="file-head">
         <a class="mono" href={blobHref(doc, file.filename, undefined, file.status === 'removed' ? doc.baseSha : doc.headSha)} target="_blank" rel="noopener noreferrer">
@@ -223,7 +275,7 @@ function FileHeader(handle: Handle<{ doc: DiffDoc; file: DiffFileDoc }>) {
         {file.previousFilename ? <span class="sub"> from {file.previousFilename}</span> : null}
         {file.status !== 'modified' ? <span class={`fstatus ${file.status}`}>{file.status}</span> : null}
         <span class="n">
-          <span class="plus">+{file.additions}</span> <span class="minus">−{file.deletions}</span>
+          <span class="plus">+{(counts ?? file).additions}</span> <span class="minus">−{(counts ?? file).deletions}</span>
         </span>
       </h2>
     )
@@ -260,7 +312,6 @@ function DeclItem(
     return (
       <div class={`decl ${c.status}${startsGroup ? ' group-start' : ''}`} title={`${c.kind} ${c.container ? c.container + '.' : ''}${c.name}${c.movedFrom ? `, moved from ${c.movedFrom}` : ''}`}>
         <Signature change={c} language={handle.props.file.language} />
-        {bodies && c.hasBodyPatch ? <Part id={id} index={index} store={store} view="body" declKey={c.key} language={handle.props.file.language} /> : null}
       </div>
     )
   }
@@ -341,21 +392,29 @@ function DocsTab(handle: Handle<{ id: string; doc: DiffDoc; store: Store }>) {
 /** Files with more changed lines than this start folded, and load when opened. */
 const OPEN_LINES = 400
 
-function LinesTab(handle: Handle<{ id: string; doc: DiffDoc; store: Store }>) {
+/**
+ * Full: every file's diff as GitHub has it. Trimmed: only code (parsed source files, not tests or
+ * generated ones), compared with comments and blank lines left out, so only code changes show.
+ */
+function LinesTab(handle: Handle<{ id: string; doc: DiffDoc; store: Store; trimmed: boolean }>) {
   let opened = new Map<string, boolean>()
   return () => {
-    let { doc, id, store } = handle.props
-    let total = doc.files.reduce((n, f) => n + f.additions + f.deletions, 0)
+    let { doc, id, store, trimmed } = handle.props
+    let files = doc.files.map((file, index) => ({ file, index })).filter(({ file }) => !trimmed || file.trimmed)
+    let size = (f: DiffFileDoc) => (trimmed && f.trimmed ? f.trimmed.additions + f.trimmed.deletions : f.additions + f.deletions)
+    let total = files.reduce((n, { file }) => n + size(file), 0)
+    let left = doc.files.length - files.length
     return (
       <>
         <div class="diff-summary">
           <span>
-            <strong>{doc.files.length}</strong> {doc.files.length === 1 ? 'file' : 'files'}
-            {doc.filesTruncated ? ' (GitHub lists only the first 300)' : ''}, {total} changed lines.
+            <strong>{files.length}</strong> {files.length === 1 ? 'file' : 'files'}
+            {!trimmed && doc.filesTruncated ? ' (GitHub lists only the first 300)' : ''}, {total} changed {trimmed ? 'lines of code' : 'lines'}.
+            {trimmed && left ? ` ${left} more (text, tests, generated, or only comments changed) under Full.` : ''}
           </span>
         </div>
-        {doc.files.map((file, index) => {
-          let open = opened.get(file.filename) ?? (file.additions + file.deletions <= OPEN_LINES && !file.generated && !file.test)
+        {files.map(({ file, index }) => {
+          let open = opened.get(file.filename) ?? (size(file) <= OPEN_LINES && (trimmed || (!file.generated && !file.test)))
           return (
             <section key={file.filename} class="diff-file">
               <div class="file-toggle">
@@ -371,28 +430,29 @@ function LinesTab(handle: Handle<{ id: string; doc: DiffDoc; store: Store }>) {
                 >
                   {open ? '▾' : '▸'}
                 </button>
-                <FileHeader doc={doc} file={file} />
+                <FileHeader doc={doc} file={file} counts={trimmed ? file.trimmed : undefined} />
               </div>
               {!open ? (
                 <p class="empty folded">
                   {file.generated ? 'Generated. ' : file.test ? 'Test code. ' : ''}
-                  {file.additions + file.deletions} changed lines, folded.
+                  {size(file)} changed lines, folded.
                 </p>
               ) : file.hasPart ? (
-                <Part id={id} index={index} store={store} view="lines" />
+                <Part id={id} index={index} store={store} view={trimmed ? 'trimmed' : 'lines'} language={file.language} />
               ) : (
                 <p class="empty">No line diff (a binary file, or too large for GitHub to show).</p>
               )}
             </section>
           )
         })}
+        {!files.length ? <p class="empty">{trimmed ? 'No code changed, only text, tests or comments.' : 'No files.'}</p> : null}
       </>
     )
   }
 }
 
 /** One file's part, read when it's first shown. */
-function Part(handle: Handle<{ id: string; index: number; store: Store; view: 'lines' | 'docs' | 'body'; declKey?: string; language?: string }>) {
+function Part(handle: Handle<{ id: string; index: number; store: Store; view: 'lines' | 'docs' | 'trimmed'; language?: string }>) {
   let state: DiffPartState = { status: 'loading' }
   let unsubscribe = handle.props.store.diffPart(handle.props.id, handle.props.index, (next) => {
     state = next
@@ -400,7 +460,7 @@ function Part(handle: Handle<{ id: string; index: number; store: Store; view: 'l
   })
   handle.signal.addEventListener('abort', () => unsubscribe())
   return () => {
-    let { view, declKey } = handle.props
+    let { view, language } = handle.props
     if (state.status === 'loading') return <p class="empty">Loading…</p>
     if (state.status === 'missing') return <p class="empty">Not here yet; it arrives with the next sync.</p>
     if ('error' in state.doc) return <p class="error">Couldn’t load it: {state.doc.error}</p>
@@ -416,12 +476,11 @@ function Part(handle: Handle<{ id: string; index: number; store: Store; view: 'l
         </>
       )
     }
-    let patch = view === 'body' ? part.bodyPatches?.[declKey ?? ''] : part.patch
-    if (!patch) return <p class="empty">No line diff for this.</p>
-    if (view === 'body') return <CodeDiff patch={patch} language={handle.props.language} />
+    let rows = view === 'trimmed' ? trimmedRows(part.trimmed ?? []) : part.patch ? patchRows(part.patch) : null
+    if (!rows?.length) return <p class="empty">No line diff for this.</p>
     return (
       <>
-        <PatchTable patch={patch} />
+        <PatchTable rows={rows} language={language} />
         {cut}
       </>
     )
@@ -453,65 +512,55 @@ function patchRows(patch: string): PatchRow[] {
   return rows
 }
 
+/** The trimmed rows (server/diff trimmedDiff) as patch rows. */
+function trimmedRows(rows: TrimmedRow[]): PatchRow[] {
+  return rows.map((r) =>
+    r.k === '@'
+      ? { kind: r.t ? 'note' : 'hunk', text: r.t ?? '' }
+      : { kind: r.k === '+' ? 'add' : r.k === '-' ? 'del' : 'ctx', old: r.o, new: r.n, text: r.t ?? '' },
+  )
+}
+
 /**
- * A body's diff as code: added lines in shades of green, removed in red, the rest grey, and "…"
- * between hunks. Each side of a hunk (context with removed lines, context with added) is
- * highlighted as one text, so a string or comment over several lines is colored right.
+ * Highlighting for each row: each side of a hunk (context with removed lines, context with added)
+ * is highlighted as one text, so a string over several lines is colored right.
  */
-function CodeDiff(handle: Handle<{ patch: string; language?: string }>) {
-  return () => {
-    let rows = patchRows(handle.props.patch)
-    let lang = langOf(handle.props.language)
-    let lineClasses: (Classes | null)[] = rows.map(() => null)
-    let side = (keep: (k: string) => boolean, idx: number[]) => {
-      let text = idx.map((i) => rows[i].text).join('\n')
-      let classes = highlight(text, lang)
-      let at = 0
-      for (let i of idx) {
-        lineClasses[i] = classes.slice(at, at + rows[i].text.length)
-        at += rows[i].text.length + 1
-      }
+function rowClasses(rows: PatchRow[], language: string | undefined): (Classes | null)[] {
+  let lang = langOf(language)
+  let out: (Classes | null)[] = rows.map(() => null)
+  if (!lang) return out
+  let side = (idx: number[]) => {
+    let classes = highlight(idx.map((i) => rows[i].text).join('\n'), lang)
+    let at = 0
+    for (let i of idx) {
+      out[i] = classes.slice(at, at + rows[i].text.length)
+      at += rows[i].text.length + 1
     }
-    // Hunk by hunk: the old side, then the new (a context line belongs to both; they agree).
-    let hunk: number[] = []
-    let flush = () => {
-      side((k) => k !== 'add', hunk.filter((i) => rows[i].kind !== 'add'))
-      side((k) => k !== 'del', hunk.filter((i) => rows[i].kind !== 'del'))
-      hunk = []
-    }
-    rows.forEach((r, i) => {
-      if (r.kind === 'hunk') flush()
-      else if (r.kind !== 'note') hunk.push(i)
-    })
-    flush()
-    return (
-      <pre class="code-diff">
-        {rows.map((r, i) =>
-          r.kind === 'hunk' ? (
-            i === 0 ? null : (
-              <span key={i} class="gap">
-                {'…\n'}
-              </span>
-            )
-          ) : r.kind === 'note' ? null : (
-            <span key={i} class={r.kind}>
-              {Code({ text: r.text, classes: lineClasses[i] ?? [], from: 0, to: r.text.length })}
-              {'\n'}
-            </span>
-          ),
-        )}
-      </pre>
-    )
   }
+  let hunk: number[] = []
+  let flush = () => {
+    side(hunk.filter((i) => rows[i].kind !== 'add'))
+    side(hunk.filter((i) => rows[i].kind !== 'del'))
+    hunk = []
+  }
+  rows.forEach((r, i) => {
+    if (r.kind === 'hunk' || r.kind === 'note') flush()
+    else hunk.push(i)
+  })
+  flush()
+  return out
 }
 
 /** A unified diff the way GitHub shows it: old and new line numbers, then the line. */
-function PatchTable(handle: Handle<{ patch: string }>) {
-  return () => (
+function PatchTable(handle: Handle<{ rows: PatchRow[]; language?: string }>) {
+  return () => {
+    let { rows, language } = handle.props
+    let classes = rowClasses(rows, language)
+    return (
     <div class="patch-wrap">
       <table class="patch-table">
         <tbody>
-          {patchRows(handle.props.patch).map((r, i) =>
+          {rows.map((r, i) =>
             r.kind === 'hunk' || r.kind === 'note' ? (
               <tr key={i} class={r.kind}>
                 <td class="ln" />
@@ -524,7 +573,7 @@ function PatchTable(handle: Handle<{ patch: string }>) {
                 <td class="ln">{r.new ?? ''}</td>
                 <td class="code">
                   <span class="mark">{r.kind === 'add' ? '+' : r.kind === 'del' ? '−' : ' '}</span>
-                  {r.text}
+                  {classes[i] ? Code({ text: r.text, classes: classes[i]!, from: 0, to: r.text.length }) : r.text}
                 </td>
               </tr>
             ),
@@ -532,5 +581,6 @@ function PatchTable(handle: Handle<{ patch: string }>) {
         </tbody>
       </table>
     </div>
-  )
+    )
+  }
 }

@@ -187,8 +187,6 @@ export interface DeclChangeDoc {
   /** The file it was in at the base, when it moved. */
   movedFrom?: string
   exported: boolean
-  /** The file's part (DiffPartDoc) has the body's diff under this change's key. */
-  hasBodyPatch?: boolean
 }
 
 export interface DiffFileDoc {
@@ -201,8 +199,10 @@ export interface DiffFileDoc {
   kind: 'code' | 'docs' | 'other'
   language?: string
   generated?: boolean
-  /** Test code: under Lines only. */
+  /** Test code: under Full only. */
   test?: boolean
+  /** The part has a trimmed (code-only) diff, and how many lines it adds and removes. */
+  trimmed?: { additions: number; deletions: number }
   decls?: DeclChangeDoc[]
   /** There's a part document (diffParts/<id>~<index>) with its lines, docs or body diffs. */
   hasPart: boolean
@@ -221,9 +221,18 @@ export interface DiffPartDoc {
   patch?: string
   /** Markdown at the head, rendered, with <ins> and <del> where it changed. */
   docHtml?: string
-  /** Unified diffs of changed bodies, by declaration key, with the file's own line numbers. */
-  bodyPatches?: Record<string, string>
+  /** The code-only diff: comments and blank lines left out of both versions before comparing. */
+  trimmed?: TrimmedRow[]
   truncated?: boolean
+}
+
+/** One row of a trimmed diff: a hunk break, or a line kept (' '), added ('+') or removed ('-'). */
+export interface TrimmedRow {
+  k: ' ' | '+' | '-' | '@'
+  /** Its line numbers at the base and the head. */
+  o?: number
+  n?: number
+  t?: string
 }
 
 /** diffs/<repo~pull~n>: a PR's changes, for the diff viewer's tabs. */

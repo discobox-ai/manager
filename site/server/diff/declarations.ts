@@ -91,6 +91,40 @@ export async function declarations(source: string, lang: LanguageName): Promise<
   }
 }
 
+/** A source line with its comments taken out: its 1-based number and what's left of it. */
+export interface CodeLine {
+  n: number
+  text: string
+}
+
+/**
+ * The file's lines without comments, for the trimmed diff: comment text removed (by the parse, so a
+ * // or # inside a string stays), and the lines left with nothing but space dropped. null when it
+ * can't be parsed.
+ */
+export async function codeLines(source: string, lang: LanguageName): Promise<CodeLine[] | null> {
+  let parser = await parserFor(lang)
+  try {
+    let tree = parser.parse(source)
+    if (!tree) return null
+    try {
+      let text = source.split('')
+      for (let c of comments(tree.rootNode)) {
+        for (let i = c.startIndex; i < c.endIndex; i++) if (text[i] !== '\n') text[i] = ''
+      }
+      return text
+        .join('')
+        .split('\n')
+        .map((line, i) => ({ n: i + 1, text: line.trimEnd() }))
+        .filter((l) => l.text.trim() !== '')
+    } finally {
+      tree.delete()
+    }
+  } finally {
+    parser.delete()
+  }
+}
+
 class Collector {
   decls: Decl[] = []
   #seen = new Map<string, number>()

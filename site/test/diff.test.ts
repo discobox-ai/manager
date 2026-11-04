@@ -2,8 +2,8 @@ import * as assert from 'remix/assert'
 import { describe, it } from 'remix/test'
 
 import { diffSequence, unifiedDiff } from '../app/shared/sequence.ts'
-import { declarations } from '../server/diff/declarations.ts'
-import { compareDecls, isTestFile } from '../server/diff/index.ts'
+import { codeLines, declarations } from '../server/diff/declarations.ts'
+import { compareDecls, isTestFile, trimmedDiff } from '../server/diff/index.ts'
 import { htmlDiff, markdownDiff } from '../server/diff/markdown-diff.ts'
 import { highlight, langOf, runs } from '../app/ui/highlight.ts'
 
@@ -111,6 +111,22 @@ describe('highlighting', () => {
     let classes = highlight(text, langOf('typescript'))
     assert.equal(classes[text.indexOf('two')], 'str')
     assert.equal(classes[text.indexOf('let')], 'kw')
+  })
+})
+
+describe('trimmed diff', () => {
+  it('leaves out comment-only and spacing-only changes, and keeps a // inside a string', async () => {
+    let before = 'package x\n\n// Old doc.\nfunc A() string {\n\treturn "a // b"\n}\n\nfunc B() {   }\n'
+    let after = 'package x\n\n// New doc, longer.\nfunc A() string {\n\t// a note\n\treturn "a // b!"\n}\n\nfunc B() {}\n'
+    let rows = trimmedDiff((await codeLines(before, 'go'))!, (await codeLines(after, 'go'))!)
+    let changed = rows.filter((r) => r.k === '+' || r.k === '-').map((r) => `${r.k}${r.t}`)
+    assert.deepEqual(changed, ['-\treturn "a // b"', '+\treturn "a // b!"'])
+    assert.equal(rows.find((r) => r.k === '+')!.n, 6)
+  })
+
+  it('is empty when only comments changed', async () => {
+    let rows = trimmedDiff((await codeLines('x = 1  # one\n', 'python'))!, (await codeLines('# new\nx = 1  # uno\n', 'python'))!)
+    assert.deepEqual(rows, [])
   })
 })
 

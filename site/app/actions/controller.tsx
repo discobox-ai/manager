@@ -4,7 +4,7 @@ import { routes } from '../routes.ts'
 import { store } from '../store/index.ts'
 import { AdrIndexPage, AdrPage, AdrUnavailable } from '../ui/adr-page.tsx'
 import { BoardPage } from '../ui/board.tsx'
-import { DiffPage, isTab } from '../ui/diff-page.tsx'
+import { DiffPage, tabFrom } from '../ui/diff-page.tsx'
 import { NotFound } from '../ui/shell.tsx'
 
 const REPO = /^[A-Za-z0-9_.-]+$/
@@ -19,7 +19,7 @@ export default createController(routes, {
       let { repo, number } = params
       if (!REPO.test(repo) || !/^\d+$/.test(number)) return render(<NotFound path={url.pathname} />, { status: 404 })
       let tab = url.searchParams.get('tab')
-      return render(<DiffPage id={`${repo}~pull~${number}`} tab={isTab(tab) ? tab : 'contract'} store={store} />)
+      return render(<DiffPage id={`${repo}~pull~${number}`} tab={tabFrom(tab)} store={store} />)
     },
 
     async adr({ render, params, url }) {
