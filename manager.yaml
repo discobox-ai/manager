@@ -18,9 +18,16 @@ repos:
   - name: discobox-ai/review
     defaultBranch: main
   # Added by the owner 2026-11-04: the docs site, blog and home page.
-  # defaultBranch assumed; check once the bot can read it.
+  # defaultBranch main checked 2026-11-04.
   - name: discobox-ai/site
     defaultBranch: main
+
+# The release being worked toward (owner, 2026-11-04). Its milestone's issues
+# come next after blockers (docs/labels.md, Next up). The owner creates the
+# milestone; the manager applies it.
+release:
+  repo: discobox-ai/discobox
+  milestone: v0.19 Release
 
 workers:
   # The harness every new worker box runs (`discobox run -H`; owner, 2026-11-04).

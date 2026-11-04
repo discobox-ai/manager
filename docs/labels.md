@@ -26,6 +26,22 @@ none, which means new). The other groups describe it.
 `area/*` (component), `platform/*` (macos, windows), `priority/low|medium|high|critical`.
 `priority/*` is how the owner steers.
 
+## Next up (owner, 2026-11-04)
+
+What starts next, and how the table ranks, in three groups, each by
+`priority/*` within it:
+
+1. **Blockers:** `type/flake`, release-validation findings, anything that
+   breaks CI, and anything blocking an issue in the release milestone.
+2. **The release milestone** (`release.milestone` in `manager.yaml`, in
+   `release.repo`): its issues, and the parts in other repositories its
+   description names.
+3. **Everything else**, including background streams the owner keeps out of
+   the release (disco-vm drivers).
+
+A release is a GitHub milestone, created by the owner (the bot has Triage
+and can only apply one). Its description holds the release's scope.
+
 ## Initiatives
 
 A multi-issue effort (like discobox#42, disco-vm) is a tracking issue, not a

@@ -29,8 +29,12 @@ the table. Each row has:
   - An ADR PR that's green is "Review and merge": merging it accepts it.
 - **The merge queue** is the rows at "Review and merge", in rank order. Only
   its top 3 get rebased when they conflict (`workers`, Rebases).
-- **Why this rank:** rank by how much a row unblocks (critical path first),
-  then by how hard the decision is to reverse.
+- **Why this rank:** blockers first (a flake, a release-validation finding,
+  broken CI, anything holding up a milestone issue), then the release
+  milestone's rows, then the rest (`docs/labels.md`, Next up). Within each,
+  by how much a row unblocks (critical path first), then by how hard the
+  decision is to reverse. Say which group in the column ("blocker: flake",
+  "v0.19").
 - **Ad-hoc boxes** get a row too: Item is the owner's topic, Doing "owner
   working" ("owner prototyping" for a prototype box), Your move `–`, until `submit` gives it an issue.
 - **Finished boxes** get no row: you archive them yourself (`workers`, Retire).

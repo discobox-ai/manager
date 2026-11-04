@@ -138,7 +138,8 @@ this order, within `workers.max` and `disk.minFreeGiB`:
    mechanical prompts.
 3. **`status/ready` issues** with a free slot.
 4. **New issues** in migrated repositories: triage, at most
-   `workers.triageMax` at once, flakes first, then highest `priority/*`, then newest.
+   `workers.triageMax` at once, flakes first, then the release milestone's,
+   then highest `priority/*`, then newest (`docs/labels.md`, Next up).
 
 Update the rows that changed (`scripts/table`).
 
