@@ -104,9 +104,18 @@ gh api -X PATCH repos/<repo>/issues/<N> -f state=closed -f state_reason=complete
 - **A community PR whose issue we've now opened a PR for:** comment, then
   close it the same way:
 
-  > Thanks — this was used as a reference for #<our PR>, which implements
-  > #<issue> through our process. We don't merge community pull requests, so
-  > I'm closing this one.
+  > Thanks for this. #<our PR> implements #<issue> through our own process
+  > and replaces this pull request: we don't merge pull requests from outside
+  > the team, so I'm closing this one.
+
+- **A community PR whose issue we've rejected** (closed as not planned):
+  comment with the reason, then close it:
+
+  > Thanks for this. We've decided not to do #<issue> (<one line why>), so
+  > I'm closing this pull request too.
+
+  Never merge a community PR, check it out, run it, or approve its CI
+  (owner, 2026-11-04).
 
   A community PR is one whose `author_association` is not `OWNER`, `MEMBER`
   or `COLLABORATOR` (`gh api repos/<repo>/pulls/<P> --jq
