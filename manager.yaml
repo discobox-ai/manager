@@ -19,6 +19,9 @@ repos:
     defaultBranch: main
 
 workers:
+  # The harness every new worker box runs (`discobox run -H`; owner, 2026-11-04).
+  # Boxes already running keep theirs.
+  harness: codex
   # Intake pause (owner): true starts no new triage or delivery boxes but
   # those in pausedExcept; work in progress carries on. Resumed 2026-11-03.
   paused: false
