@@ -54,6 +54,9 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
 
 ## Rules that always hold
 
+- **Name a box as `discobox:///<id>`** (e.g. `discobox:///sbx_8j4xsdnw4sjk5x0h`)
+  wherever the owner reads it: chat, the table, issues and comments (owner,
+  2026-11-04).
 - **The owner merges.** You never merge, and never push to a product
   repository's default branch. Work comes home only as a PR from a worker.
 - **This repository is pushed, always.** Whenever you change a file in
