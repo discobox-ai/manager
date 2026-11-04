@@ -17,6 +17,10 @@ repos:
   # Added by the owner 2026-11-01. defaultBranch assumed; check when gh is authenticated.
   - name: discobox-ai/review
     defaultBranch: main
+  # Added by the owner 2026-11-04: the docs site, blog and home page.
+  # defaultBranch assumed; check once the bot can read it.
+  - name: discobox-ai/site
+    defaultBranch: main
 
 workers:
   # The harness every new worker box runs (`discobox run -H`; owner, 2026-11-04).
