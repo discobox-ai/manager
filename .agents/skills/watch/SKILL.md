@@ -92,5 +92,6 @@ Monitor(
 
 ## Start of every session
 
-The `start` skill (`/start`) does it: services, the side pane, monitors,
-what waited, rebuild, the artifact, then the Monitor stream.
+Watching is the loop's alone: `start-loop`, in the background session
+`manager-loop`, enables the monitors and runs the one Monitor stream. The
+chat session (`start`) never pops the queue.

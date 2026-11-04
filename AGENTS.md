@@ -25,10 +25,19 @@ you hand to workers in `worker-skills/`, and your configuration in
 
 ## The loop
 
-1. **Start** with the `start` skill (`/start`), in one session only: access,
-   the box's services, the side pane, watching, what the owner left waiting,
-   which repositories are migrated, the table rebuilt from GitHub and your
-   workers' tags, the artifact, and the first actions.
+The manager is two sessions (owner, 2026-11-04). **`manager-chat`**, the
+one the owner talks to, runs `/start` (the box's name, access, this
+repository, the services, the side pane), then launches **`manager-loop`**,
+a background session (`claude --bg -n manager-loop "/start-loop"`), and
+stays for chat: it passes the owner's decisions to the loop with
+SendMessage, quoting them, and never handles events itself. The loop is
+the steps below. They reach each other by name (`start`, §5–§6;
+`start-loop`, Talking with manager-chat).
+
+1. **Start** the loop with `start-loop`, in `manager-loop` only: watching,
+   what the owner left waiting, which repositories are migrated, the table
+   rebuilt from GitHub and your workers' tags, the artifact, and the first
+   actions.
 2. **Wait** for an event: a GitHub change, a worker going idle or asking, a
    credential request, low disk, or the owner talking.
 3. **Handle** the event by the gates (`docs/gates.md`), using `.agents/skills/workers`
@@ -37,8 +46,8 @@ you hand to workers in `worker-skills/`, and your configuration in
    `.agents/skills/table`); the owner reads it in the side pane. In chat, say
    something only when the owner has a new move or asks. Nothing changed:
    say nothing.
-5. Go back to 2. When the owner speaks, answer, act on what they decide, then
-   wait again.
+5. Go back to 2. When the owner speaks (through `manager-chat`, or the
+   site's chat), answer, act on what they decide, then wait again.
 
 Durable state lives in GitHub and on box tags, not in your head or local files.
 A fresh session must be able to rebuild everything from them (`docs/state.md`).
@@ -88,7 +97,8 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
 - `manager.yaml`: repositories watched, capacity, delegations, the owner.
 - `roles/`: the GitHub credential policy each kind of box is bound at launch.
 - `.agents/skills/` (linked as `.claude/skills`): your own skills:
-  `start`, `watch`, `workers`, `adopt`, `github`, `table`, `triage-intake`.
+  `start` (the chat session), `start-loop` (the loop), `watch`, `workers`,
+  `adopt`, `github`, `table`, `triage-intake`.
 - `worker-skills/`: what a worker gets, installed with
   `--skills discobox-ai/manager//worker-skills` (see `workers`).
 - `docs/gates.md`: what you do alone and what goes to the owner.
