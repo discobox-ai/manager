@@ -1,0 +1,1 @@
+{ "name": "artifact-sync", "version": "0.1.0", "description": "Sends the manager's artifact outbox to its database on a timer, and pulls the owner's actions, with no model in the loop" }

@@ -25,9 +25,10 @@ you hand to workers in `worker-skills/`, and your configuration in
 
 ## The loop
 
-1. **Start** with the `start-loop` skill (`/start-loop`): access, watching,
+1. **Start** with the `start` skill (`/start`), in one session only: access,
+   the box's services, the side pane, watching, what the owner left waiting,
    which repositories are migrated, the table rebuilt from GitHub and your
-   workers' tags, and the first actions.
+   workers' tags, the artifact, and the first actions.
 2. **Wait** for an event: a GitHub change, a worker going idle or asking, a
    credential request, low disk, or the owner talking.
 3. **Handle** the event by the gates (`docs/gates.md`), using `.agents/skills/workers`
@@ -86,7 +87,7 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
 - `manager.yaml`: repositories watched, capacity, delegations, the owner.
 - `roles/`: the GitHub credential policy each kind of box is bound at launch.
 - `.agents/skills/` (linked as `.claude/skills`): your own skills:
-  `start-loop`, `watch`, `workers`, `github`, `table`, `triage-intake`.
+  `start`, `watch`, `workers`, `github`, `table`, `triage-intake`.
 - `worker-skills/`: what a worker gets, installed with
   `--skills discobox-ai/manager//worker-skills` (see `workers`).
 - `docs/gates.md`: what you do alone and what goes to the owner.

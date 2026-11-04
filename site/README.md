@@ -95,7 +95,8 @@ The tests need Playwright's Chromium once: `npx playwright install chromium-head
    collection needs its rule added: then pass the whole `capabilities` set (the `table` skill
    lists it).
 
-The services start at the box's boot. A box booted before they were declared doesn't run them
-until it reboots; start them by hand meanwhile, detached, from the repository root:
+Discobox runs both as the box's services (`.discobox/services/manager-site` and `manager-sync`),
+started at boot; nothing restarts one that exits. `/start` checks both. A box booted before they
+were declared, or one that exited, is started by hand, detached, from the repository root:
 `setsid nohup .discobox/services/manager-site > ~/.local/state/discobox-manager/site.log 2>&1 &`
 (and `manager-sync` into `sync.log`).

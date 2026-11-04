@@ -33,6 +33,9 @@ discobox-monitor enable file --name site-chat -o path=$HOME/.local/state/discobo
 # The artifact's sync agent stalling: site/sync.ts writes a line when nothing has left the
 # outbox for 10 minutes ("stalled: …"), and again when it moves ("recovered: …").
 discobox-monitor enable file --name artifact-sync -o path=$HOME/.local/state/discobox-manager/artifact-sync/alerts.log
+# The artifact's sync flushing: site/sync.ts appends a line to changed.log when it queues
+# batches; each one starts a sync pass (below).
+discobox-monitor enable file --name artifact-flush -o path=$HOME/.local/state/discobox-manager/artifact-sync/changed.log
 # Disk.
 discobox-monitor enable command --name disk -o cmd='df -BG --output=avail / | tail -1' -o every=5m
 ```
@@ -89,5 +92,5 @@ Monitor(
 
 ## Start of every session
 
-The `start-loop` skill does it: status, drain, rebuild, then the Monitor
-stream.
+The `start` skill (`/start`) does it: services, the side pane, monitors,
+what waited, rebuild, the artifact, then the Monitor stream.

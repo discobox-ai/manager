@@ -63,11 +63,12 @@ stops a box, and on each heartbeat.
 
 ## The manager site
 
-`site/` (Remix 3) serves the same table on port 4400, started at boot by
-`.discobox/services/manager-site`: "Your move" rows first, each issue and PR
+`site/` (Remix 3) serves the same table on port 4400, run by discobox as the
+box's `manager-site` service (`.discobox/services/`, started at boot, dev
+mode; `start` §3 checks it): "Your move" rows first, each issue and PR
 expandable to its body, checks, files and comments (read live from GitHub,
-read only), and a diff page per PR with Contract, Docs, Implementation and
-Lines tabs (`site/README.md`). It also gives the owner buttons on each row: close or reject a
+read only), and a diff page per PR with Summary, Contract, Docs, Trimmed and
+Full tabs (`site/README.md`). It also gives the owner buttons on each row: close or reject a
 PR, close an issue, prioritize, or a free-text instruction. A button only
 records the action, as one line in
 `~/.local/state/discobox-manager/actions.jsonl`; the `site-actions` monitor
@@ -144,7 +145,12 @@ Its stored rules, to restate in full if a collection is ever added: `rows`,
 `admin`; `actions` read `view`, write `interact`; plus `user: {}`.
 
 The site keeps no state of its own and commits nothing: lose the box and
-`start-loop` rebuilds the table.
+`/start` rebuilds the table.
+
+The side pane is the `manager-table` mod, kept in
+`.agents/skills/start/mods/manager-table/` and copied into the manager's
+session by `/start` (§4). Change it there, then copy it into the session again
+(`cp -r`); the session reloads it when the turn ends.
 
 ## When it changes
 

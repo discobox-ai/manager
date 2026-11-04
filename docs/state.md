@@ -14,5 +14,18 @@ manager, rebuilds the whole table from three places:
    nothing that happened while the manager's session was down is lost
    (`.agents/skills/watch`).
 
-Anything else (a local list of watched PRs, a "last seen" file) is a cache. Losing
-it must cost nothing but a rebuild.
+On the box, in `~/.local/state/discobox-manager/`:
+
+- `table.json` (the table) and `artifact-sync/` (the artifact's outbox and
+  state) are caches: `/start` rebuilds the table, and the sync re-sends.
+- `actions.jsonl`, `actions-done.jsonl`, `chat.jsonl` and
+  `chat-replies.jsonl` are the owner's button presses and chat with you, and
+  your answers. They outlive any session (a new one finds what waited, `start`
+  §6), but not the box.
+
+The side-pane mod is kept in the repository (`.agents/skills/start/mods/`);
+a session's own copy of it is a copy.
+
+Nothing that matters lives in a session: the owner can delete them all and
+start again with `/start`. Anything else (a local list of watched PRs, a
+"last seen" file) is a cache. Losing it must cost nothing but a rebuild.
