@@ -39,7 +39,9 @@ Empty means none or more than one: launch nothing, and tell the owner which
 to every `discobox run` below. Boxes already running keep theirs. The prompts
 and the screen-reading in this skill were written against Claude Code (its
 permission prompts, `AskUserQuestion` dialogs): check a new harness's first
-boxes before trusting the rest.
+boxes before trusting the rest. A Codex box first shows a "Trust this folder?"
+dialog for its own checkout (`/workspace/<repo>`): press Enter on "Trust and continue"
+(first Codex box, 2026-11-04; it then worked normally).
 
 **Workers push to the bot's forks** (owner, 2026-11-03): the bot can't write
 to the product repositories. A role that pushes (`github-deliver`,
