@@ -30,9 +30,14 @@ edits) ends with a footer naming this box, on its own line, last:
   decide or build; open questions marked open) / `## Done when`. A worker
   must be able to start from the issue alone.
 - `gh issue create --body-file F`, and `gh issue edit N --body-file F`.
-- **A worker's "Issue to file" comment** (`worker` skill; owner, 2026-11-03):
-  workers can't file issues, so they post the issue as a comment headed
-  `**Issue to file** in <repo>` on their own issue or PR. File it as written
+- **An issue a worker filed** (`worker` skill; owner, 2026-11-04): a worker
+  files what it finds in its own repository directly, and comments `Filed #M`
+  on its issue. It arrives as a new issue: triage it (`triage-intake`). One
+  titled `Flaky: ` is a flake: label it `type/flake`, `priority/high`,
+  `status/ready`, no triage, as for a flake you saw in CI (`docs/gates.md`).
+- **A worker's "Issue to file" comment** (`worker` skill): for another
+  repository than its own, a worker posts the issue as a comment headed
+  `**Issue to file** in <repo>` on its own issue or PR. File it as written
   (check `search/issues` for a duplicate first; link the duplicate instead
   if there is one), with the footer, then reply on the worker's thread: `Filed
   as <repo>#N.` Triage it like any new issue (`triage-intake`). If the worker

@@ -167,32 +167,41 @@ job needs; don't ask for it.
 - What a route can't narrow is yours to keep: push only your own branch,
   edit only your own PR, comment only on your issue and PR.
 
-## New work you find: "Issue to file"
+## New work you find: file it
 
-You don't file issues, and you never ask for a credential to file one
-(owner, 2026-11-03): new issues come through the manager. When your job turns
-up work outside its scope (a bug, a follow-up, something the owner asked for
-in your box), post one comment on **your own issue** (or your PR, if you have
-no issue), in this form exactly:
+When your job turns up work outside its scope (a flaky test, a bug, a
+follow-up, something the owner asked for in your box), **file it yourself in
+the repository you work in** (owner, 2026-11-04). Don't fix it in your PR,
+and don't ask for a credential: your role allows `POST repos/$REPO/issues`.
 
-```markdown
-**Issue to file** in `<owner>/<repo>`
+1. Search for a duplicate first: `gh api search/issues -f q="repo:$REPO is:issue is:open <words>"`.
+   One found: comment your evidence on it instead, and stop.
+2. File it with `gh issue create --repo $REPO --title '<title>' --body-file F`.
+   A flaky test's title starts `Flaky: ` and names the test. The body:
 
-### <title>
+   ```markdown
+   ## Today
+   … (what happens, with the failing run's link or the command and output)
+   ## Wanted
+   …
+   ## Done when
+   …
 
-## Today
-…
-## Wanted
-…
-## Done when
-…
-```
+   Found while working on #<N>.
+   ```
 
-then the footer. One comment per issue. The manager is watching your issue and
-PR; it files it, labels it, and replies on the same thread with the link.
-Don't wait for the reply: carry on with your job. If your job truly needs the
-number (to write `Part of #N`), read the replies later, or the manager types
-the link into your box.
+   then the footer (Comments, below). Never set labels, a milestone or an
+   assignee: the manager triages it.
+3. Comment once on your own issue (or PR): `Filed #<M>: <title>`, with the
+   footer, so the manager sees it.
+
+Carry on with your job; don't wait for the issue to be triaged.
+
+**Another repository** (validate-release files in discobox-ai/discobox, say):
+your role can't file there. Post one comment on your own issue headed
+`**Issue to file** in \`<owner>/<repo>\``, then `### <title>` and the same
+`## Today` / `## Wanted` / `## Done when` body and the footer. The manager
+files it and replies with the link.
 
 ## Comments
 
