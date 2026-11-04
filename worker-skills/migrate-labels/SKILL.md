@@ -95,6 +95,10 @@ Drop the tag once answered. On a change, revise the plan and ask again.
 
 1. Create the missing labels: `gh api -X POST repos/$REPO/labels -f name=…
    -f color=… -f description=…`.
+   A 404 means the bot can't create labels there (it has Triage; that needs
+   Write). Don't ask for a credential: tag the box `needs-input` and ask the
+   owner to run `./scripts/create-labels $REPO` from a checkout of
+   discobox-ai/manager, then carry on from step 2 once the labels exist.
 2. For each issue in the plan, add its new labels (`gh api -X POST
    repos/$REPO/issues/<n>/labels -f 'labels[]=status/triaged' …`), then
    remove its mapped old ones (`gh api -X DELETE

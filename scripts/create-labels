@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Create the manager's label set (docs/labels.md) in a repository, or bring
+# an existing label's color and description in line. Run it as the owner:
+# the bot has Triage on product repositories, and creating labels needs Write.
+#
+#   ./scripts/create-labels discobox-ai/release-validation
+#   ./scripts/create-labels --dry-run discobox-ai/hooks
+#
+# It only creates and updates the labels below. It never deletes a label or
+# changes an issue's labels; moving issues onto them is the migrate-labels
+# worker's job. Safe to run again.
+set -euo pipefail
+
+dry=
+if [ "${1:-}" = "--dry-run" ]; then dry=1; shift; fi
+repo=${1:?usage: create-labels [--dry-run] OWNER/REPO}
+command -v gh >/dev/null || { echo "create-labels: needs the gh CLI" >&2; exit 1; }
+
+# name<TAB>color<TAB>description, as in discobox-ai/discobox (2026-11-04).
+labels='status/triaged	0e8a16	Scoped and labelled, waiting for priority or a slot
+status/needs-decision	0e8a16	The owner has to decide something before work starts
+status/needs-input	0e8a16	Its worker is waiting on the owner in the box
+status/ready	0e8a16	Go: the next free worker takes it
+status/in-progress	0e8a16	A worker is on it
+status/in-review	0e8a16	Its PR is green, waiting for the owner
+status/blocked	0e8a16	Waiting on something named in a comment
+type/bug	1d4ed8	Behaviour is wrong
+type/feature	1d4ed8	New behaviour
+type/adr	1d4ed8	The issue is a design decision
+type/flake	1d4ed8	A test fails intermittently
+type/chore	1d4ed8	Cleanup, docs, build, no behaviour change
+priority/critical	b60205	Security or credential exposure, data loss, or unusable for everyone
+priority/high	d93f0b	A core flow broken for some users, or a regression in a release
+priority/medium	fbca04	Broken with a workaround, or a clearly wanted enhancement
+priority/low	c2e0c6	Polish, rare edge cases, nice-to-haves
+platform/macos	555555	Only happens on macOS; needs a macOS agent to reproduce and fix
+platform/windows	0078D6	Only happens on Windows; needs a Windows agent to reproduce and fix'
+
+existing=$(gh api "repos/$repo/labels?per_page=100" --paginate \
+  --jq '.[] | [.name, (.color|ascii_downcase), .description // ""] | @tsv')
+
+# Label names hold a slash, so they're sent URL-encoded in the path.
+enc() { jq -rn --arg s "$1" '$s|@uri'; }
+
+created=0 updated=0 same=0
+while IFS=$'\t' read -r name color desc; do
+  color=$(printf %s "$color" | tr 'A-F' 'a-f')
+  have=$(printf '%s\n' "$existing" | awk -F'\t' -v n="$name" '$1 == n' || true)
+  if [ -z "$have" ]; then
+    echo "create  $name"
+    [ -n "$dry" ] || gh api -X POST "repos/$repo/labels" \
+      -f name="$name" -f color="$color" -f description="$desc" >/dev/null
+    created=$((created + 1))
+  elif [ "$have" != "$name"$'\t'"$color"$'\t'"$desc" ]; then
+    echo "update  $name"
+    [ -n "$dry" ] || gh api -X PATCH "repos/$repo/labels/$(enc "$name")" \
+      -f color="$color" -f description="$desc" >/dev/null
+    updated=$((updated + 1))
+  else
+    same=$((same + 1))
+  fi
+done <<<"$labels"
+
+echo "$repo: $created created, $updated updated, $same already right${dry:+ (dry run: nothing changed)}"
