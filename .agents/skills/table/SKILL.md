@@ -32,12 +32,11 @@ the table. Each row has:
   merge or close, recompute the order and rebase at once any conflicting PR
   now in the top 3, even with every slot full: the rebase wakes its own
   worker (owner, 2026-11-04; PR 613 sat in the top 3 unrebased).
-- **Why this rank:** blockers first (a flake, a release-validation finding,
-  broken CI, anything holding up a milestone issue), then the release
-  milestone's rows, then the rest (`docs/labels.md`, Next up). Within each,
-  by how much a row unblocks (critical path first), then by how hard the
-  decision is to reverse. Say which group in the column ("blocker: flake",
-  "v0.19").
+- **Why this rank:** written by `scripts/table rank` ("2 v0.19 Release
+  (high)"), from labels and milestones; see Editing it. A blocker no label
+  marks (broken CI, a release-validation finding, an issue holding up a
+  milestone one) gets `blocker=yes`. Within a group and priority, order by
+  how much a row unblocks (critical path first) with `move`.
 - **Ad-hoc boxes** get a row too: Item is the owner's topic, Doing "owner
   working" ("owner prototyping" for a prototype box), Your move `–`, until `submit` gives it an issue.
 - **Finished boxes** get no row: you archive them yourself (`workers`, Retire).
@@ -52,12 +51,23 @@ the row's issue (`460`, `vm 33`), else its PR (`pr 372`), else a name
 scripts/table set 460 doing="ADR PR green" move="Review and merge" pr=463
 scripts/table add 461 item="…" agent=sbx_… doing="Working: triage" --before finished
 scripts/table rm 411 "pr vm 31"
-scripts/table move 460 --at 1
+scripts/table move 460 --at 1     # only among rows of the same group and priority
+scripts/table rank                # re-read labels and milestones from GitHub, re-sort
+scripts/table set 525 blocker=yes # group 1 when no label says so (broken CI)
 scripts/table link 463 https://github.com/discobox-ai/discobox/pull/463
 scripts/table show
 ```
 
-Fields: `item agent issue pr doing move why`. `move` is "Your move", `–`
+**The order is computed, not placed** (owner, 2026-11-04). Every write
+sorts the rows by group (1 Blocker, 2 the release, 3 the next release,
+4 Other, 5 Done; `docs/labels.md`, Next up), then by `priority/*`, keeping
+your order among equals. `rank` reads each row's labels, milestone and
+state from GitHub and writes its group, priority and `why`; a new row is
+ranked as it's added. Run `scripts/table rank` (or `rank KEY`) after any
+change to a label, a milestone or `manager.yaml`'s `release`, and at the
+start of the loop. A row whose issue is closed lands in Done: remove it.
+
+Fields: `item agent issue pr doing move why blocker`. `move` is "Your move", `–`
 when there's none. Issues, PRs and boxes are links in their rows (boxes as `discobox:///<id>`);
 there's no link list under the table (owner, 2026-11-03). The file is `~/.local/state/discobox-manager/table.json`; the
 command writes it atomically and stamps it, and the pane turns "Stale" when

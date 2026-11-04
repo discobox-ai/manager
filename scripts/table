@@ -12,15 +12,32 @@ for a row with no issue, or a name for anything else ("finished").
   table unlink LABEL ...
   table show                       the rows, one per line
   table slots                      refresh the slot list (running workers) from discobox ls
+  table rank [KEY ...]             re-read each row's labels and milestone from GitHub
+                                   (all rows, or the KEYs) and re-sort the table
 
-Fields: item agent issue pr doing move why ("move" is "Your move"; "–" is none).
+Fields: item agent issue pr doing move why blocker ("move" is "Your move"; "–" is
+none; blocker=yes puts a row in group 1 when no label says so, e.g. broken CI).
 Every write is atomic (a temp file, then a rename) and stamps postedAt.
+
+Ranking (docs/labels.md, Next up). Every write sorts the rows by group, then
+priority, keeping the current order among equals, so the order can't drift:
+  1 Blocker      type/flake, or blocker=yes
+  2 <release>    in manager.yaml's release.milestone, or listed in release.alsoIn
+  3 <next>       in release.next
+  4 Other        everything else that is open
+  5 Done         closed issues and merged or closed PRs
+Priority within a group: critical, high, medium, low, none. `rank` stores each
+row's group and priority (fields `group`, `prio`) and rewrites `why` as
+"<group> <name> (<priority>)"; a new row with an issue or PR key is ranked
+when it's added.
 """
 import json
 import re, os, sys, time
 
 PATH = os.path.expanduser(os.environ.get("MANAGER_TABLE", "~/.local/state/discobox-manager/table.json"))
-FIELDS = {"item": "item", "agent": "agent", "issue": "issue", "pr": "pr", "doing": "doing", "move": "yourMove", "yourMove": "yourMove", "why": "why"}
+FIELDS = {"item": "item", "agent": "agent", "issue": "issue", "pr": "pr", "doing": "doing", "move": "yourMove", "yourMove": "yourMove", "why": "why", "blocker": "blocker"}
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+PRIOS = ["critical", "high", "medium", "low"]
 
 
 def load():
@@ -135,6 +152,109 @@ def slots():
     return {"max": mx, "boxes": boxes}
 
 
+# --- ranking ------------------------------------------------------------------
+
+def release_config():
+    """manager.yaml's release: {repo, milestone, next, alsoIn}. Read by hand: no yaml module here."""
+    cfg = {"repo": "discobox-ai/discobox", "milestone": "", "next": "", "alsoIn": []}
+    try:
+        lines = open(os.path.join(ROOT, "manager.yaml")).read().splitlines()
+    except OSError:
+        return cfg
+    inside = also = False
+    for line in lines:
+        if re.match(r"^release:\s*$", line):
+            inside = True
+            continue
+        if inside and line and not line.startswith(" ") and not line.startswith("#"):
+            break
+        if not inside:
+            continue
+        m = re.match(r"^  (repo|milestone|next):\s*(.*?)\s*$", line)
+        if m:
+            cfg[m.group(1)] = m.group(2).strip("'\"")
+            also = False
+            continue
+        if re.match(r"^  alsoIn:\s*$", line):
+            also = True
+            continue
+        m = re.match(r"^    - \s*(\S+)", line)
+        if also and m:
+            cfg["alsoIn"].append(m.group(1))
+    return cfg
+
+
+def target(r, owner, default_repo):
+    """The GitHub issue or PR a row is about, as (owner/repo, number), or None."""
+    for field in ("issue", "pr"):
+        v = str(r.get(field, "-"))
+        m = re.match(r"^(?:([a-z][\w.-]*) )?(\d+)$", v)
+        if m:
+            return (f"{owner}/{m.group(1)}" if m.group(1) else default_repo, m.group(2))
+    m = re.match(r"^(?:([a-z][\w.-]*) )?pr (\d+)$|^pr (?:([a-z][\w.-]*) )?(\d+)$", key_of(r))
+    if m:
+        name, num = (m.group(1), m.group(2)) if m.group(2) else (m.group(3), m.group(4))
+        return (f"{owner}/{name}" if name else default_repo, num)
+    return None
+
+
+def fetch(repo, num):
+    import subprocess
+    out = subprocess.run(["gh", "api", f"repos/{repo}/issues/{num}", "--jq",
+                          "{state, milestone: (.milestone.title // \"\"), labels: [.labels[].name]}"],
+                         capture_output=True, text=True)
+    if out.returncode != 0:
+        return None
+    return json.loads(out.stdout)
+
+
+def classify(r, info, cfg, owner):
+    names = {1: "Blocker", 2: cfg["milestone"] or "Release", 3: cfg["next"] or "Next", 4: "Other", 5: "Done"}
+    labels = info.get("labels", []) if info else []
+    prio = next((p for p in PRIOS if f"priority/{p}" in labels), "none")
+    t = target(r, owner, cfg["repo"])
+    ref = ""
+    if t:
+        repo, num = t
+        ref = f"{repo}#{num}" if repo != cfg["repo"] else f"{cfg['repo']}#{num}"
+    if info and info.get("state") == "closed":
+        g = 5
+    elif "type/flake" in labels or str(r.get("blocker", "")).lower() in ("yes", "true", "1"):
+        g = 1
+    elif info and cfg["milestone"] and info.get("milestone") == cfg["milestone"] and t and t[0] == cfg["repo"]:
+        g = 2
+    elif ref and ref in cfg["alsoIn"]:
+        g = 2
+    elif info and cfg["next"] and info.get("milestone") == cfg["next"] and t and t[0] == cfg["repo"]:
+        g = 3
+    else:
+        g = 4
+    return g, prio, f"{g} {names[g]} ({prio})"
+
+
+def rank(rows, keys=None):
+    from concurrent.futures import ThreadPoolExecutor
+    cfg = release_config()
+    owner = cfg["repo"].split("/")[0]
+    todo = [r for r in rows if keys is None or key_of(r) in keys]
+    with ThreadPoolExecutor(8) as ex:
+        infos = list(ex.map(lambda r: (lambda t: fetch(*t) if t else None)(target(r, owner, cfg["repo"])), todo))
+    for r, info in zip(todo, infos):
+        if info is None and target(r, owner, cfg["repo"]):
+            continue  # GitHub didn't answer: keep what the row had
+        g, prio, why = classify(r, info, cfg, owner)
+        r["group"], r["prio"], r["why"] = g, prio, why
+
+
+def sort_rows(rows):
+    """Stable: by group, then priority; rows never ranked keep their place relative to their neighbours' group 4."""
+    def k(r):
+        g = r.get("group", 4)
+        p = r.get("prio", "none")
+        return (g if isinstance(g, int) else 4, PRIOS.index(p) if p in PRIOS else len(PRIOS))
+    rows.sort(key=k)
+
+
 def main(argv):
     if len(argv) < 2 or argv[1] in ("-h", "--help"):
         print(__doc__)
@@ -153,11 +273,14 @@ def main(argv):
             row = blank(key)
             row.update(fields)
             place(rows, row, pos)
+            rank(rows, {key})
         else:
             rows[i].update(fields)
             rows[i].setdefault("key", key)
             if pos:
                 place(rows, rows.pop(i), pos)
+            if "blocker" in fields or "issue" in fields or "pr" in fields:
+                rank(rows, {key})
     elif cmd == "rm":
         d["rows"] = [r for r in rows if key_of(r) not in set(args)]
     elif cmd == "move":
@@ -171,10 +294,13 @@ def main(argv):
         d["links"] = [l for l in d["links"] if not l.startswith(label + ":")] + [f"{label}: {url}"]
     elif cmd == "slots":
         d["slots"] = slots()
+    elif cmd == "rank":
+        rank(rows, set(args) or None)
     elif cmd == "unlink":
         d["links"] = [l for l in d["links"] if not any(l.startswith(a + ":") for a in args)]
     else:
         sys.exit(f"table: unknown command {cmd!r}")
+    sort_rows(d["rows"])
     save(d)
 
 
