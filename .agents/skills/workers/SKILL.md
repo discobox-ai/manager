@@ -15,6 +15,27 @@ eval "$(discobox-access env)"; unset DISCOBOX_TOKEN     # GitHub (GH_TOKEN) and 
 
 ## Launch
 
+**Use `scripts/launch`** (owner, 2026-11-04). It reads the harness, server, fork
+owner and default branch from `manager.yaml`, the role from the worker skill,
+and the one delegated GitHub secret; refuses while this checkout is dirty or
+unpushed or `workers.paused` is true; runs the box; tags it; moves a deliver or
+ADR issue to `status/in-progress`; and presses Enter on a Codex box's "Trust
+this folder?" dialog. Never type `-H codex` or the rest of the command by hand:
+a hand-typed harness only matches `manager.yaml` until the owner changes it.
+
+```sh
+scripts/launch deliver-issue --repo discobox-ai/discobox --issue 566
+scripts/launch triage-issue  --repo discobox-ai/discobox --issue 561
+scripts/launch propose-adr   --repo discobox-ai/discobox --issue 564
+scripts/launch deliver-issue --repo discobox-ai/discobox --issue 564 -p 'Deliver #564. Investigate first; ADR only.'
+scripts/launch validate-release --repo discobox-ai/release-validation --issue 3 --no-source -p '/validate-release fresh v0.18.1'
+scripts/launch ... --dry-run     # print the harness, role and command, launch nothing
+```
+
+Then add the table row (`scripts/table add`). What follows is what the script
+does, for reading and for launches it doesn't cover (ad-hoc and prototype
+boxes, which take `--role github-submit`).
+
 First make sure this checkout is committed and pushed (`github` skill, Pushing
 to discobox-ai/manager): `--skills` installs from the pushed `main`, not from
 local files.
