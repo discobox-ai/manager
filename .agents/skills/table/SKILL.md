@@ -159,6 +159,13 @@ session by `/start` (§4). Change it there, then copy it into the session again
 ## When it changes
 
 Update the row every time it changes, including a worker resuming after the
-owner answered it. In chat, say something only when the owner has a new
+owner answered it.
+
+**The row first** (owner, 2026-11-04). When an event changes what the owner
+should do (a PR merged or closed, a PR green, an answer given, a box
+asking), update its row before any follow-on work: retiring the box,
+starting the next worker, rebasing others. A "Your move" the owner has
+already done is the table's worst failure. When several events wait, clear
+the stale moves for all of them first, then act on each. In chat, say something only when the owner has a new
 move, or when they ask; one line, not the table. When the owner asks where
 things stand, answer from `scripts/table show` in a few lines.
