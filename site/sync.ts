@@ -138,6 +138,17 @@ function fit(doc: Record<string, any>): Record<string, any> {
   return doc
 }
 
+/** A document as last staged on disk, if it is still current and not an error document. */
+async function lastGood(state: SyncState, docPath: string): Promise<Record<string, any> | undefined> {
+  if (!state.hashes[docPath]) return undefined
+  try {
+    let doc = JSON.parse(await fsp.readFile(docFile(docPath), 'utf8'))
+    return doc && typeof doc === 'object' && !('error' in doc) ? doc : undefined
+  } catch {
+    return undefined
+  }
+}
+
 async function buildDocs(state: SyncState): Promise<{ docs: Map<string, Record<string, any>>; moveSet: string; meta: Record<string, any> }> {
   let table = await readTable()
   if (table.error) throw new Error(table.error)
@@ -149,6 +160,12 @@ async function buildDocs(state: SyncState): Promise<{ docs: Map<string, Record<s
   await Promise.all(
     [...wantedDetails(table.rows)].map(async ([id, w]) => {
       let doc = await detailsDoc(w.repo, w.kind, w.n, 'github')
+      // A GitHub error (a 5xx now and then) must not replace a good document: it would make
+      // the PR's diff documents vanish and be rebuilt in full when GitHub answers again.
+      if ('error' in doc) {
+        let prev = await lastGood(state, `details/${id}`)
+        if (prev) doc = prev as DetailsDoc
+      }
       details.set(id, doc)
       docs.set(`details/${id}`, 'error' in doc ? doc : fit(doc))
     }),
@@ -164,7 +181,18 @@ async function buildDocs(state: SyncState): Promise<{ docs: Map<string, Record<s
       if ('error' in d || d.kind !== 'pull' || d.state !== 'open' || d.merged) return
       let built = await diffFor(d.repo, d.number, 'github')
       if ('error' in built) {
-        docs.set(`diffs/${id}`, built)
+        // Keep the last good diff and its parts; show the error only when there is none.
+        let prev = await lastGood(state, `diffs/${id}`)
+        if (prev) {
+          docs.set(`diffs/${id}`, prev)
+          for (let p of Object.keys(state.hashes)) {
+            if (!p.startsWith(`diffParts/${id}~`)) continue
+            let part = await lastGood(state, p)
+            if (part) docs.set(p, part)
+          }
+        } else {
+          docs.set(`diffs/${id}`, built)
+        }
         return
       }
       docs.set(`diffs/${id}`, fit(built.doc))
