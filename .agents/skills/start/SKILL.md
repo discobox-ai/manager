@@ -17,8 +17,7 @@ the same monitors and writes the table), say so in one line and stop unless
 the owner says this one replaces it; then that one should be closed.
 
 ```sh
-export DISCOBOX_SERVER=https://api.discobox.internal
-eval "$(discobox-access env)"; unset DISCOBOX_TOKEN
+eval "$(discobox-access env)"   # GH_TOKEN; leave the DISCOBOX_* environment as it is
 ```
 
 ## 0. Name the box

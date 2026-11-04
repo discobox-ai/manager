@@ -51,7 +51,7 @@ one pop returning and the next starting.
 
 ```
 Monitor(
-  command: "export DISCOBOX_SERVER=https://api.discobox.internal; eval \"$(discobox-access env)\"; unset DISCOBOX_TOKEN; discobox-monitor pop --follow",
+  command: "eval \"$(discobox-access env)\"; discobox-monitor pop --follow",
   description: "discobox monitor events (manager: GitHub, workers, disk)",
   timeout_ms: 1800000,
 )

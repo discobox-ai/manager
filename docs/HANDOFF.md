@@ -73,8 +73,8 @@ target becomes real and nothing needs to poll.
     request for "open a PR" was refused for `POST /pulls`.
   - Keep worker prompts short and task-only. The proxy judge clips them at 256
     bytes, and it reads mentions of credentials as handing out privileges.
-- **The CLI inside a discobox:** the devShell can point `discobox` at a nested
-  dev server. Always `export DISCOBOX_SERVER=https://api.discobox.internal`.
+- **The CLI inside a discobox:** the box's own `DISCOBOX_*` environment
+  reaches the right server; don't override it (owner, 2026-11-04).
 - **A launch error can still make a working box.** Check before launching
   again; a relaunch once put two or three workers on one issue.
 - **Disk:**

@@ -6,7 +6,7 @@
 #
 # SKILL is a directory in worker-skills/ (deliver-issue, triage-issue, propose-adr, fix-ci,
 # rebase-pr, validate-release, ...). It reads, from manager.yaml, the harness
-# (workers.harness), the server, the fork owner and the repository's default
+# (workers.harness), the fork owner and the repository's default
 # branch; from the skill, the role it runs under; from `discobox-access`, the one
 # delegated GitHub secret. It then runs the box, tags it, moves the issue to
 # status/in-progress (deliver and ADR jobs), and, for a Codex box, answers its
@@ -42,12 +42,10 @@ done
 
 # --- manager.yaml -----------------------------------------------------------
 HARNESS=$(sed -n 's/^  harness: *//p' manager.yaml | head -1)
-SERVER=$(sed -n 's/^  server: *//p' manager.yaml | head -1)
 FORK=$(sed -n 's/^  forkOwner: *//p' manager.yaml | head -1)
 PAUSED=$(sed -n 's/^  paused: *//p' manager.yaml | head -1)
 BRANCH=$(awk -v r="$REPO" '$1=="-" && $2=="name:" {cur=$3} /defaultBranch:/ && cur==r {print $2; exit}' manager.yaml)
 [ -n "$HARNESS" ] || die "manager.yaml has no workers.harness"
-[ -n "$SERVER" ] || die "manager.yaml has no workers.server"
 [ -n "$FORK" ] || die "manager.yaml has no github.forkOwner"
 [ -n "$BRANCH" ] || die "$REPO is not in manager.yaml's repos"
 if [ "$PAUSED" = true ]; then die "workers.paused is true in manager.yaml: no new boxes (pausedExcept names the exceptions)"; fi
@@ -88,9 +86,8 @@ PUSHES=1
 case $ROLE in github-triage|github-labels|github-manager) PUSHES="" ;; esac
 
 # --- credentials ------------------------------------------------------------
-export DISCOBOX_SERVER=$SERVER
+# The box's own DISCOBOX_* environment already reaches the right server; leave it alone.
 eval "$(discobox-access env)"
-unset DISCOBOX_TOKEN
 GH_SECRET=$(discobox-access list -json | jq -r '[.credentials[] | select(.purpose == "delegate" and (.hosts | index("api.github.com"))) | .name] | if length == 1 then .[0] else "" end')
 [ -n "$GH_SECRET" ] || die "no single delegated GitHub credential (discobox-access list): launch nothing and tell the owner"
 
@@ -111,7 +108,7 @@ if [ -n "$NOSRC" ]; then ARGS+=(--no-source); else ARGS+=("$SRC"); fi
 ARGS+=(-p "$PROMPT")
 
 if [ -n "$DRY" ]; then
-  echo "harness=$HARNESS server=$SERVER job=$JOB role=$ROLE fork=${PUSHES:+$FORK}"
+  echo "harness=$HARNESS job=$JOB role=$ROLE fork=${PUSHES:+$FORK}"
   echo "discobox ${ARGS[*]}"
   exit 0
 fi

@@ -33,9 +33,6 @@ workers:
   # A worker waiting on the owner (needs-input or blocked) whose screen has
   # been still this long is stopped; the owner opening it starts it again.
   pauseAfter: 5m
-  # discobox server workers are created on. Inside a discobox the devShell may
-  # point the CLI at a nested dev server; always pass this explicitly.
-  server: https://api.discobox.internal
   # Of those, triage workers up at once, so a backlog of new issues doesn't
   # take every slot. New issues are triaged highest priority/* first, then
   # newest first.

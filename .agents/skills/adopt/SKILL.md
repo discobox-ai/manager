@@ -33,6 +33,13 @@ Run it in the background: it waits for a person. Table row: "Approve the
 adoption of box <id>" (`!` in the console). It's yours when `discobox ls`
 shows this box as its PARENT.
 
+Then tell the box what is happening, so it doesn't guess (`workers`, Type
+into a worker; only when it's idle at its prompt):
+
+```sh
+discobox send <id> 'The manager has adopted this box to bring your work into its process. Stop where you are and wait: it will file an issue for this work, set your tags and credential, and tell you the next step here.' && discobox send-key <id> Enter
+```
+
 ## 3. Learn what it did
 
 - Its screen and scrollback: `discobox capture <id> --scrollback 400 --trim`.
@@ -84,7 +91,8 @@ would have bound at launch.
 ## 7. Brief it
 
 It has no worker skills, so the message carries the rules. Wait until it is
-idle at its prompt, then type one message (`workers`, Type into a worker):
+idle at its prompt, then send one message with `discobox send <id> '…' &&
+discobox send-key <id> Enter`:
 
 > You've joined the manager's process for <owner>/<name> issue #<N>
 > (<link>). Your GitHub credential is GH_TOKEN, bound for this job; use it

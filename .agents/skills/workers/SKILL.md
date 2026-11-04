@@ -5,12 +5,12 @@ description: Start, steer, check and retire worker discoboxes for the manager. U
 
 # Workers
 
-Every command here runs against the real server. Inside a discobox the
-devShell may point the `discobox` CLI at a nested dev server, so set it first:
+The box's own environment already points `discobox` at the right server:
+don't set or unset `DISCOBOX_SERVER`, `DISCOBOX_API_URL` or `DISCOBOX_TOKEN`
+(owner, 2026-11-04). GitHub comes from:
 
 ```sh
-export DISCOBOX_SERVER=https://api.discobox.internal   # manager.yaml workers.server
-eval "$(discobox-access env)"; unset DISCOBOX_TOKEN     # GitHub (GH_TOKEN) and the discobox API
+eval "$(discobox-access env)"   # GH_TOKEN
 ```
 
 ## Launch
@@ -228,9 +228,12 @@ says it.
 
 ## Type into a worker
 
-`discobox admin terminal input <id> primary '<text>'`, then a separate `Enter`.
-Never type into a worker that has a question dialog open: it would answer the
-dialog.
+```sh
+discobox send <id> '<text>' && discobox send-key <id> Enter
+```
+
+A message with newlines stays one message (it arrives as a paste). Never type
+into a worker that has a question dialog open: it would answer the dialog.
 
 ## Mechanical prompts you answer yourself
 
