@@ -1,6 +1,6 @@
 ---
 name: start
-description: The manager's one entry point — start (or restart) everything from nothing: access, the box's services (the site and the artifact sync), the side-pane mod, watching, the owner's waiting buttons and chat, the status table rebuilt from GitHub and its workers' tags, the artifact's sending, the first actions, and waiting for events. Use when the manager's box starts (its launch prompt is /start), in any new session that is to be the manager, after a restart, or whenever the owner says /start.
+description: The manager's one entry point — start (or restart) everything from nothing: the box's name, access, the box's services (the site and the artifact sync), the side-pane mod, watching, the owner's waiting buttons and chat, the status table rebuilt from GitHub and its workers' tags, the artifact's sending, the first actions, and waiting for events. Use when the manager's box starts (its launch prompt is /start), in any new session that is to be the manager, after a restart, or whenever the owner says /start.
 ---
 
 # Start
@@ -20,6 +20,33 @@ the owner says this one replaces it; then that one should be closed.
 export DISCOBOX_SERVER=https://api.discobox.internal
 eval "$(discobox-access env)"; unset DISCOBOX_TOKEN
 ```
+
+## 0. Name the box
+
+Discobox lists this box by `~/.discobox/meta.json`'s `name`, and with none, by
+whichever session's title it last saw. Make it the manager's, keeping any
+fields already there:
+
+```sh
+python3 - <<'PY'
+import json, os
+p = os.path.expanduser("~/.discobox/meta.json")
+try:
+    m = json.load(open(p))
+except (OSError, ValueError):
+    m = {}
+m["name"] = "Discobox manager"
+m.setdefault("description", "The manager: watches discobox-ai's repositories, runs workers, keeps the status table.\nSite on :4400; start with /start.")
+m.setdefault("tags", {})["manager"] = ""
+text = json.dumps(m, indent=2)
+open(p, "w").write(text)
+PY
+jq . ~/.discobox/meta.json
+```
+
+Never give it a `job` tag: that marks a worker (`AGENTS.md`). The session's
+own name is the owner's to set (`/rename`, which only they can type); §11
+suggests one.
 
 ## 1. Access
 
@@ -202,5 +229,6 @@ Update the rows that changed (`scripts/table`).
 
 Start the Monitor tool streaming `discobox-monitor pop --follow` (`watch`
 skill), and go to the loop's step 2 (`AGENTS.md`). Say one line to the owner:
-started, what needs them (the first "Your move"), and anything §3 or §4 needs
-from them.
+started, what needs them (the first "Your move"), anything §3 or §4 needs
+from them, and, when this session has no name yet, that `/rename manager`
+names it so it's easy to find among others.
