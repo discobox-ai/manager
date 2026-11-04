@@ -535,6 +535,35 @@ pre.sig del, .md del { background: var(--bad-wash); color: var(--bad); border-ra
 .code-diff .ctx { color: var(--ink-soft); }
 .code-diff .gap { color: var(--ink-soft); opacity: 0.6; }
 :root .decl pre.code-diff { padding-left: 2ch; }
+
+/* ---- Syntax shades: the change's color first, the kind of code second ---- */
+/* unchanged code: greys, the names that matter a little brighter */
+.decl .tk-kw { color: #c9c6bf; }
+.decl .tk-type { color: #a7b3c2; }
+.decl .tk-fn { color: #e9e7e2; font-weight: 600; }
+.decl .tk-str { color: #b8ad92; }
+.decl .tk-num { color: #b8ad92; }
+.decl .tk-com { color: #5c5e65; font-style: italic; }
+.code-diff .ctx { color: #8a8b91; }
+.code-diff .ctx .tk-kw { color: #a8a6a0; }
+.code-diff .ctx .tk-fn { color: #bdbab3; font-weight: 400; }
+/* added: shades of green */
+:root .decl .ins-all, :root .decl ins, .code-diff .add { color: #6fd39b; }
+.decl .ins-all .tk-kw, .decl ins .tk-kw, .code-diff .add .tk-kw { color: #b9f2cf; }
+.decl .ins-all .tk-type, .decl ins .tk-type, .code-diff .add .tk-type { color: #49c9a6; }
+.decl .ins-all .tk-fn, .decl ins .tk-fn, .code-diff .add .tk-fn { color: #9ff5bd; font-weight: 600; }
+.decl .ins-all .tk-str, .decl ins .tk-str, .code-diff .add .tk-str { color: #c3db78; }
+.decl .ins-all .tk-num, .decl ins .tk-num, .code-diff .add .tk-num { color: #c3db78; }
+.decl .ins-all .tk-com, .decl ins .tk-com, .code-diff .add .tk-com { color: #3f7a57; font-style: italic; }
+/* removed: shades of red */
+:root .decl .del-all, :root .decl del, .code-diff .del { color: #ff7a7a; }
+.decl .del-all .tk-kw, .decl del .tk-kw, .code-diff .del .tk-kw { color: #ffc0bd; }
+.decl .del-all .tk-type, .decl del .tk-type, .code-diff .del .tk-type { color: #f58fb0; }
+.decl .del-all .tk-fn, .decl del .tk-fn, .code-diff .del .tk-fn { color: #ffa3a3; font-weight: 600; }
+.decl .del-all .tk-str, .decl del .tk-str, .code-diff .del .tk-str { color: #ffaa72; }
+.decl .del-all .tk-num, .decl del .tk-num, .code-diff .del .tk-num { color: #ffaa72; }
+.decl .del-all .tk-com, .decl del .tk-com, .code-diff .del .tk-com { color: #8a4a4a; font-style: italic; }
+.decl:has(.code-diff) { margin-bottom: 14px; }
 </style>
   </head>
   <body>

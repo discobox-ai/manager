@@ -6,6 +6,7 @@ import { diffSequence } from '../shared/sequence.ts'
 import { routes } from '../routes.ts'
 import { href } from '../routing.ts'
 import type { DiffPartState, DiffState, Store } from '../store/index.ts'
+import { highlight, langOf, runs, type Classes } from './highlight.ts'
 import { Markdown } from './html.tsx'
 import { Page } from './shell.tsx'
 
@@ -227,8 +228,8 @@ function DeclItem(
     let { change: c, id, index, store, bodies } = handle.props
     return (
       <div class={`decl ${c.status}`} title={`${c.kind} ${c.container ? c.container + '.' : ''}${c.name}${c.movedFrom ? `, moved from ${c.movedFrom}` : ''}`}>
-        <Signature change={c} />
-        {bodies && c.hasBodyPatch ? <Part id={id} index={index} store={store} view="body" declKey={c.key} /> : null}
+        <Signature change={c} language={handle.props.file.language} />
+        {bodies && c.hasBodyPatch ? <Part id={id} index={index} store={store} view="body" declKey={c.key} language={handle.props.file.language} /> : null}
       </div>
     )
   }
@@ -236,26 +237,43 @@ function DeclItem(
 
 const WORD = /[\p{L}\p{N}_]+|\s+|[^\s\p{L}\p{N}_]/gu
 
-/** A declaration's signature: as it is now, or before → after merged word by word. */
-function Signature(handle: Handle<{ change: DeclChangeDoc }>) {
+/** [from, to) of a text as highlighted spans, inside an ins, del or nothing. */
+function Code(props: { text: string; classes: Classes; from: number; to: number }) {
+  return runs(props.text, props.classes, props.from, props.to).map((r, i) => (r.cls ? <span key={i} class={`tk-${r.cls}`}>{r.text}</span> : r.text))
+}
+
+/**
+ * A declaration's signature, highlighted: as it is now, or before → after merged word by word,
+ * added words in shades of green, removed in shades of red.
+ */
+function Signature(handle: Handle<{ change: DeclChangeDoc; language?: string }>) {
   return () => {
-    let c = handle.props.change
-    if (c.status === 'added') return <pre class="sig ins-all">{c.after}</pre>
-    if (c.status === 'removed') return <pre class="sig del-all">{c.before}</pre>
+    let { change: c, language } = handle.props
+    let lang = langOf(language)
+    if (c.status === 'added' || c.status === 'removed') {
+      let text = (c.status === 'added' ? c.after : c.before) ?? ''
+      return <pre class={`sig ${c.status === 'added' ? 'ins-all' : 'del-all'}`}>{Code({ text, classes: highlight(text, lang), from: 0, to: text.length })}</pre>
+    }
     let before = c.before ?? ''
     let after = c.after ?? ''
-    if (!c.signatureChanged || before === after) return <pre class="sig">{after}</pre>
+    let beforeClasses = highlight(before, lang)
+    let afterClasses = highlight(after, lang)
+    if (!c.signatureChanged || before === after) return <pre class="sig">{Code({ text: after, classes: afterClasses, from: 0, to: after.length })}</pre>
     let a = before.match(WORD) ?? []
     let b = after.match(WORD) ?? []
+    // Character offsets of each word, to cut the highlighted texts along the diff's runs.
+    let offsets = (words: string[]) => words.reduce<number[]>((acc, w) => (acc.push(acc[acc.length - 1] + w.length), acc), [0])
+    let ao = offsets(a)
+    let bo = offsets(b)
     return (
       <pre class="sig">
         {diffSequence(a, b).map((r, i) =>
           r.op === 'equal' ? (
-            b.slice(r.bStart, r.bEnd).join('')
+            <span key={i}>{Code({ text: after, classes: afterClasses, from: bo[r.bStart], to: bo[r.bEnd] })}</span>
           ) : r.op === 'delete' ? (
-            <del key={i}>{a.slice(r.aStart, r.aEnd).join('')}</del>
+            <del key={i}>{Code({ text: before, classes: beforeClasses, from: ao[r.aStart], to: ao[r.aEnd] })}</del>
           ) : (
-            <ins key={i}>{b.slice(r.bStart, r.bEnd).join('')}</ins>
+            <ins key={i}>{Code({ text: after, classes: afterClasses, from: bo[r.bStart], to: bo[r.bEnd] })}</ins>
           ),
         )}
       </pre>
@@ -343,7 +361,7 @@ function LinesTab(handle: Handle<{ id: string; doc: DiffDoc; store: Store }>) {
 }
 
 /** One file's part, read when it's first shown. */
-function Part(handle: Handle<{ id: string; index: number; store: Store; view: 'lines' | 'docs' | 'body'; declKey?: string }>) {
+function Part(handle: Handle<{ id: string; index: number; store: Store; view: 'lines' | 'docs' | 'body'; declKey?: string; language?: string }>) {
   let state: DiffPartState = { status: 'loading' }
   let unsubscribe = handle.props.store.diffPart(handle.props.id, handle.props.index, (next) => {
     state = next
@@ -369,7 +387,7 @@ function Part(handle: Handle<{ id: string; index: number; store: Store; view: 'l
     }
     let patch = view === 'body' ? part.bodyPatches?.[declKey ?? ''] : part.patch
     if (!patch) return <p class="empty">No line diff for this.</p>
-    if (view === 'body') return <CodeDiff patch={patch} />
+    if (view === 'body') return <CodeDiff patch={patch} language={handle.props.language} />
     return (
       <>
         <PatchTable patch={patch} />
@@ -404,10 +422,37 @@ function patchRows(patch: string): PatchRow[] {
   return rows
 }
 
-/** A body's diff as plain code: added lines green, removed red, a gap between hunks as "…". */
-function CodeDiff(handle: Handle<{ patch: string }>) {
+/**
+ * A body's diff as code: added lines in shades of green, removed in red, the rest grey, and "…"
+ * between hunks. Each side of a hunk (context with removed lines, context with added) is
+ * highlighted as one text, so a string or comment over several lines is colored right.
+ */
+function CodeDiff(handle: Handle<{ patch: string; language?: string }>) {
   return () => {
     let rows = patchRows(handle.props.patch)
+    let lang = langOf(handle.props.language)
+    let lineClasses: (Classes | null)[] = rows.map(() => null)
+    let side = (keep: (k: string) => boolean, idx: number[]) => {
+      let text = idx.map((i) => rows[i].text).join('\n')
+      let classes = highlight(text, lang)
+      let at = 0
+      for (let i of idx) {
+        lineClasses[i] = classes.slice(at, at + rows[i].text.length)
+        at += rows[i].text.length + 1
+      }
+    }
+    // Hunk by hunk: the old side, then the new (a context line belongs to both; they agree).
+    let hunk: number[] = []
+    let flush = () => {
+      side((k) => k !== 'add', hunk.filter((i) => rows[i].kind !== 'add'))
+      side((k) => k !== 'del', hunk.filter((i) => rows[i].kind !== 'del'))
+      hunk = []
+    }
+    rows.forEach((r, i) => {
+      if (r.kind === 'hunk') flush()
+      else if (r.kind !== 'note') hunk.push(i)
+    })
+    flush()
     return (
       <pre class="code-diff">
         {rows.map((r, i) =>
@@ -419,7 +464,8 @@ function CodeDiff(handle: Handle<{ patch: string }>) {
             )
           ) : r.kind === 'note' ? null : (
             <span key={i} class={r.kind}>
-              {r.text + '\n'}
+              {Code({ text: r.text, classes: lineClasses[i] ?? [], from: 0, to: r.text.length })}
+              {'\n'}
             </span>
           ),
         )}

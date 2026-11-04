@@ -5,6 +5,7 @@ import { diffSequence, unifiedDiff } from '../app/shared/sequence.ts'
 import { declarations } from '../server/diff/declarations.ts'
 import { compareDecls, isTestFile } from '../server/diff/index.ts'
 import { htmlDiff, markdownDiff } from '../server/diff/markdown-diff.ts'
+import { highlight, langOf, runs } from '../app/ui/highlight.ts'
 
 const ctx = { repo: 'vm', dir: '', adrLinks: 'github' as const }
 
@@ -95,6 +96,21 @@ const limit = 20
       await changes('def f(a):\n    return a\nclass C:\n    def m(self):\n        pass\n', 'def f(a, b=1):\n    return a\nclass C:\n    def m(self):\n        return 1\n', 'python'),
       ['changed sig func:f', 'changed body method:C.m'],
     )
+  })
+})
+
+describe('highlighting', () => {
+  it('marks keywords, types, calls, strings, numbers and comments, and leaves names plain', () => {
+    let text = 'func (s *Server) Run(n int) error { return fmt.Errorf("bad %d", 42) } // why'
+    let got = runs(text, highlight(text, langOf('go'))).filter((r) => r.cls).map((r) => `${r.cls}:${r.text}`)
+    assert.deepEqual(got, ['kw:func', 'fn:Run', 'type:int', 'type:error', 'kw:return', 'fn:Errorf', 'str:"bad %d"', 'num:42', 'com:// why'])
+  })
+
+  it('carries a string over lines when the language allows it', () => {
+    let text = 'const a = `one\ntwo`\nlet b = 1'
+    let classes = highlight(text, langOf('typescript'))
+    assert.equal(classes[text.indexOf('two')], 'str')
+    assert.equal(classes[text.indexOf('let')], 'kw')
   })
 })
 
