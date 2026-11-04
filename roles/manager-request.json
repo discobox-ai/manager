@@ -181,6 +181,13 @@
           "owner": "discobox-ai",
           "repo": "release-validation"
         }
+      },
+      {
+        "file": "roles/github-labels.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "release-validation"
+        }
       }
     ]
   },
