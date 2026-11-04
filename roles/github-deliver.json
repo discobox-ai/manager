@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Delivery worker (deliver-issue, propose-adr, fix-ci, rebase-pr): push branches, open and update its PR, reply to review, re-run failed CI. No merge, no labels, no closing issues. Pushes go to the bot's fork (forkOwner); PRs are opened from it into the repository.",
+  "description": "Delivery worker (deliver-issue, propose-adr, fix-ci, rebase-pr): push branches, open and update its PR, reply to review, mark it ready. Re-running CI is the manager's (github-manager), not the worker's. No merge, no labels, no closing issues. Pushes go to the bot's fork (forkOwner); PRs are opened from it into the repository.",
   "parameters": {
     "owner": {
       "type": "pathSegment"

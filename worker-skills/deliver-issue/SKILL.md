@@ -19,8 +19,8 @@ tags, how to ask the owner, and your GitHub access (role `github-deliver`).
 Invoking this skill is authorization to: push the branch
 `discobox/issue-N` to `REPO` (create it, fast-forward it, and force-push it
 with a lease after a rebase onto `BASE`), open and edit one PR from it into
-`BASE`, comment on that PR and reply to its review, and re-run its failed CI
-jobs. It is not authorization to push `BASE` or any other branch, merge,
+`BASE`, comment on that PR and reply to its review, and run its CI again by
+pushing the same change again (`worker`, GitHub: you can't re-run jobs). It is not authorization to push `BASE` or any other branch, merge,
 enable auto-merge, close anything, or force-push without a lease. Where
 `open-pr` says a rebase and force-push need asking first, this skill has
 asked.
