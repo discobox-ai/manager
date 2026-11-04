@@ -157,28 +157,7 @@
         "file": "roles/github-labels.json",
         "args": {
           "owner": "discobox-ai",
-          "repo": "discobox"
-        }
-      },
-      {
-        "file": "roles/github-labels.json",
-        "args": {
-          "owner": "discobox-ai",
-          "repo": "vm"
-        }
-      },
-      {
-        "file": "roles/github-labels.json",
-        "args": {
-          "owner": "discobox-ai",
           "repo": "manager"
-        }
-      },
-      {
-        "file": "roles/github-labels.json",
-        "args": {
-          "owner": "discobox-ai",
-          "repo": "review"
         }
       },
       {
@@ -197,13 +176,6 @@
         }
       },
       {
-        "file": "roles/github-labels.json",
-        "args": {
-          "owner": "discobox-ai",
-          "repo": "release-validation"
-        }
-      },
-      {
         "file": "roles/github-deliver.json",
         "args": {
           "owner": "discobox-ai",
@@ -227,13 +199,6 @@
         }
       },
       {
-        "file": "roles/github-labels.json",
-        "args": {
-          "owner": "discobox-ai",
-          "repo": "site"
-        }
-      },
-      {
         "file": "roles/github-deliver.json",
         "args": {
           "owner": "discobox-ai",
@@ -251,13 +216,6 @@
       },
       {
         "file": "roles/github-triage.json",
-        "args": {
-          "owner": "discobox-ai",
-          "repo": "hooks"
-        }
-      },
-      {
-        "file": "roles/github-labels.json",
         "args": {
           "owner": "discobox-ai",
           "repo": "hooks"

@@ -15,7 +15,7 @@ are the source.
 |---|---|---|
 | `github-triage` | `triage-issue` workers | Read the repository and search issues; comment on issues |
 | `github-deliver` | `deliver-issue`, `propose-adr`, `fix-ci`, `rebase-pr` workers | Triage's, plus git push and fetch; open and edit its PR; reply to review; mark ready; re-run failed CI |
-| `github-labels` | `migrate-labels` workers | Read; create and edit labels; set and remove labels on issues; comment |
+| `github-labels` | `migrate-labels` workers | Read; create and edit labels; set and remove labels on issues; comment (delegated for discobox-ai/manager only: elsewhere the bot has Triage, which can't create labels, so the owner creates them; owner, 2026-11-04) |
 | `github-submit` | Ad-hoc boxes (`job=adhoc`), for `submit` | Deliver's, plus filing an issue |
 | `github-manager` | The manager itself, once per watched repository | Read; file, comment on, label and close issues; re-run failed CI. No git, no PRs |
 | `github-push` | The manager itself, for discobox-ai/manager only | Git fetch and push |
@@ -59,6 +59,8 @@ discobox-access request --json < roles/manager-request.json
   repository in `manager.yaml`, and `github-push` for discobox-ai/manager.
 - **Delegate part** (`delegate.policies`): every role a job skill names
   (`metadata.discobox.role`), for every repository in `manager.yaml`.
+  Except `github-labels`, only where the bot has Write. A request names at
+  most 32 policies across both parts.
 
 The owner approves or denies each part on one screen. **An approved part
 replaces the manager's binding of that kind**, so the file must always list
