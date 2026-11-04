@@ -153,4 +153,7 @@ if [ "$HARNESS" = codex ]; then
   done
 fi
 
+# The table's "running" header counts workers from `discobox ls`; refresh it now.
+scripts/table slots >/dev/null 2>&1 || true
+
 echo "$ID"
