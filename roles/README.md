@@ -62,6 +62,11 @@ discobox-access request --json < roles/manager-request.json
   Except `github-labels`, only where the bot has Write. A request names at
   most 32 policies across both parts.
 
+**Always send the whole file, never a part of it** (owner, 2026-11-04):
+until discobox#630 is fixed, an addition can't be granted forever, so the
+owner approves every request as a replace, which needs the full set. Never
+send a request for only the route or repository that's new.
+
 The owner approves or denies each part on one screen. **An approved part
 replaces the manager's binding of that kind**, so the file must always list
 the whole access: a repository or role left out is access lost. Whenever a
