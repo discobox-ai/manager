@@ -34,7 +34,7 @@ scripts/launch ... --dry-run     # print the harness, role and command, launch n
 
 Then add the table row (`scripts/table add`). What follows is what the script
 does, for reading and for launches it doesn't cover (ad-hoc and prototype
-boxes, which take `--role github-submit`).
+boxes, which take `--role github-deliver`).
 
 First make sure this checkout is committed and pushed (`github` skill, Pushing
 to discobox-ai/manager): `--skills` installs from the pushed `main`, not from
@@ -66,7 +66,7 @@ dialog for its own checkout (`/workspace/<repo>`): press Enter on "Trust and con
 
 **Workers push to the bot's forks** (owner, 2026-11-03): the bot can't write
 to the product repositories. A role that pushes (`github-deliver`,
-`github-submit`) takes `forkOwner`, and the box gets a `fork` tag:
+`github-deliver`) takes `forkOwner`, and the box gets a `fork` tag:
 
 ```sh
 FORK=$(sed -n 's/^  forkOwner: *//p' manager.yaml)   # ibuildthecloud-bot
@@ -129,7 +129,7 @@ owner's own work join the process.
 
 ```sh
 discobox run -d -H "$HARNESS" --skills discobox-ai/manager//worker-skills \
-  --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-submit.json,owner=<owner>,repo=<name>,forkOwner=$FORK" \
+  --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-deliver.json,owner=<owner>,repo=<name>,forkOwner=$FORK" \
   https://github.com/<repo>@<defaultBranch> -p '<the owner's topic, or nothing>'
 discobox tag <id> repo=<repo> job=adhoc fork=$FORK base=<defaultBranch>
 ```

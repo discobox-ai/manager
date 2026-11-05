@@ -3,7 +3,7 @@ name: prototype
 description: Prototype an idea with the owner — get something working quickly to learn whether the idea holds, skipping the process's tests, review, verify and ADRs, while keeping a notes file of what was decided and which corners were cut so that `submit` can turn it into proper work afterwards. Use when the manager starts a box with /prototype, or the owner says they want to prototype something.
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write, Agent, SendMessage, Skill, Monitor, AskUserQuestion
 metadata:
-  discobox.role: github-submit
+  discobox.role: github-deliver
   argument-hint: "<the idea>"
 ---
 

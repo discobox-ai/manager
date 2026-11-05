@@ -3,7 +3,7 @@ name: submit
 description: Bring the work of an ad-hoc or prototype session into the process — take stock with the owner, file or find its issue, settle any design choice as an ADR, then either carry the code on to a PR in this box, park it on a pushed branch, or keep only the design. Use when the owner types "submit" (or /submit) in an ad-hoc or prototype box, or the manager types it on the owner's behalf.
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write, Agent, Skill, Monitor, AskUserQuestion
 metadata:
-  discobox.role: github-submit
+  discobox.role: github-deliver
 ---
 
 # Submit an ad-hoc session
@@ -26,7 +26,7 @@ prototype skipped; recommend *park* or *design only* when the shortcuts are
 most of it.
 
 **Read the `worker` skill first.** It gives you `REPO` and `BASE`, your tags,
-how to ask the owner, and your GitHub access (role `github-submit`). The
+how to ask the owner, and your GitHub access (role `github-deliver`). The
 owner is usually at this box, and this skill asks them several things:
 tag `needs-input` before each question, as `worker` says. They may have said
 "submit box X" to the manager and gone elsewhere.
