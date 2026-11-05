@@ -88,6 +88,42 @@ Steps that need a person's credential (a harness login): record the prompt,
 choose the option that skips or defers it, and note it. Don't ask for
 credentials.
 
+## 2b. Startup latency
+
+The owner wants to know how long a user waits to start (owner, 2026-11-05).
+Measure it, in both modes, on `<to>`: in `fresh` right after install, in
+`upgrade` right after §4. Use a fresh local user with an empty `HOME` and no
+`DISCOBOX_*` variables (§3), so the CLI starts its own server and nothing is
+cached. Drive it in tmux, timestamping with `date +%s.%N`:
+
+```sh
+tmux new -d -s lat -x 160 -y 48
+T0=$(date +%s.%N); tmux send-keys -t lat 'discobox run --no-source -H claude-code' Enter
+```
+
+Poll `tmux capture-pane -p -t lat` (every 0.25 s) and the server
+(`discobox ls` answering, or its log), and record when each milestone first
+happens:
+
+| Mark | When |
+|---|---|
+| **T1 server up** | the server is downloaded (if the CLI fetches it) and answers |
+| **T2 box running** | the box is listed as running |
+| **T3 harness screen** | Claude Code's first screen is drawn in the terminal (its welcome, theme or login screen: whatever comes first; no login, no completions) |
+
+Run it **three times**: the first cold (nothing downloaded: no server, no
+images, no harness bundle), then twice warm (`discobox rm` the box between
+runs; keep the server running for one warm run, and stop it for the other).
+Note where the time goes when the CLI or log says (downloading the server,
+pulling an image, the harness bundle, the VM boot), and the pool type used.
+
+Report a table in seconds (T1, T2−T1, T3−T2, T3 total) for each run, the
+box's CPU count and whether `/dev/kvm` is there: this runs nested inside a
+discobox, so say so next to the numbers. Keep the raw timestamps in
+`~/latency.md`, and add it to the run PR as `baselines/latency-<mode>.md`, so
+the next release compares against it. A total more than 25% slower than the
+baseline is a finding.
+
 ## 3. Seed (upgrade mode only)
 
 On `<from>`, make the state an upgrade must keep:
@@ -168,6 +204,10 @@ No baseline: say this run sets the first one.
 |---|---|---|
 | ... | PASS | ... |
 | (each carried-forward check) | ... | ... |
+
+### Startup latency (§2b)
+| Run | T1 server | T2−T1 box | T3−T2 harness | Total |
+|---|---|---|---|---|
 
 ### Onboarding compared with the baseline
 - Step 3 (Choose a pool): wording changed — expected, discobox-ai/discobox#498. ...
