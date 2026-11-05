@@ -27,9 +27,9 @@ function refsOf(row: TableRow): string {
 // "454" is discobox's; "vm 33" or "review 13" names its repository.
 const ORG = 'https://github.com/discobox-ai'
 function ghUrl(ref: string, kind: 'issues' | 'pull'): string | undefined {
-  const m = ref.trim().match(/^(?:([a-z][\w.-]*)\s*#?\s*)?#?(\d+)$/i)
+  const m = ref.trim().match(/^(?:discobox-ai\/)?(?:([a-z][\w.-]*?)\s*#?\s*)?#?(\d+)$/i)
   if (m === null) return undefined
-  return `${ORG}/${m[1] ?? 'discobox'}/${kind}/${m[2]}`
+  return `${ORG}/${m[1] || 'discobox'}/${kind}/${m[2]}`
 }
 
 // A reference as a link to GitHub, or plain text when it isn't a number.
@@ -66,9 +66,14 @@ function boxLinks(field: string, el: { Text: any; Link: any; Box: any }) {
 function where(row: TableRow, el: { Text: any; Link: any; Box: any }) {
   const box = String(row.yourMove).match(/sbx_[a-z0-9]+/)?.[0] ?? (/\bbox\b/i.test(row.yourMove) ? dash(row.agent) : '')
   if (box) return boxLinks(box, el)
-  const num = String(row.yourMove).match(/\bPR\s+(\d+)/i)?.[1] ?? dash(row.pr).match(/(\d+)$/)?.[1]
+  // "Merge release-validation PR 8": the repository named before "PR" wins;
+  // then the PR field's, then the issue field's ("vm 46", "release-validation#7").
+  const named = String(row.yourMove).match(/\b([a-z][\w.-]*)\s+PR\s+#?(\d+)/i)
+  const num = named?.[2] ?? String(row.yourMove).match(/\bPR\s+#?(\d+)/i)?.[1] ?? dash(row.pr).match(/(\d+)$/)?.[1]
   if (num && !/\bissue\b/i.test(row.yourMove)) {
-    const repo = (dash(row.issue) || dash(row.pr)).match(/^([a-z][\w.-]*)\s/i)?.[1]
+    const fieldRepo = (f: string) => dash(f).match(/^(?:discobox-ai\/)?([a-z][\w.-]*?)\s*#?\s*\d+$/i)?.[1]
+    const said = named && !/^(merge|review|and|the|a|open|its)$/i.test(named[1]) ? named[1] : undefined
+    const repo = said ?? fieldRepo(row.pr) ?? fieldRepo(row.issue)
     return ghLink(repo ? `${repo} ${num}` : num, 'pull', 'PR', el)
   }
   return ghLink(row.issue, 'issues', 'issue', el)

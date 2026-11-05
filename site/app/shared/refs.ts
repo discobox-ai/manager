@@ -23,9 +23,10 @@ export interface Ref {
 
 export function parseRef(value: string | undefined | null): Ref | null {
   if (!value) return null
-  let m = value.trim().match(/^(?:(?:pr\s+)?([A-Za-z][\w.-]*)\s+)?#?(\d+)\b/)
+  // "454", "#454", "vm 33", "vm#33", "release-validation#7", "discobox-ai/vm#33", "pr vm 33"
+  let m = value.trim().match(/^(?:pr\s+)?(?:discobox-ai\/)?(?:([A-Za-z][\w.-]*?)\s*#?\s*)?#?(\d+)\b/i)
   if (!m) return null
-  let repo = m[1] ?? defaultRepo
+  let repo = m[1] || defaultRepo
   return { repo, fullName: `${githubOrg}/${repo}`, number: Number(m[2]) }
 }
 

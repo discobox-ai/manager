@@ -99,9 +99,25 @@ def parse(args):
         k, sep, v = a.partition("=")
         if not sep or k not in FIELDS:
             sys.exit(f"table: bad field {a!r} (fields: {', '.join(sorted(set(FIELDS) - {'yourMove'}))})")
+        if FIELDS[k] in ("issue", "pr"):
+            v = norm_ref(v)
         out[FIELDS[k]] = v
         i += 1
     return out, pos
+
+
+def norm_ref(v):
+    """An issue or PR field in one form the renderers read: "677" for discobox,
+    "<repo> <N>" for any other repository. Accepts "#677", "discobox#677",
+    "discobox-ai/vm#46", "vm#46", "vm 46"; anything else is kept as given."""
+    t = v.strip()
+    m = re.match(r"^(?:discobox-ai/)?([A-Za-z][\w.-]*?)?\s*#?\s*(\d+)$", t)
+    if not m:
+        return v
+    repo, num = m.group(1), m.group(2)
+    if not repo or repo == "discobox":
+        return num
+    return f"{repo} {num}"
 
 
 def place(rows, row, pos):
