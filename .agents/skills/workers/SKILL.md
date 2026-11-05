@@ -342,7 +342,9 @@ Workers sleep whenever they wait and power off when they're done (the
 - **A worker you find idle with no state tag and nothing on screen** for
   `workers.pauseAfter`: it forgot to sleep. Type `Set your state tag and
   sleep (worker skill, Power).`
-- **Capacity counts running workers.** Waking one of your workers for its
+- **Capacity counts running workers:** power state `running` or `starting`
+  only (`scripts/table slots`). Suspended, stopped and archived boxes never
+  count against `workers.max` (owner, 2026-11-05). Waking one of your workers for its
   own PR comes before starting new work; at `workers.max`, it takes the next
   free slot ahead of any launch.
 
