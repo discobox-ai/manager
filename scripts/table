@@ -22,8 +22,9 @@ Every write is atomic (a temp file, then a rename) and stamps postedAt.
 Ranking (docs/labels.md, Next up). Every write sorts the rows by group, then
 priority, keeping the current order among equals, so the order can't drift:
   1 Blocker      type/flake, or blocker=yes
-  2 <release>    in manager.yaml's release.milestone, or listed in release.alsoIn
-  3 <next>       in release.next
+  2 <release>    in a milestone named release.milestone, in any managed
+                 repository (same-named milestones), or listed in release.alsoIn
+  3 <next>       in a milestone named release.next, in any managed repository
   4 Other        everything else that is open
   5 Done         closed issues and merged or closed PRs
 Priority within a group: critical, high, medium, low, none. `rank` stores each
@@ -221,11 +222,11 @@ def classify(r, info, cfg, owner):
         g = 5
     elif "type/flake" in labels or str(r.get("blocker", "")).lower() in ("yes", "true", "1"):
         g = 1
-    elif info and cfg["milestone"] and info.get("milestone") == cfg["milestone"] and t and t[0] == cfg["repo"]:
+    elif info and cfg["milestone"] and info.get("milestone") == cfg["milestone"]:
         g = 2
     elif ref and ref in cfg["alsoIn"]:
         g = 2
-    elif info and cfg["next"] and info.get("milestone") == cfg["next"] and t and t[0] == cfg["repo"]:
+    elif info and cfg["next"] and info.get("milestone") == cfg["next"]:
         g = 3
     else:
         g = 4
