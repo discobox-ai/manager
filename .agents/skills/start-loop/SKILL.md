@@ -35,6 +35,12 @@ them).
   words (AGENTS.md, "A relayed plan is not a go-ahead").
 - **To it:** a short answer to what it asked, when done. What the owner
   should see goes on the table, not to it.
+- **Your own transcript: say nothing.** Nobody reads this session's thread
+  (owner, 2026-11-05), so text you write there is tokens wasted. After an
+  event, update the table (`scripts/table`) and go back to waiting with no
+  status message, summary or recap: end the turn with nothing, or at most
+  one word. Anything the owner needs goes on the table; anything
+  `manager-chat` asked for goes to it with SendMessage.
 - The site's chat (`scripts/chat`) is yours: the `site-chat` monitor wakes
   you, and you reply there (`table` skill, Chat).
 - If you find this repository's checkout dirty while `manager-chat` is
@@ -149,4 +155,5 @@ Start the Monitor tool streaming `discobox-monitor pop --follow` (`watch`
 skill), and go to the loop's step 2 (`AGENTS.md`). Send `manager-chat`
 (SendMessage) one line: the loop is up, and the first "Your move". Then say
 nothing to it unless it asks, or the owner has a new move it should hear of
-before the table shows it.
+before the table shows it. Don't write a status message in your own transcript
+either, at startup or after any event (Talking with manager-chat).
