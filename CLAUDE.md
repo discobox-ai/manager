@@ -54,6 +54,11 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
 
 ## Rules that always hold
 
+- **Name an issue or PR by its repository unless it's in the same one:**
+  `discobox-ai/discobox#677` in a release-validation, site, vm or manager
+  comment, never `#677`, which GitHub links to that repository's own #677
+  (owner, 2026-11-05). In the table and chat, write `discobox#677`,
+  `site#12`, `release-validation#7`; a bare number is a discobox issue.
 - **Name a box as `discobox:///<id>`** (e.g. `discobox:///sbx_8j4xsdnw4sjk5x0h`)
   wherever the owner reads it: chat, the table, issues and comments (owner,
   2026-11-04).

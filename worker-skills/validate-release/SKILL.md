@@ -250,7 +250,7 @@ No baseline: say this run sets the first one.
 Where the cold time went: <download server, image pull, harness bundle, boot>.
 
 ### Onboarding compared with the baseline
-- Step 3 (Choose a pool): wording changed — expected, discobox-ai/discobox#498. ...
+- Step 3 (Choose a pool): wording changed — expected, discobox-ai/discobox#498 (always the full `discobox-ai/discobox#N`: this report is posted in release-validation, where a bare `#N` links to the wrong repository). ...
 
 ### Caveats
 (none) | each workaround (§4b): who told you, the exact command, its issue, the checks that ran after it

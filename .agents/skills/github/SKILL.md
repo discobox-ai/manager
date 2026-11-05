@@ -24,6 +24,16 @@ edits) ends with a footer naming this box, on its own line, last:
 `<sub>From \`$DISCOBOX_ADDRESS\`</sub>` (owner, 2026-11-03). Workers do the same
 (`worker` skill, Comments).
 
+## References
+
+A bare `#N` links to the repository the text is posted in. In any comment,
+issue or PR body outside discobox-ai/discobox, write a discobox issue or PR
+as `discobox-ai/discobox#N` (and any other repository's the same way, e.g.
+`discobox-ai/vm#46`). Only an issue in the same repository may be a bare `#N`.
+Check before posting: every `#N` in a release-validation, site, vm, hooks,
+tour or manager text that means a discobox issue is wrong (owner,
+2026-11-05).
+
 ## Filing and editing issues
 
 - Write issues as `## Today` (facts, with file paths) / `## Wanted` (what to

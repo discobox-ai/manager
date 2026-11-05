@@ -211,6 +211,12 @@ repository: its default branch, unless its `AGENTS.md` says otherwise.
 
 ## Comments
 
+**References:** a bare `#N` links to the repository you post in. Name an
+issue or PR in any other repository in full, `discobox-ai/discobox#677`, even
+when your job is about it (a release-validation report citing discobox
+issues, a site PR naming its discobox issue). Only your own repository's
+issues may be a bare `#N` (owner, 2026-11-05).
+
 Everything you post on GitHub ends with a footer naming this box: every
 comment, PR body, issue body, review reply and process note. Whoever reads it
 can then find the box that wrote it (owner, 2026-11-03):
