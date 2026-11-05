@@ -24,7 +24,7 @@ sets direction, trust or what ships goes to the owner, as a row on the table.
 | An ADR PR is green | – | Review and merge (merging is accepting), or reject with a comment |
 | An ADR PR merges | Retires its `propose-adr` worker. Sets the issue `status/ready` and, with a free slot, starts a `deliver-issue` worker, which marks the ADR Accepted and implements it in one PR | – |
 | An implementation PR is green | Reads its Evidence against the PR and the issue (`github` skill, The process comment). Something missing or not matching: sends the worker back to do it. Otherwise posts the process comment and sets `status/in-review` | Review and merge, after the comment |
-| A PR conflicts with its base | Only if it's in the top 3 of the merge queue: wakes its worker to rebase. Further down, it waits its turn (`workers`, Rebases) | – |
+| A PR conflicts with its base | If it's at "Review and merge" (or green and on its way there): wakes its worker to rebase at once, whatever its rank. The owner merges in any order (owner, 2026-11-05: four conflicts caught by the owner in a day under the old top-3 rule) (`workers`, Rebases) | – |
 | A PR's CI fails and its worker is stopped | Starts the worker again on `fix-ci` | "Look at it" if the worker says it can't make it green |
 | Main's CI fails | If it looks like a flake (unrelated to the commit), files a `type/flake` issue (`priority/high`, `status/ready`); the manager can't re-run CI (the bot has Triage). Otherwise files an issue and starts a `fix-ci` worker | – |
 | A PR merges | Closes its issue if it's still open, and retires its worker as it sleeps: archived with `discobox rm`, never woken to do anything | – |

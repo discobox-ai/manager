@@ -27,11 +27,11 @@ the table. Each row has:
     it didn't tag; tag it first, `workers`).
   - A concrete decision ("Decide A or B on the issue").
   - An ADR PR that's green is "Review and merge": merging it accepts it.
-- **The merge queue** is the rows at "Review and merge", in rank order. Only
-  its top 3 get rebased when they conflict (`workers`, Rebases). After every
-  merge or close, recompute the order and rebase at once any conflicting PR
-  now in the top 3, even with every slot full: the rebase wakes its own
-  worker (owner, 2026-11-04; PR 613 sat in the top 3 unrebased).
+- **The merge queue** is the rows at "Review and merge", in rank order.
+  Every PR in it is kept rebased: after every merge or close, recheck them
+  all and rebase at once any that conflicts, even with every slot full (the
+  rebase wakes its own worker). The owner merges in any order (owner,
+  2026-11-05; the top-3-only rule let 656, 690 and 697 sit conflicted).
 - **Why this rank:** written by `scripts/table rank` ("2 v0.19 Release
   (high)"), from labels and milestones; see Editing it. A blocker no label
   marks (broken CI, a release-validation finding, an issue holding up a

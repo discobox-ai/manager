@@ -357,11 +357,15 @@ each rebase reruns CI, and the next merge makes most of them conflict again.
 
 - **The merge queue** is the PRs at "Review and merge" on the table, in its
   ranked order (`table`).
-- **Only the top 3 of the queue get rebased.** When one of them is `dirty`,
-  wake its worker: `PR #<P> conflicts with <base>; rebase it (deliver-issue
-  §6).` A conflicting PR further down waits, with its row saying
-  "conflicts, rebased when near the front". When a merge moves it into the
-  top 3, it's its turn.
+- **Every PR in the queue is kept rebased** (owner, 2026-11-05; it was the
+  top 3 only, and the owner kept finding conflicts lower down: they merge in
+  any order). When one is `dirty`, wake its worker at once: `PR #<P>
+  conflicts with <base>; rebase it (deliver-issue §6).` A rebase wakes its
+  own worker even with every slot full.
+- **After every merge to a watched repository's base**, recheck
+  `mergeable_state` of every PR in the queue for that repository (give
+  GitHub a minute: `unknown` means not yet), so a conflict is fixed before
+  the owner sees it.
 - **One rebase per PR per base.** Don't ask again while it's rebasing or its
   CI is running, and don't ask again for a base it's already rebased onto.
   After a merge, give GitHub a minute to recompute `mergeable_state` before
