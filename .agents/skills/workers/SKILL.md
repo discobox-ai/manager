@@ -279,6 +279,10 @@ Workers sleep whenever they wait and power off when they're done (the
   when the event comes, and while any such box is pending, keep the waiting
   `pop` no longer than the time left (`watch`). The row stays "Answer in the
   box": opening it starts it again.
+- **A box you stopped that starts again is the owner** (owner, 2026-11-04):
+  you didn't start it, so they opened it to work in it. Leave it running and
+  never stop it again while it's in use; stop it only once its screen has
+  been still for `workers.pauseAfter` after the owner's last input.
 - **Wake a sleeping worker when its work needs it**: a review or comment on
   its PR, a failing check on its head, Evidence missing (`github`, The
   process comment), a rebase it's due (Rebases, below). **Never for a merge or close**: retire it as it sleeps. `discobox start <id>`, wait until its
