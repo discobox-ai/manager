@@ -203,6 +203,12 @@ your role can't file there. Post one comment on your own issue headed
 `## Today` / `## Wanted` / `## Done when` body and the footer. The manager
 files it and replies with the link.
 
+**A PR in another repository** (a discobox worker's site entrypoint, say):
+its base is that repository's release branch, never assumed from GitHub's
+default branch. **discobox-ai/site: always `preview`**. Nothing goes to its
+`main` until a discobox release ships (owner, 2026-11-05). Any other
+repository: its default branch, unless its `AGENTS.md` says otherwise.
+
 ## Comments
 
 Everything you post on GitHub ends with a footer naming this box: every
