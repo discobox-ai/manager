@@ -139,6 +139,38 @@ working", Your move `–`. Count it against `workers.max` like any worker.
 Don't type into an ad-hoc box, and don't answer its prompts: the owner is
 driving it. The only exception is "submit box X".
 
+### Cutting a release
+
+A release is cut in three steps (owner, 2026-11-05). Only the owner starts
+one ("cut v0.19.0-rc.4", "kick off an rc"):
+
+1. **A tag box.** Pick the tag (the next `-rc.<n>` after the newest of that
+   version in `gh release list`, or the version the owner names) and the
+   commit (the default branch's head, its CI green; else the newest green
+   one, and say which). Start an empty box with the `cut-release` skill and
+   no credential:
+
+   ```sh
+   scripts/launch cut-release --repo discobox-ai/discobox --no-source \
+     -p '/cut-release discobox-ai/discobox <tag> <full sha>'
+   ```
+
+   It asks the owner for a credential that can create that one tag: the bot
+   can't (Triage). **Never approve it yourself**, and never ask for tag
+   rights for your own credential. Table row: "Approve the tag credential
+   for discobox:///<id>" (`!`). The box tags, goes `ready` and powers off;
+   retire it then. It does nothing else.
+2. **Watch the release.** The tag starts the Release workflow, which
+   publishes a prerelease. Watch for `gh release view <tag>` to exist, with
+   its assets (table row: "releasing <tag>", Your move `–`). The workflow
+   failing is main CI failing (`docs/gates.md`): file it and start a
+   `fix-ci` worker; a re-cut needs a new tag, which is the owner's call.
+3. **Validate it**, below: from the newest stable release (`gh release list`,
+   `Latest`) to the tag, and a fresh install of the tag.
+
+The owner marking the prerelease a release (promote) is theirs, after
+validation.
+
 ### Release validation boxes
 
 To validate a release (owner, 2026-11-03), open a tracking issue in

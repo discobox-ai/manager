@@ -16,6 +16,7 @@ are the source.
 | `github-triage` | `triage-issue` workers | Read the repository and search issues; comment on issues; file issues |
 | `github-deliver` | `deliver-issue`, `propose-adr`, `fix-ci`, `rebase-pr` workers, and ad-hoc and prototype boxes (`submit`; `github-submit` was the same routes and is gone, 2026-11-05) | Triage's, plus git push and fetch; open and edit its PR; reply to review; mark ready; file issues. No CI re-run: GitHub requires admin rights the bot doesn't have, so a worker re-runs by pushing again |
 | `github-labels` | `migrate-labels` workers | Read; create and edit labels; set and remove labels on issues; comment (delegated for discobox-ai/manager only: elsewhere the bot has Triage, which can't create labels, so the owner creates them; owner, 2026-11-04) |
+| (none) | `cut-release` boxes | Bound nothing: the box asks the owner for a credential that can create one tag (`POST git/tags`, `git/refs`), since the bot has Triage |
 | `github-manager` | The manager itself, once per watched repository | Read; file, comment on, label and close issues; re-run failed CI. No git, no PRs |
 | `github-push` | The manager itself, for discobox-ai/manager only | Git fetch and push |
 

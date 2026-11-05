@@ -61,6 +61,7 @@ if [ -z "$JOB" ]; then
     rebase-pr) JOB=rebase ;;
     validate-release) JOB=validate ;;
     migrate-labels) JOB=labels ;;
+    cut-release) JOB=tag ;;
     *) JOB=$SKILL ;;
   esac
 fi
@@ -68,7 +69,8 @@ if [ -z "$ROLE" ]; then
   ROLE=$(sed -n '/^---$/,/^---$/p' "worker-skills/$SKILL/SKILL.md" | sed -n 's/^ *discobox\.role: *//p' | head -1)
 fi
 [ -n "$ROLE" ] || die "worker-skills/$SKILL names no discobox.role; pass --role"
-[ -f "roles/$ROLE.json" ] || die "no roles/$ROLE.json"
+# Role `none` (cut-release): the box is bound nothing and asks the owner itself.
+[ "$ROLE" = none ] || [ -f "roles/$ROLE.json" ] || die "no roles/$ROLE.json"
 if [ -z "$PROMPT" ]; then
   [ -n "$ISSUE" ] || die "give -p PROMPT, or --issue N for the default prompt"
   case $SKILL in
@@ -83,7 +85,7 @@ fi
 
 # A role that pushes takes the fork; triage and label roles don't.
 PUSHES=1
-case $ROLE in github-triage|github-labels|github-manager) PUSHES="" ;; esac
+case $ROLE in github-triage|github-labels|github-manager|none) PUSHES="" ;; esac
 
 # --- credentials ------------------------------------------------------------
 # The box's own DISCOBOX_* environment already reaches the right server; leave it alone.
@@ -103,7 +105,8 @@ git fetch -q origin main
 
 BIND="$GH_SECRET:GH_TOKEN,policy=roles/$ROLE.json,owner=$OWNER,repo=$NAME${PUSHES:+,forkOwner=$FORK}"
 SRC="https://github.com/$REPO@$BRANCH"
-ARGS=(run -d -H "$HARNESS" --skills "$(sed -n 's/^  skills: *//p' manager.yaml | head -1)" --bind "$BIND")
+ARGS=(run -d -H "$HARNESS" --skills "$(sed -n 's/^  skills: *//p' manager.yaml | head -1)")
+[ "$ROLE" = none ] || ARGS+=(--bind "$BIND")
 if [ -n "$NOSRC" ]; then ARGS+=(--no-source); else ARGS+=("$SRC"); fi
 ARGS+=(-p "$PROMPT")
 
