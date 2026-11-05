@@ -53,11 +53,11 @@ owner decision. The manager moves those there itself and tells the owner.
 A release is a GitHub milestone, created by the owner (the bot has Triage
 and can only apply one). Its title says enough; it needs no description
 (owner, 2026-11-04). A milestone can't hold another repository's issues, so
-a release that spans repositories is **one milestone title in each**: the
-owner creates "v0.20 Release" in discobox-ai/vm too, and the manager sets it
-on vm's issues. The table ranks by the title, whatever the repository
-(owner, 2026-11-05; no GitHub Projects). A part in a repository that has no
-such milestone yet is listed in `manager.yaml`'s `release.alsoIn`.
+the release's parts elsewhere are listed in `manager.yaml`'s
+`release.alsoIn`. Don't ask for milestones in other repositories: the owner
+wants one place to look (owner, 2026-11-05). From v0.20 a release is a GitHub
+Project across repositories (discobox#693); until then, work deferred to the
+next release in another repository gets a comment saying so.
 
 ## Initiatives
 

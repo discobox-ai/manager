@@ -38,11 +38,9 @@ repos:
 release:
   repo: discobox-ai/discobox
   milestone: v0.19 Release
-  # A release spans repositories by milestone NAME: the owner creates a
-  # milestone with the same title in each repository that has work in it
-  # (the bot has Triage and can't), and the manager sets it on issues there
-  # (owner, 2026-11-05). alsoIn lists parts in a repository with no such
-  # milestone yet.
+  # Its parts in other repositories, which a discobox milestone can't hold.
+  # Not same-named milestones elsewhere: from v0.20 a release is a GitHub
+  # Project across repositories (owner, 2026-11-05; discobox#693).
   alsoIn:
     - discobox-ai/manager#2
     - discobox-ai/manager#4
