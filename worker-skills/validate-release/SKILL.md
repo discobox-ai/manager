@@ -21,7 +21,7 @@ git -c credential.helper= -c credential.helper='!f() { echo username=x-access-to
 ``` You install it the way a user does, from the
 release site, and check that it installs, onboards, and (in `upgrade` mode)
 upgrades cleanly with real state in it. You never build discobox from source,
-and you never fix anything: what you find goes in the report, and new work as
+and you never fix anything (a workaround only when told: §4b): what you find goes in the report, and new work as
 an "Issue to file" (`worker`).
 
 Your tags give the tracking issue (`repo`, `issue`); your prompt gives the
@@ -155,6 +155,28 @@ too, in a second pass on fresh state). Keep the output. Any onboarding or
 migration prompt the upgrade shows goes into the record (§2), under
 "Upgrade".
 
+## 4b. A workaround, only when you're told
+
+A failure that stops the run (the upgraded CLI refuses to start, say) ends
+the checks after it: they're SKIP. You never work around it on your own. If
+the owner or the user tells you to (directly, or through the manager), apply
+exactly that workaround and carry on, and **mark everything after it**
+(owner, 2026-11-05):
+
+- In your record, a step `Workaround (told by <who>): <exact command>`, for
+  `<issue>`.
+- In the report, a `### Caveats` section listing each workaround, its issue,
+  and which checks ran after it. Each such check's Evidence starts
+  `After the <issue> workaround:`.
+- In **every** Issue to file (and evidence added to an existing issue) found
+  after it, a first line: `Caveat: found after working around <issue> by hand
+  (<exact command>); without it the run stopped at <step>.`
+- In the blocking issue itself, a comment saying the workaround was used and
+  what it let through.
+
+The verdict stays FAIL for the blocker: a workaround never turns it into a
+PASS.
+
 ## 5. Check
 
 Each a line in the report, PASS / FAIL / SKIP with the evidence:
@@ -227,6 +249,9 @@ Where the cold time went: <download server, image pull, harness bundle, boot>.
 
 ### Onboarding compared with the baseline
 - Step 3 (Choose a pool): wording changed — expected, discobox-ai/discobox#498. ...
+
+### Caveats
+(none) | each workaround (§4b): who told you, the exact command, its issue, the checks that ran after it
 
 ### Findings
 (none) | each one, with an **Issue to file** comment posted separately (`worker`), for discobox-ai/discobox
