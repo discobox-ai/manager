@@ -187,7 +187,10 @@ discobox tag <id> repo=discobox-ai/release-validation issue=<N> job=validate for
 ```
 
 Each opens a run PR (new baseline, note edits) and posts one report on the
-issue. Findings come as "Issue to file" comments for discobox-ai/discobox:
+issue. When both have reported, post **the release's timing report** on the
+tracking issue and give it to the owner: one table, both modes' cold and
+warm T3 totals against the baseline with the change in %, any run over 25%
+named as a finding (owner, 2026-11-05). Findings come as "Issue to file" comments for discobox-ai/discobox:
 file them there. The owner merging a run PR accepts the run; then retire its
 box.
 

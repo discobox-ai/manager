@@ -121,8 +121,12 @@ Report a table in seconds (T1, T2−T1, T3−T2, T3 total) for each run, the
 box's CPU count and whether `/dev/kvm` is there: this runs nested inside a
 discobox, so say so next to the numbers. Keep the raw timestamps in
 `~/latency.md`, and add it to the run PR as `baselines/latency-<mode>.md`, so
-the next release compares against it. A total more than 25% slower than the
-baseline is a finding.
+the next release compares against it.
+
+**The 25% rule** (owner, 2026-11-05): compare each run's T3 total (cold with
+cold, warm with warm) with `baselines/latency-<mode>.md`. More than 25% slower
+is a FAIL on the §5 latency check and a finding (an "Issue to file", with
+both tables). No baseline yet: this run sets it, and the check is SKIP.
 
 ## 3. Seed (upgrade mode only)
 
@@ -163,6 +167,7 @@ Each a line in the report, PASS / FAIL / SKIP with the evidence:
 - A **new** box starts in each pool and runs a shell command.
 - `discobox doctor` (or the release's health command) is clean.
 - Nothing in the server's log at error level that the release doesn't explain.
+- Startup latency (§2b): each T3 total within 25% of the baseline's.
 
 ## 6. Compare with the baseline
 
@@ -188,6 +193,10 @@ No baseline: say this run sets the first one.
 1. **One PR to discobox-ai/release-validation** (from your fork, `open-pr`
    for the form), from branch `validate/<mode>-<to>`, holding:
    - your record as `baselines/onboarding-<mode>.md`;
+   - your timings as `baselines/latency-<mode>.md` (§2b);
+   - in the notes skill, under "Checks carried forward", the line
+     "Startup latency: T3 totals within 25% of `baselines/latency-<mode>.md`
+     (owner, 2026-11-05)" if it isn't there yet;
    - edits to the notes skill, **only** where it steered you wrong, or where a
      finding deserves a check next release (add it under "Checks carried
      forward", naming the issue), or a check's issue is closed and it passed
@@ -205,9 +214,16 @@ No baseline: say this run sets the first one.
 | ... | PASS | ... |
 | (each carried-forward check) | ... | ... |
 
-### Startup latency (§2b)
-| Run | T1 server | T2−T1 box | T3−T2 harness | Total |
-|---|---|---|---|---|
+### Startup latency (§2b): PASS | FAIL | SKIP (first baseline)
+<pool type, CPUs, /dev/kvm yes|no, nested in a discobox>
+
+| Run | T1 server | T2−T1 box | T3−T2 harness | Total | Baseline total | Change |
+|---|---|---|---|---|---|---|
+| cold | | | | | | +x% |
+| warm, server running | | | | | | |
+| warm, server stopped | | | | | | |
+
+Where the cold time went: <download server, image pull, harness bundle, boot>.
 
 ### Onboarding compared with the baseline
 - Step 3 (Choose a pool): wording changed — expected, discobox-ai/discobox#498. ...
