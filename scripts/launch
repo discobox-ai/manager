@@ -69,7 +69,7 @@ if [ -z "$ROLE" ]; then
   ROLE=$(sed -n '/^---$/,/^---$/p' "worker-skills/$SKILL/SKILL.md" | sed -n 's/^ *discobox\.role: *//p' | head -1)
 fi
 [ -n "$ROLE" ] || die "worker-skills/$SKILL names no discobox.role; pass --role"
-# Role `none` (cut-release): bound only git read of the skills repository; it asks the owner for the rest.
+# Role `none` (cut-release): the box is bound nothing and asks the owner itself.
 [ "$ROLE" = none ] || [ -f "roles/$ROLE.json" ] || die "no roles/$ROLE.json"
 if [ -z "$PROMPT" ]; then
   [ -n "$ISSUE" ] || die "give -p PROMPT, or --issue N for the default prompt"
@@ -103,16 +103,14 @@ export GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0=
 git fetch -q origin main
 [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || die "HEAD is not origin/main: push (or pull) first"
 
-# The pool fetches the --skills repository itself; it's private, so every box also gets git read of it.
-SKILLS_REPO=$(sed -n 's/^  skills: *//p' manager.yaml | head -1 | sed 's|//.*||')
-BIND="$GH_SECRET:GH_TOKEN,policy=roles/$ROLE.json,owner=$OWNER,repo=$NAME${PUSHES:+,forkOwner=$FORK},policy=roles/skills-read.json,owner=${SKILLS_REPO%%/*},repo=${SKILLS_REPO#*/}"
+BIND="$GH_SECRET:GH_TOKEN,policy=roles/$ROLE.json,owner=$OWNER,repo=$NAME${PUSHES:+,forkOwner=$FORK}"
 SRC="https://github.com/$REPO@$BRANCH"
-ARGS=(run -d -H "$HARNESS" --skills "$(sed -n 's/^  skills: *//p' manager.yaml | head -1)")
-if [ "$ROLE" = none ]; then
-  ARGS+=(--bind "$GH_SECRET:GH_TOKEN,policy=roles/skills-read.json,owner=${SKILLS_REPO%%/*},repo=${SKILLS_REPO#*/}")
-else
-  ARGS+=(--bind "$BIND")
-fi
+# Skills go in as a local directory, copied from this checkout (equal to the pushed
+# main, checked above). Given as discobox-ai/manager//worker-skills, the pool fetches
+# the private repository itself, and from inside a box the CLI never lends it Git
+# credentials: the box waits for its source forever (2026-11-05).
+ARGS=(run -d -H "$HARNESS" --skills "$PWD/worker-skills")
+[ "$ROLE" = none ] || ARGS+=(--bind "$BIND")
 if [ -n "$NOSRC" ]; then ARGS+=(--no-source); else ARGS+=("$SRC"); fi
 ARGS+=(-p "$PROMPT")
 

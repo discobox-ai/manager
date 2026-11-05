@@ -95,7 +95,7 @@ with `could not read Username for 'https://github.com'` (2026-11-03).
 H='!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f'
 export GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0= \
   GIT_CONFIG_KEY_1=credential.helper GIT_CONFIG_VALUE_1="$H"
-discobox run -d -H "$HARNESS" --skills discobox-ai/manager//worker-skills \
+discobox run -d -H "$HARNESS" --skills "$PWD/worker-skills" \
   --bind "$GH_SECRET:GH_TOKEN,policy=roles/<role>.json,owner=<owner>,repo=<name>${FORK:+,forkOwner=$FORK}" \
   https://github.com/<repo>@<defaultBranch> \
   -p 'Deliver issue #<N> in <repo>.'
@@ -128,7 +128,7 @@ you can read, type into and approve for later, so this is what lets the
 owner's own work join the process.
 
 ```sh
-discobox run -d -H "$HARNESS" --skills discobox-ai/manager//worker-skills \
+discobox run -d -H "$HARNESS" --skills "$PWD/worker-skills" \
   --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-deliver.json,owner=<owner>,repo=<name>,forkOwner=$FORK" \
   https://github.com/<repo>@<defaultBranch> -p '<the owner's topic, or nothing>'
 discobox tag <id> repo=<repo> job=adhoc fork=$FORK base=<defaultBranch>
@@ -180,7 +180,7 @@ To validate a release (owner, 2026-11-03), open a tracking issue in
 since this box's credential has no git route to it, and opens one PR there):
 
 ```sh
-discobox run -d -H "$HARNESS" --skills discobox-ai/manager//worker-skills \
+discobox run -d -H "$HARNESS" --skills "$PWD/worker-skills" \
   --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-deliver.json,owner=discobox-ai,repo=release-validation,forkOwner=$FORK" \
   --no-source -p '/validate-release upgrade <from> <to>'      # and a second box: '/validate-release fresh <to>'
 discobox tag <id> repo=discobox-ai/release-validation issue=<N> job=validate fork=$FORK base=main

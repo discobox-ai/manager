@@ -1,7 +1,7 @@
 # Worker skills
 
 Every worker discobox gets these, installed by the manager with
-`discobox run --skills discobox-ai/manager//worker-skills`. A worker does one
+`discobox run --skills /workspace/manager/worker-skills`, copied from the manager's checkout of the pushed `main`. A worker does one
 job and ends in a defined state. The manager reads that state; nobody has to
 read the worker's terminal to know where it stands.
 

@@ -16,8 +16,7 @@ are the source.
 | `github-triage` | `triage-issue` workers | Read the repository and search issues; comment on issues; file issues |
 | `github-deliver` | `deliver-issue`, `propose-adr`, `fix-ci`, `rebase-pr` workers, and ad-hoc and prototype boxes (`submit`; `github-submit` was the same routes and is gone, 2026-11-05) | Triage's, plus git push and fetch; open and edit its PR; reply to review; mark ready; file issues. No CI re-run: GitHub requires admin rights the bot doesn't have, so a worker re-runs by pushing again |
 | `github-labels` | `migrate-labels` workers | Read; create and edit labels; set and remove labels on issues; comment (delegated for discobox-ai/manager only: elsewhere the bot has Triage, which can't create labels, so the owner creates them; owner, 2026-11-04) |
-| `skills-read` | Every worker, beside its job's role, for discobox-ai/manager | Git fetch of the skills repository only. The pool fetches `--skills` itself and the repository is private (2026-11-05); narrower than `github-triage` on manager, which the manager delegates, so no new grant is needed |
-| (none) | `cut-release` boxes | Bound only `skills-read`: the box asks the owner for a credential that can create one tag (`POST git/tags`, `git/refs`), since the bot has Triage |
+| (none) | `cut-release` boxes | Bound nothing: the box asks the owner for a credential that can create one tag (`POST git/tags`, `git/refs`), since the bot has Triage |
 | `github-manager` | The manager itself, once per watched repository | Read; file, comment on, label and close issues; re-run failed CI. No git, no PRs |
 | `github-push` | The manager itself, for discobox-ai/manager only | Git fetch and push |
 
@@ -36,7 +35,7 @@ from `discobox-access list -json` (`workers`, Launch): the owner chooses the
 secret when approving, so it isn't always `github`.
 
 ```sh
-discobox run -d --skills discobox-ai/manager//worker-skills \
+discobox run -d --skills "$PWD/worker-skills" \
   --bind "$GH_SECRET:GH_TOKEN,policy=roles/github-deliver.json,owner=discobox-ai,repo=discobox,forkOwner=ibuildthecloud-bot" \
   https://github.com/discobox-ai/discobox@main -p 'Deliver issue #432 in discobox-ai/discobox.'
 ```
