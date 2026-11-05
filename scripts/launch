@@ -9,8 +9,8 @@
 # (workers.harness), the fork owner and the repository's default
 # branch; from the skill, the role it runs under; from `discobox-access`, the one
 # delegated GitHub secret. It then runs the box, tags it, moves the issue to
-# status/in-progress (deliver and ADR jobs), and, for a Codex box, answers its
-# "Trust this folder?" dialog.
+# status/in-progress (deliver and ADR jobs). A Codex box trusts its folder by
+# itself (discobox#571, PR 707): nothing here answers a dialog.
 #
 # It refuses to launch when this checkout is dirty or not pushed (the box installs
 # its skills from the pushed main), or when workers.paused is true.
@@ -144,30 +144,6 @@ if [ -n "$ISSUE" ] && [ -z "$NOLABEL" ]; then
     gh api -X POST "repos/$REPO/issues/$ISSUE/labels" -f 'labels[]=status/in-progress' --silent
     ;;
   esac
-fi
-
-# --- a Codex box asks to trust its folder ------------------------------------
-# Until discobox#571 lands. The dialog comes only after the pool has delivered
-# every source, which can take minutes, so watch until it shows or Codex is past
-# it (its prompt is up), for up to 15 minutes; run it in the background so the
-# launch returns at once.
-if [ "$HARNESS" = codex ]; then
-  (
-    for _ in $(seq 1 180); do
-      sleep 5
-      scr=$(discobox admin terminal screen "$ID" primary 2>/dev/null || true)
-      if printf %s "$scr" | grep -q "Trust this folder"; then
-        discobox admin terminal input "$ID" primary Enter >/dev/null
-        exit 0
-      fi
-      # Codex's composer is up: no dialog is coming.
-      if printf %s "$scr" | grep -q -E "esc to interrupt|Ask Codex to do anything|% context left|Context [0-9]+% left"; then
-        exit 0
-      fi
-    done
-    echo "launch: $ID never showed Codex's trust dialog or its prompt in 15 minutes" >&2
-  ) </dev/null >>"${XDG_STATE_HOME:-$HOME/.local/state}/discobox-manager/trust-$ID.log" 2>&1 &
-  echo "watching $ID for Codex's trust dialog (background, up to 15 min)"
 fi
 
 # The table's "running" header counts workers from `discobox ls`; refresh it now.
