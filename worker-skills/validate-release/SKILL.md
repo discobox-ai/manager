@@ -171,8 +171,10 @@ exactly that workaround and carry on, and **mark everything after it**
 - In **every** Issue to file (and evidence added to an existing issue) found
   after it, a first line: `Caveat: found after working around <issue> by hand
   (<exact command>); without it the run stopped at <step>.`
-- In the blocking issue itself, a comment saying the workaround was used and
-  what it let through.
+- For the blocking issue itself, a comment saying the workaround was used and
+  what it let through. It's in discobox-ai/discobox, which your role can't
+  reach: post it on your tracking issue as **Comment for <repo>#<N>**, and the
+  manager posts it there. Never ask for a credential to post it.
 
 The verdict stays FAIL for the blocker: a workaround never turns it into a
 PASS.
