@@ -41,7 +41,6 @@ Exactly these routes, for this repository, for an hour:
 
 ```sh
 discobox-access request -name github -env-var GH_TOKEN -ttl 1h \
-  -hosts api.github.com \
   -route "POST api.github.com/repos/$REPO/git/tags" \
   -route "POST api.github.com/repos/$REPO/git/refs" \
   -route "GET api.github.com/repos/$REPO/git/**" \
@@ -49,7 +48,9 @@ discobox-access request -name github -env-var GH_TOKEN -ttl 1h \
   -wait -timeout 24h
 ```
 
-Tag the box `needs-input` while it waits (`worker`); the manager puts
+Exactly those three routes and nothing else: no `-hosts` flag, which asks
+for the whole host (any method, any path) on top of them. Tag the box
+`needs-input` while it waits (`worker`); the manager puts
 "Approve the tag credential" on the owner's table. Never ask for more routes,
 never a git push route, and never use the credential for anything but §3.
 Denied: tag `blocked`, say so, stop.
