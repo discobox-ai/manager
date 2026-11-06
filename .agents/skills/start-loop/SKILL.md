@@ -146,6 +146,9 @@ this order, within `workers.max` and `disk.minFreeGiB`:
 4. **New issues** in migrated repositories: triage, at most
    `workers.triageMax` at once, flakes first, then the release milestone's,
    then highest `priority/*`, then newest (`docs/labels.md`, Next up).
+   Do it again after every event you handle: an open issue with no
+   `status/*` label and no triage box gets one now (`triage-intake`; a row
+   alone is not triage).
 
 Update the rows that changed (`scripts/table`).
 

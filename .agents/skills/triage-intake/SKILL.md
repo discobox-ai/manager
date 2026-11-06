@@ -15,6 +15,11 @@ description: How the manager handles incoming work — a new issue, an issue the
    (`docs/labels.md`, Next up)
 1. Start a triage worker:
    `-p 'Triage issue #N in <repo>.'` (job `triage`, skill `triage-issue`).
+   **Adding the issue's row is not triaging it** (discobox#741 sat unlabeled
+   with only a "Needs triage" row, 2026-11-06): launch the triage worker in
+   the same step, before you handle the next event. If you can't (no slot,
+   low disk), the row says why. An issue a worker filed with the bot account
+   is new work like any other.
 2. When it finishes, its verdict is a comment on the issue: proposed
    `type/*`, `area/*` and `priority/*`, a rewritten body if it was thin, and
    whether it needs an ADR or a decision.
@@ -24,8 +29,12 @@ description: How the manager handles incoming work — a new issue, an issue the
 ## The owner asks for something in conversation
 
 - If it's a change to a product repository, **file an issue** (Today / Wanted /
-  Done when), then treat it as `status/ready` (the owner asked). Start the
-  worker. Don't make the change yourself.
+  Done when), then treat it as `status/ready` (the owner asked): set the
+  label and start the worker (an ADR worker if the issue needs one), by
+  priority when slots are short. Don't wait for a milestone: asking for it is
+  the go-ahead, and a missing milestone is only a question on the table
+  (owner, 2026-11-06, on discobox#744). manager-chat files these and passes
+  them on; the loop starts their workers. Don't make the change yourself.
 - If it's a question about the state of things, answer from GitHub and the
   workers, not from memory.
 - If it changes the process, the change goes into this repository. Edit
