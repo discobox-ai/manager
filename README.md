@@ -1,5 +1,7 @@
 # discobox-ai/manager
 
+![The Rube Goldberg Factory: a crew of identical managers building an elaborate machine to make a cupcake](docs/images/manager.jpg)
+
 An agent that manages engineering work across discobox-ai repositories. It
 runs in a discobox and starts worker discoboxes to do the work. The owner talks
 to it, and it watches GitHub, triages what comes in, runs the work through
