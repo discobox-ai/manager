@@ -191,8 +191,14 @@ issue. When both have reported, post **the release's timing report** on the
 tracking issue and give it to the owner: one table, both modes' cold and
 warm T3 totals against the baseline with the change in %, any run over 25%
 named as a finding (owner, 2026-11-05). Findings come as "Issue to file" comments for discobox-ai/discobox:
-file them there. The owner merging a run PR accepts the run; then retire its
-box.
+file them there. The owner merging a run PR accepts the run.
+
+A validation box holds nested pools, images and VM disks, and it can grow by
+tens of GiB in minutes (rc.6's fresh box: archiving it freed 17G at once,
+2026-11-06). **Archive it as soon as its report is posted and its run PR is
+pushed**: don't keep it for later edits or rebases. A rebase or fix to its
+run PR goes to a `rebase-pr` worker instead. Suspending it saves nothing on
+disk.
 
 ### Prototype boxes
 
