@@ -106,6 +106,13 @@ gh api -X PATCH repos/<repo>/issues/<N> -f state=closed -f state_reason=complete
 ```
 
 - **A PR merged without closing its issue:** close the issue as above.
+- **Never reopen an issue the owner closed**, or one closed at their word
+  (discobox#521 was reopened twice by release validation after the owner had
+  ruled its behavior correct, 2026-11-06). New evidence goes on it as a
+  comment, and the table gets the question ("discobox#521 reproduces in
+  rc.6: still fine?"). Only the owner reopens it. The check that found it
+  is a mistake in the validation notes, not a release blocker: have it fixed
+  there (`validate-release`, §0).
 - **A superseded or obsolete issue:** `state_reason=not_planned`, with a
   comment naming what replaced it.
 - **A community PR with no issue** (`docs/gates.md`): a PR is an issue to

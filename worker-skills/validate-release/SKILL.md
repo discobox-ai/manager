@@ -35,6 +35,12 @@ Read, from that checkout, before anything else (the notes skill is at
 - the **`validate-release-notes`** skill: checks carried forward from past
   findings (run each, report each on its own line), recipes that worked,
   environment quirks, and differences already explained;
+  Before running a carried check, look at its issue: closed by the owner, or
+  with an owner comment that the behavior is correct, means the check is
+  wrong. Report it SKIP ("<issue> closed by the owner: behavior accepted"),
+  never FAIL, and drop or rewrite the check in your run PR to test what the
+  owner said should hold (for discobox-ai/discobox#521: Esc cancels the copy
+  prompt; a large apparent size is correct). Never reopen it.
 - **`baselines/onboarding-<mode>.md`**: the last accepted onboarding record.
   Missing: this run sets the first.
 
