@@ -26,6 +26,8 @@ function refsOf(row: TableRow): string {
 
 // "454" is discobox's; "vm 33" or "review 13" names its repository.
 const ORG = 'https://github.com/discobox-ai'
+// The repositories a move may name before "PR" (manager.yaml's repos, short names).
+const REPOS = new Set(['discobox', 'vm', 'review', 'manager', 'release-validation', 'hooks', 'site', 'tour', 'x'])
 function ghUrl(ref: string, kind: 'issues' | 'pull'): string | undefined {
   const m = ref.trim().match(/^(?:discobox-ai\/)?(?:([a-z][\w.-]*?)\s*#?\s*)?#?(\d+)$/i)
   if (m === null) return undefined
@@ -72,7 +74,8 @@ function where(row: TableRow, el: { Text: any; Link: any; Box: any }) {
   const num = named?.[2] ?? String(row.yourMove).match(/\bPR\s+#?(\d+)/i)?.[1] ?? dash(row.pr).match(/(\d+)$/)?.[1]
   if (num && !/\bissue\b/i.test(row.yourMove)) {
     const fieldRepo = (f: string) => dash(f).match(/^(?:discobox-ai\/)?([a-z][\w.-]*?)\s*#?\s*\d+$/i)?.[1]
-    const said = named && !/^(merge|review|and|the|a|open|its)$/i.test(named[1]) ? named[1] : undefined
+    // Only a repository the manager watches counts: "ADR PR 710" or "the PR 9" name none.
+    const said = named && REPOS.has(named[1].toLowerCase()) ? named[1].toLowerCase() : undefined
     const repo = said ?? fieldRepo(row.pr) ?? fieldRepo(row.issue)
     return ghLink(repo ? `${repo} ${num}` : num, 'pull', 'PR', el)
   }
