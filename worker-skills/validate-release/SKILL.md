@@ -40,7 +40,10 @@ Read, from that checkout, before anything else (the notes skill is at
   wrong. Report it SKIP ("<issue> closed by the owner: behavior accepted"),
   never FAIL, and drop or rewrite the check in your run PR to test what the
   owner said should hold (for discobox-ai/discobox#521: Esc cancels the copy
-  prompt; a large apparent size is correct). Never reopen it.
+  prompt; a large apparent size is correct). Never reopen it. Your role
+  reaches only release-validation: read a discobox-ai/discobox issue
+  without your token (the repository is public), e.g.
+  `curl -s https://api.github.com/repos/discobox-ai/discobox/issues/<N>/comments`.
 - **`baselines/onboarding-<mode>.md`**: the last accepted onboarding record.
   Missing: this run sets the first.
 
