@@ -254,7 +254,9 @@ discobox#786, merged by you.
 - **Launching.** `scripts/launch` finds the track itself: an issue the epic
   lists starts from the track's branch and its PR targets it (`base` tag).
   Never start track work from the default branch. ADRs merged into the
-  track's branch are accepted for the track (`deliver-issue` §0).
+  track's branch are accepted for the track (`deliver-issue` §0), and you
+  merge ADR PRs into it like any other: the owner said "You can merge
+  anything that goes to the feature branch, even adr" (2026-11-07).
 - **When.** Track issues take slots after the current release milestone's
   work and before anything else, in the epic's phase order (P0 first) and
   each issue's "Depends on". Suspend track boxes while release validation
