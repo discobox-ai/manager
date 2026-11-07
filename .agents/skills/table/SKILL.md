@@ -19,8 +19,11 @@ the table. Each row has:
   waiting on CI, done. Never whether its box is running or stopped: workers
   sleep whenever they wait, so asleep is normal.
 - **Your move** is `–` unless the owner has something to do:
-  - "Review and merge", only once every check on the PR's head is green and
-    the process comment for that head is posted (`github` skill).
+  - "Review and merge", only once every check on the PR's head is green,
+    the process comment for that head is posted (`github` skill), **and the
+    PR is out of draft**. A green draft whose worker is done goes back to its
+    worker to mark it ready (owner, 2026-11-07, PR 782); the row stays `–`
+    until it is.
     Never "review and merge once green".
   - "Look at it" for a failing PR its worker can't make green.
   - "Answer in the box" for a box tagged `needs-input` (or showing a question
