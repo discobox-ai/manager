@@ -53,6 +53,12 @@ tour or manager text that means a discobox issue is wrong (owner,
   as <repo>#N.` Triage it like any new issue (`triage-intake`). If the worker
   is stopped waiting on the number, type the link into its box. A worker
   asking for a credential to file an issue gets pointed here instead.
+- **A PR carries its issue's milestone** (owner, 2026-11-07, PR 782). When
+  a worker's PR appears, set the PR's milestone to its issue's (`Closes` or
+  `Part of #N`) with
+  `gh api -X PATCH repos/<repo>/issues/<PR> -F milestone=<number>`, and
+  again whenever the issue's milestone changes. An issue with no milestone
+  leaves its PR with none.
 - Labels follow `docs/labels.md`. Changing an issue's `status/*` means
   removing the old one in the same call:
   `--remove-label status/ready --add-label status/in-progress`.
