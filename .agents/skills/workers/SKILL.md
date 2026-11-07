@@ -201,7 +201,13 @@ named as a finding (owner, 2026-11-05). Findings come as "Issue to file" comment
 file them there. The owner merging a run PR accepts the run.
 
 The two run PRs touch disjoint files (`validate-release` §7), so they merge
-in either order with no rebase. **After both are merged**, if either left a
+in either order with no rebase. **Run PRs of different candidates** (rc.8's
+and rc.9's fresh runs, say) do overlap: both rewrite
+`baselines/*-<mode>.md`. The newest candidate's baselines win. When an older
+candidate's run PR conflicts with a newer one already merged, start a
+`rebase-pr` worker on it with: keep main's baselines, keep this PR's own
+`runs/<mode>-<to>/` and check files (2026-11-07, release-validation PRs 20
+and 21 after 23). **After both are merged**, if either left a
 `runs/<mode>-<to>/notes.md` or the two added duplicate `checks/` files,
 start one `deliver-issue` worker on release-validation (role
 `github-deliver`, repo release-validation) to fold them: notes into the notes
