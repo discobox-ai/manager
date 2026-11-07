@@ -186,6 +186,13 @@ discobox run -d -H "$HARNESS" --skills "$PWD/worker-skills" \
 discobox tag <id> repo=discobox-ai/release-validation issue=<N> job=validate fork=$FORK base=main
 ```
 
+**Quiet the host first** (owner, 2026-11-07): validation measures startup
+time, and the host's load skews it. Before launching the two boxes, suspend
+every worker that isn't on the release's milestone, and start no new box
+until both have posted their timing. Check `uptime`: launch when the
+1-minute load is below the host's CPU count (`nproc`), and say the load in
+the tracking issue.
+
 Each opens a run PR (new baseline, note edits) and posts one report on the
 issue. When both have reported, post **the release's timing report** on the
 tracking issue and give it to the owner: one table, both modes' cold and

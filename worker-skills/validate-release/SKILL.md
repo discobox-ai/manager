@@ -120,6 +120,19 @@ happens:
 | **T2 box running** | the box is listed as running |
 | **T3 harness screen** | Claude Code's first screen is drawn in the terminal (its welcome, theme or login screen: whatever comes first; no login, no completions) |
 
+**Record the host's load with every run** (owner, 2026-11-07: rc.7's fresh
+run hit a load of ~300 on 64 CPUs and its times meant nothing). Before each
+run and every 10 s during it, append `date +%s` and `/proc/loadavg` to
+`~/load.log` (the box shares the host's kernel, so this is the host's load),
+and note `nproc`. In the report, give each run's peak and mean 1-minute load
+next to its times. **A run whose 1-minute load went above `nproc` is
+overloaded:** its latency is not compared with the baseline (the 25% check
+is SKIP, "host overloaded: peak <L> on <N> CPUs"), and a timeout in it is
+still reported, but as found under overload, with the load in the evidence.
+Discobox should be slow under load, never fail: a step that fails on a fixed
+deadline while the host is busy is a bug, and is filed as one, but say the
+load.
+
 Run it **three times**: the first cold (nothing downloaded: no server, no
 images, no harness bundle), then twice warm (`discobox rm` the box between
 runs; keep the server running for one warm run, and stop it for the other).
