@@ -121,6 +121,10 @@ gh api -X PATCH repos/<repo>/issues/<N> -f state=closed -f state_reason=complete
   there (`validate-release`, §0).
 - **A superseded or obsolete issue:** `state_reason=not_planned`, with a
   comment naming what replaced it.
+- **A teammate's PR we've taken over** (`workers`, Taking over a PR): once
+  the bot's PR is open, comment `Superseded by #<new>`, then close it with
+  the same call, `state_reason` left out. `Closes #<old>` in the new PR
+  wouldn't do it: closing keywords close issues, not PRs.
 - **A community PR with no issue** (`docs/gates.md`): a PR is an issue to
   this API, so the same two calls close it, with `state_reason` left out:
 

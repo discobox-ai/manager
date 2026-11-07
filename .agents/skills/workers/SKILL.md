@@ -237,6 +237,38 @@ the `adopt` skill (`/adopt <id or description>`). You find it, lead it,
 write its issue, tag it, give it its role's credential and brief it. The box
 itself runs no process step and asks for nothing.
 
+### Taking over a PR (owner, 2026-11-07)
+
+The owner (or a teammate) opened a PR by hand, and asks you to "take over
+PR N" or "adopt PR N into our process". Only on their word, and only for a
+trusted author: `author_association` `OWNER`, `MEMBER` or `COLLABORATOR`
+(`gh api repos/<repo>/pulls/<N> --jq .author_association`). A community PR is
+never taken over (`github`, Closing).
+
+1. **Back-fill the issue(s).** Use the PR's own issue if it has one. Otherwise
+   file it from the PR's body (`github`, Filing): Today / Wanted / Done when,
+   the PR's description as the design, and what its author tested. One issue
+   per independent change: a PR that fixes two things gets two issues. Give
+   it the milestone the owner says, else the release the regression is in (say
+   so), with `status/ready`. Leave the PR's own design decisions alone: an
+   ADR in it that the owner wrote is their decision, and stays as written.
+2. **Comment on the old PR**: `Taken over by the manager: tracked as #<issue>;
+   a bot PR will supersede this one.` Set its milestone to the issue's.
+3. **Launch a `deliver-issue` worker** for the issue (the usual role and
+   tags), with the prompt
+   `/deliver-issue <issue>` and the line
+   `Take over PR #<old>: deliver-issue §0b.`
+4. **When the worker's PR is open**, close the old PR: comment `Superseded by
+   #<new>, which carries these commits through review and verify.`, then
+   `gh api -X PATCH repos/<repo>/issues/<old> -f state=closed` (a PR is an
+   issue to this API; the `pulls` endpoint is refused). Don't wait for the
+   merge: `Closes #<old>` in a PR body doesn't close a PR (GitHub's closing
+   keywords close only issues), and two open PRs for one change split the
+   review. If the takeover is abandoned, reopen it the same way
+   (`state=open`).
+5. On the table, the old PR's row goes; the issue's row follows the worker
+   as usual.
+
 ### "Submit box X"
 
 The owner says it to you, or types "submit" in the box themselves. When it's

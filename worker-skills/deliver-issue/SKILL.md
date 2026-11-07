@@ -48,6 +48,20 @@ asked.
   see whether it covers a case yours doesn't. If it does, handle that case
   through your own change and review, never by copying. Your PR body says
   `Replaces #<P> (community PR)`. The manager closes it once your PR is open.
+- **§0b. Taking over a PR** (your prompt says `Take over PR #<old>`): a
+  trusted teammate's PR is the starting point, not the community-PR rule
+  above. Check `author_association` is `OWNER`, `MEMBER` or `COLLABORATOR`;
+  anything else, stop and say so. Fetch it
+  (`git fetch "$GH_URL" pull/<old>/head`), and cherry-pick its commits onto
+  `discobox/issue-<N>` from the current default branch, **keeping their
+  author** (cherry-pick does; never squash them into your own). Resolve
+  conflicts the least you can. Its description is the design: an ADR in it
+  that the owner wrote stays as they wrote it. Then carry on from §1 as for
+  any change: finish what its description or CI says is missing, add tests
+  where it has none, and go through review and verify yourself. Never push to
+  the old PR's branch. Your PR body says `Closes #<N>` and `Supersedes
+  #<old>`, credits the author, and its Evidence says what the old PR's author
+  tested that you couldn't (a platform this box can't run).
 - **Read how the repository is built** (`worker`, The repository says how
   it's built), down to each package you'll touch.
 - Check the disk (`worker`), and never sit idle (`worker`, Power).
