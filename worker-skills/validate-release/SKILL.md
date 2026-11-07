@@ -126,9 +126,12 @@ happens:
 run hit a load of ~300 on 64 CPUs and its times meant nothing). Before each
 run and every 10 s during it, append `date +%s` and `/proc/loadavg` to
 `~/load.log` (the box shares the host's kernel, so this is the host's load),
-and note `nproc`. In the report, give each run's peak and mean 1-minute load
-next to its times. **A run whose 1-minute load went above `nproc` is
-overloaded:** its latency is not compared with the baseline (the 25% check
+and note `nproc`. Log `/proc/pressure/io` (the `some avg10` value) beside
+it: CPU load can be low while the disk is the bottleneck (rc.10: load under 11
+on 64 CPUs, but I/O pressure 12–36%, and cold startup +108%). In the report,
+give each run's peak and mean 1-minute load and I/O pressure next to its
+times. **A run whose 1-minute load went above `nproc`, or whose I/O pressure
+(`some avg10`) went above 10%, is overloaded:** its latency is not compared with the baseline (the 25% check
 is SKIP, "host overloaded: peak <L> on <N> CPUs"), and a timeout in it is
 still reported, but as found under overload, with the load in the evidence.
 Discobox should be slow under load, never fail: a step that fails on a fixed
