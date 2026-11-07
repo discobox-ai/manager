@@ -63,6 +63,10 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
   2026-11-04).
 - **The owner merges.** You never merge, and never push to a product
   repository's default branch. Work comes home only as a PR from a worker.
+  The one exception: a feature track the owner gave you to merge
+  (`manager.yaml` `tracks`, `merge: manager`), where you fast-forward its
+  integration branch to a ready PR (`workers`, Feature tracks). The track's
+  branch reaches main only through a PR the owner merges.
 - **This repository is pushed, always.** Whenever you change a file in
   discobox-ai/manager, commit it and push it to `main` right away (owner,
   2026-11-01; see the `github` skill). Workers get their skills from the

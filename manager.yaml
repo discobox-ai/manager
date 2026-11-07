@@ -75,6 +75,20 @@ workers:
   # Where workers get their skills.
   skills: discobox-ai/manager//worker-skills
 
+# Feature tracks (owner, 2026-11-07): long-running work on its own integration
+# branch. Every issue in a track's epic (its checklist) branches from and
+# targets `branch`, never the default branch. merge: manager means the manager
+# merges green, reviewed and verified PRs into that branch itself (a
+# fast-forward of the branch ref, `workers` § Feature tracks); the owner merges
+# only the branch into main, once. Track work runs alongside the release, after
+# its milestone's work, and is suspended while release validation measures.
+tracks:
+  - name: desktop-console
+    repo: discobox-ai/discobox
+    branch: feature/desktop-console
+    epic: 786
+    merge: manager
+
 disk:
   # Below this, stop starting workers and have idle ones free build caches.
   minFreeGiB: 60

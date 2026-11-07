@@ -2,7 +2,11 @@
 # Start one worker box for a job, the way the `workers` skill's Launch section says.
 #
 #   scripts/launch SKILL --repo OWNER/NAME [--issue N] [--job JOB] [-p PROMPT]
-#                  [--role ROLE] [--no-source] [--no-label] [--dry-run]
+#                  [--role ROLE] [--base BRANCH] [--no-source] [--no-label] [--dry-run]
+#
+# The box starts from, and its PR targets, the repository's default branch, or
+# the branch of the feature track whose epic lists the issue (manager.yaml
+# tracks), or --base.
 #
 # SKILL is a directory in worker-skills/ (deliver-issue, triage-issue, propose-adr, fix-ci,
 # rebase-pr, validate-release, ...). It reads, from manager.yaml, the harness
@@ -20,8 +24,8 @@ cd "$(dirname "$0")/.."
 
 die() { echo "launch: $*" >&2; exit 1; }
 
-SKILL="" REPO="" ISSUE="" JOB="" PROMPT="" ROLE="" NOSRC="" NOLABEL="" DRY=""
-[ $# -gt 0 ] || die "usage: scripts/launch SKILL --repo OWNER/NAME [--issue N] [--job JOB] [-p PROMPT] [--role ROLE] [--no-source] [--no-label] [--dry-run]"
+SKILL="" REPO="" ISSUE="" JOB="" PROMPT="" ROLE="" NOSRC="" NOLABEL="" DRY="" BASEARG=""
+[ $# -gt 0 ] || die "usage: scripts/launch SKILL --repo OWNER/NAME [--issue N] [--job JOB] [-p PROMPT] [--role ROLE] [--base BRANCH] [--no-source] [--no-label] [--dry-run]"
 SKILL=$1; shift
 while [ $# -gt 0 ]; do
   case $1 in
@@ -30,6 +34,7 @@ while [ $# -gt 0 ]; do
     --job) JOB=$2; shift 2 ;;
     -p|--prompt) PROMPT=$2; shift 2 ;;
     --role) ROLE=$2; shift 2 ;;
+    --base) BASEARG=$2; shift 2 ;;
     --no-source) NOSRC=1; shift ;;
     --no-label) NOLABEL=1; shift ;;
     --dry-run) DRY=1; shift ;;
@@ -48,6 +53,17 @@ BRANCH=$(awk -v r="$REPO" '$1=="-" && $2=="name:" {cur=$3} /defaultBranch:/ && c
 [ -n "$HARNESS" ] || die "manager.yaml has no workers.harness"
 [ -n "$FORK" ] || die "manager.yaml has no github.forkOwner"
 [ -n "$BRANCH" ] || die "$REPO is not in manager.yaml's repos"
+# A feature track whose epic's checklist lists this issue gives the base.
+TRACK=""
+if [ -z "$BASEARG" ] && [ -n "$ISSUE" ]; then
+  while read -r t_repo t_branch t_epic; do
+    [ "$t_repo" = "$REPO" ] || continue
+    if gh api "repos/$REPO/issues/$t_epic" --jq .body 2>/dev/null | grep -Eq "#$ISSUE([^0-9]|\$)"; then
+      BASEARG=$t_branch TRACK=$t_epic; break
+    fi
+  done < <(awk '/^tracks:/ {t=1; next} t && /^[^ #]/ {t=0} t && $1=="repo:" {r=$2} t && $1=="branch:" {b=$2} t && $1=="epic:" {print r, b, $2}' manager.yaml)
+fi
+[ -z "$BASEARG" ] || BRANCH=$BASEARG
 if [ "$PAUSED" = true ]; then die "workers.paused is true in manager.yaml: no new boxes (pausedExcept names the exceptions)"; fi
 OWNER=${REPO%%/*} NAME=${REPO#*/}
 
@@ -62,6 +78,7 @@ if [ -z "$JOB" ]; then
     validate-release) JOB=validate ;;
     migrate-labels) JOB=labels ;;
     cut-release) JOB=tag ;;
+    merge-track) JOB=merge ;;
     *) JOB=$SKILL ;;
   esac
 fi
@@ -115,7 +132,7 @@ if [ -n "$NOSRC" ]; then ARGS+=(--no-source); else ARGS+=("$SRC"); fi
 ARGS+=(-p "$PROMPT")
 
 if [ -n "$DRY" ]; then
-  echo "harness=$HARNESS job=$JOB role=$ROLE fork=${PUSHES:+$FORK}"
+  echo "harness=$HARNESS job=$JOB role=$ROLE fork=${PUSHES:+$FORK} base=$BRANCH${TRACK:+ track=#$TRACK}"
   echo "discobox ${ARGS[*]}"
   exit 0
 fi

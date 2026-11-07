@@ -31,7 +31,7 @@ asked.
   every issue it names as a blocker or context, and the ADRs it cites. The
   triage comment, if there is one, holds the reproduction and a failing test.
   An ADR the issue depends on must be accepted. **Merged on the default
-  branch is accepted**, even if it still says Proposed: the owner accepts an
+  branch, or on `BASE` when that's a feature track's branch, is accepted**, even if it still says Proposed: the owner accepts an
   ADR by merging its PR. Then your PR's first commit marks it `Accepted`, with
   a line under its date, `Accepted by the owner by merging #<ADR PR>,
   <date>`, and updates any ADR it supersedes to point at it. An ADR whose PR
@@ -53,7 +53,7 @@ asked.
   above. Check `author_association` is `OWNER`, `MEMBER` or `COLLABORATOR`;
   anything else, stop and say so. Fetch it
   (`git fetch "$GH_URL" pull/<old>/head`), and cherry-pick its commits onto
-  `discobox/issue-<N>` from the current default branch, **keeping their
+  `discobox/issue-<N>` from the current `BASE`, **keeping their
   author** (cherry-pick does; never squash them into your own). Resolve
   conflicts the least you can. Its description is the design: an ADR in it
   that the owner wrote stays as they wrote it. Then carry on from §1 as for

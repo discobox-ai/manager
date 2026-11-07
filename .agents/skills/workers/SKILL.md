@@ -243,6 +243,51 @@ the `adopt` skill (`/adopt <id or description>`). You find it, lead it,
 write its issue, tag it, give it its role's credential and brief it. The box
 itself runs no process step and asks for nothing.
 
+### Feature tracks (owner, 2026-11-07)
+
+A feature track is long-running work on its own integration branch,
+listed under `tracks` in `manager.yaml`: its repository, `branch`, `epic`
+(the issue whose checklist names its issues) and who merges into the branch.
+The first is the desktop console: `feature/desktop-console`, epic
+discobox#786, merged by you.
+
+- **Launching.** `scripts/launch` finds the track itself: an issue the epic
+  lists starts from the track's branch and its PR targets it (`base` tag).
+  Never start track work from the default branch. ADRs merged into the
+  track's branch are accepted for the track (`deliver-issue` §0).
+- **When.** Track issues take slots after the current release milestone's
+  work and before anything else, in the epic's phase order (P0 first) and
+  each issue's "Depends on". Suspend track boxes while release validation
+  measures timing (§ Release validation boxes), like any non-release work.
+- **Merging into the branch** (`merge: manager`): you merge, the owner
+  doesn't. A track PR is ready when its checks on its head are green (until
+  the track's own CI exists, discobox#788, there may be none: then its
+  Evidence must show the repository's suites passing locally), its review
+  has signed off, its verify passed or says why it couldn't, its process
+  comment is posted, and it's rebased on the track's branch with nothing
+  between them. Then have the track's **merge box** fast-forward the branch
+  to the PR's head: type `Merge PR #<P> at <sha>` into it. That box
+  (`merge-track` skill, role `none`, started once per track with
+  `scripts/launch merge-track --repo <repo> --no-source -p '/merge-track <repo> <branch>'`
+  and tagged `job=merge`) is the only holder of a credential that reaches
+  only that branch's ref, which the owner approves (owner, 2026-11-07); it
+  re-checks the PR and moves nothing that isn't a green fast-forward. GitHub
+  marks the PR merged. A PR that isn't a fast-forward goes back to its worker
+  to rebase first; never force. The merge box is never retired while its
+  track is open, and never counts against `workers.max` while idle.
+- **Issues don't close themselves** on a merge into a branch that isn't the
+  default: close the issue with a comment naming the PR, tick it in the
+  epic's checklist (edit the epic's body), and retire the box.
+- **Keeping up with main.** When a track PR conflicts because main moved, or
+  every week or so, start a `deliver-issue`-style job on the epic: merge the
+  default branch into a branch off the track's branch, run the suites, open
+  a PR into the track's branch; you fast-forward it like any other.
+- **Into main**, once: the epic's merge criteria (its last P7 issue) hold,
+  a PR from the track's branch into the default branch, and the owner merges
+  that one.
+- **On the table:** one row per track issue with a box or a PR; the epic's
+  row says the phase it's in.
+
 ### Taking over a PR (owner, 2026-11-07)
 
 The owner (or a teammate) opened a PR by hand, and asks you to "take over

@@ -35,6 +35,7 @@ and skills (`verify-recipes`; `discobox-review` is in every box).
 | Rebase | `rebase-pr` | The PR rebased keeping both sides, green; tagged `ready` |
 | Labels | `migrate-labels` | The repository has the `status/*` and `type/*` labels and every open issue is relabelled, after the owner approved the plan in the box; tagged `ready` |
 | Tag | `cut-release` | One annotated tag on the commit in its prompt, with a credential the owner approved for that alone; tagged `ready` and powered off |
+| Merge | `merge-track` | Long-lived: holds the owner-approved credential for one feature track's branch ref, and fast-forwards it to a ready PR when the manager asks; nothing else |
 | Prototype | `prototype` | The owner has seen the idea working (or not), with `~/prototype.md` listing what was decided and every shortcut; then submitted or dropped |
 | Submit | `submit` | An ad-hoc or prototype box's work is an issue with a submit comment, then carried on as `deliver-issue`, parked on a pushed branch, or kept as design only |
 
