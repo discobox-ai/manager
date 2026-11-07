@@ -43,7 +43,10 @@ the tests the conflict touched.
 
 **Branch:** `discobox/issue-<N>` for an issue, on the fork. Check it's free: `git ls-remote "$GH_URL"
 refs/heads/<branch>` returns nothing, or an ancestor of `HEAD` (this work's
-earlier push). Anything else is someone else's branch: stop and say so.
+earlier push). If it's taken by a PR that is already **merged or closed**
+(an earlier round on the same issue), don't replace it: use the next free
+`discobox/issue-<N>-2`, `-3`, ... and go on without asking. Anything else is
+someone else's branch: stop and say so.
 
 ## 2. Push and open
 
