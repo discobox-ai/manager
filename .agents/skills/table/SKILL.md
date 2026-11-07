@@ -172,6 +172,29 @@ The side pane is the `manager-table` mod, kept in
 session by `/start` (§4). Change it there, then copy it into the session again
 (`cp -r`); the session reloads it when the turn ends.
 
+## The release status issue
+
+Each release has one issue in discobox-ai/discobox, titled `v<X.Y> release
+status`, in that release's milestone, labelled `type/chore`,
+`status/in-progress` (owner, 2026-11-07; v0.19's is discobox#826). **Its
+body is the status**: you rewrite the whole body whenever the release's
+state changes (a candidate cut, a validation verdict, a blocker filed or
+closed, the owner's next move), with
+`gh api -X PATCH repos/discobox-ai/discobox/issues/<N> --input <json>`
+(`{"body": ...}`). Never post status as comments, and keep the first line
+`**Status: <one phrase>** (updated <date> by the manager)`.
+
+Sections, in order: Next (numbered, each owner step marked **Owner**),
+Milestone (counts, not counting this issue; what's in flight), Candidates
+(one row per rc: commit, tracking issue, result), Startup latency (the
+latest timing table), Known and accepted, Since the last candidate (what
+main has that it doesn't). Write issue numbers in full outside discobox's
+own (`discobox-ai/release-validation#19`).
+
+Open the next release's issue when its milestone gets its first issue; close
+this one when the release is tagged, with the final status as its body.
+Don't triage it or start a worker for it.
+
 ## When it changes
 
 Update the row every time it changes, including a worker resuming after the
