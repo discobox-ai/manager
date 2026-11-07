@@ -193,12 +193,20 @@ until both have posted their timing. Check `uptime`: launch when the
 1-minute load is below the host's CPU count (`nproc`), and say the load in
 the tracking issue.
 
-Each opens a run PR (new baseline, note edits) and posts one report on the
+Each opens a run PR (new baseline, check files, notes to fold) and posts one report on the
 issue. When both have reported, post **the release's timing report** on the
 tracking issue and give it to the owner: one table, both modes' cold and
 warm T3 totals against the baseline with the change in %, any run over 25%
 named as a finding (owner, 2026-11-05). Findings come as "Issue to file" comments for discobox-ai/discobox:
 file them there. The owner merging a run PR accepts the run.
+
+The two run PRs touch disjoint files (`validate-release` §7), so they merge
+in either order with no rebase. **After both are merged**, if either left a
+`runs/<mode>-<to>/notes.md` or the two added duplicate `checks/` files,
+start one `deliver-issue` worker on release-validation (role
+`github-deliver`, repo release-validation) to fold them: notes into the notes
+skill, duplicate checks into one file. That's one PR, after the runs, so
+nothing races it.
 
 A validation box holds nested pools, images and VM disks, and it can grow by
 tens of GiB in minutes (rc.6's fresh box: archiving it freed 17G at once,

@@ -32,9 +32,11 @@ mode and versions. Follow the `worker` skill for tags, power and comments.
 Read, from that checkout, before anything else (the notes skill is at
 `.agents/skills/validate-release-notes/SKILL.md`):
 
-- the **`validate-release-notes`** skill: checks carried forward from past
-  findings (run each, report each on its own line), recipes that worked,
-  environment quirks, and differences already explained;
+- the **`validate-release-notes`** skill: recipes that worked, environment
+  quirks, and differences already explained;
+- the **carried checks**: every file in `checks/` (one check per file; run
+  each, report each on its own line). Until the repository has a `checks/`
+  directory, they're the notes skill's "Checks carried forward" list;
   Before running a carried check, look at its issue: closed by the owner, or
   with an owner comment that the behavior is correct, means the check is
   wrong. Report it SKIP ("<issue> closed by the owner: behavior accepted"),
@@ -237,17 +239,32 @@ No baseline: say this run sets the first one.
 ## 7. Report, and update what the next run reads
 
 1. **One PR to discobox-ai/release-validation** (from your fork, `open-pr`
-   for the form), from branch `validate/<mode>-<to>`, holding:
-   - your record as `baselines/onboarding-<mode>.md`;
-   - your timings as `baselines/latency-<mode>.md` (§2b);
-   - in the notes skill, under "Checks carried forward", the line
-     "Startup latency: T3 totals within 25% of `baselines/latency-<mode>.md`
-     (owner, 2026-11-05)" if it isn't there yet;
-   - edits to the notes skill, **only** where it steered you wrong, or where a
-     finding deserves a check next release (add it under "Checks carried
-     forward", naming the issue), or a check's issue is closed and it passed
-     here (drop it, saying so). Never rewrite it for style; never put method
-     there (that belongs in this skill).
+   for the form), from branch `validate/<mode>-<to>`. The two runs of a
+   release open their PRs at the same time and are merged one after the
+   other, so **a run PR only touches files no other run touches** (owner,
+   2026-11-07: every release's second PR conflicted on the notes file):
+   - your record as `baselines/onboarding-<mode>.md` and your timings as
+     `baselines/latency-<mode>.md` (§2b): per mode, so they're yours;
+   - your logs, captures and scripts under `runs/<mode>-<to>/`, never at the
+     top level or under `evidence/`;
+   - **a new check**: a new file `checks/<to>-<mode>-<slug>.md` (title line,
+     the issue in full, what must hold, what this run saw). The name is
+     unique to your run, so the other run can't collide with it, even when
+     you both found the same thing; duplicates get folded later;
+   - **a check whose issue is closed and that passed here, or that the
+     owner closed as accepted** (§0): delete its file, saying so in the PR.
+     Two runs deleting the same file merge cleanly;
+   - **a check that steered you wrong**: change that one file, the least
+     you can, and only what was wrong. Don't add this run's results to an
+     existing check (they go in your report and `runs/`);
+   - **the notes skill** (`SKILL.md`): don't edit it. A recipe, quirk or
+     explained difference worth keeping goes in
+     `runs/<mode>-<to>/notes.md`, and the manager folds it into the skill
+     after both runs are merged.
+
+   While the repository has no `checks/` directory yet, still never edit the
+   notes skill: put new and changed checks in `runs/<mode>-<to>/notes.md` for
+   the manager to fold in.
    Merging that PR is the owner accepting the run.
 2. **One report comment on your tracking issue** (your `issue` tag, in
    discobox-ai/release-validation), in this form:
@@ -280,14 +297,14 @@ Where the cold time went: <download server, image pull, harness bundle, boot>.
 ### Findings
 (none) | each one, with an **Issue to file** comment posted separately (`worker`), for discobox-ai/discobox
 
-Run PR: #<P> (new baseline and note edits)
+Run PR: #<P> (new baseline, new or dropped checks, notes to fold)
 ```
 
 then the footer. Tag `ready` and power off (`worker`, Power).
 
 ## Done when
 
-The run PR is open with the new record and any note edits, and the report
+The run PR is open with the new record, any check files and notes to fold, and the report
 comment is on the tracking issue: every §5 and carried-forward check
 answered, every onboarding difference judged, each finding posted as an Issue
 to file.
