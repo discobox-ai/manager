@@ -171,6 +171,38 @@ one ("cut v0.19.0-rc.4", "kick off an rc"):
 The owner marking the prerelease a release (promote) is theirs, after
 validation.
 
+### Release docs, after a stable tag (owner, 2026-11-07)
+
+When a **stable** release is tagged (`vX.Y.Z`, no `-rc`), its docs go to
+discobox.ai. Prereleases never do. The installer needs nothing: the Release
+workflow uploads it, and discobox.ai serves the newest stable one by itself.
+The docs follow discobox-ai/site's ADR 0001 (Astro; the owner dropped the
+Remix rewrite, 2026-11-07): one snapshot per minor line under
+`/docs/vX.Y/`, imported from discobox-ai/discobox at the tag, and published
+only through site's `main`. Two steps, each an issue in discobox-ai/site
+(`github`, Filing) with a `deliver-issue` worker (site's base is always
+`preview`, `worker`):
+
+1. **Import** ("Publish the vX.Y docs from vX.Y.Z"): run site's
+   `scripts/import-docs.mjs` at the tag's full commit (never a branch), so
+   the manifest records the tag and SHA; make vX.Y the current line in the
+   versions manifest (a patch release refreshes its line's snapshot and
+   changes nothing else); build and run the docs checks; open the PR into
+   `preview`. Evidence: the pages on preview.discobox.ai once it's merged
+   there, `/docs/` redirecting to `/docs/vX.Y/`, the version shown on each
+   page matching the tag. Row for the owner: "Review and merge" (site PRs are
+   the owner's to merge, like product PRs).
+2. **Publish** ("Release vX.Y.Z to discobox.ai"), once the import is on
+   `preview`: bring `preview` up to date with `main` (merge `main` into a
+   branch off `preview`, PR into `preview`) if it's behind, then open the PR
+   from `preview` into `main`, listing every change it carries (docs, blog,
+   pages), not just the docs. The owner merges it, and that deploys
+   discobox.ai. Then check https://discobox.ai/docs/ serves the new line and
+   say so on the release status issue.
+
+Both go in the release status issue's Next (`table`), and that issue closes
+only after step 2 is merged and checked.
+
 ### Release validation boxes
 
 To validate a release (owner, 2026-11-03), open a tracking issue in

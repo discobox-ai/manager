@@ -110,7 +110,8 @@ main has that it doesn't). Write issue numbers in full outside discobox's
 own (`discobox-ai/release-validation#19`).
 
 Open the next release's issue when its milestone gets its first issue; close
-this one when the release is tagged, with the final status as its body.
+this one when the release is tagged **and its docs are live on discobox.ai**
+(`workers`, Release docs), with the final status as its body.
 Don't triage it or start a worker for it.
 
 ## When it changes
