@@ -148,7 +148,11 @@ this order, within `workers.max` and `disk.minFreeGiB`:
    then highest `priority/*`, then newest (`docs/labels.md`, Next up).
    Do it again after every event you handle: an open issue with no
    `status/*` label and no triage box gets one now (`triage-intake`; a row
-   alone is not triage).
+   alone is not triage). And read the screen of every worker that went idle
+   without a PR: a question can arrive as an idle "done" event, not only as
+   "waiting on a question" (the #582 worker sat on one for two hours,
+   2026-11-07). A question there gets its "box needs input" row, or your
+   answer if it's mechanical.
 
 Update the rows that changed (`scripts/table`).
 
