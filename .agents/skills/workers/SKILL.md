@@ -19,7 +19,7 @@ eval "$(discobox-access env)"   # GH_TOKEN
 owner and default branch from `manager.yaml`, the role from the worker skill,
 and the one delegated GitHub secret; refuses while this checkout is dirty or
 unpushed or `workers.paused` is true; runs the box; tags it; moves a deliver or
-ADR issue to `status/in-progress`. Never type `-H codex` or the rest of the command by hand:
+ADR issue to `status/in-progress`. Never type `-H <harness>` or the rest of the command by hand:
 a hand-typed harness only matches `manager.yaml` until the owner changes it.
 
 ```sh
@@ -54,14 +54,14 @@ Empty means none or more than one: launch nothing, and tell the owner which
 (`discobox-access list`). Never fall back to `github`.
 
 **Workers run the harness `workers.harness` names** (owner, 2026-11-04;
-`manager.yaml`, now `codex`): read it with
+`manager.yaml`, now `claude-code`; codex from 2026-11-04 to 2026-11-07): read it with
 `HARNESS=$(sed -n 's/^  harness: *//p' manager.yaml)` and pass `-H "$HARNESS"`
 to every `discobox run` below. Boxes already running keep theirs. The prompts
 and the screen-reading in this skill were written against Claude Code (its
 permission prompts, `AskUserQuestion` dialogs): check a new harness's first
-boxes before trusting the rest. A Codex box trusts its own folder at every start
-(discobox#571, PR 707, 2026-11-05): a "Trust this folder?" dialog on a worker
-is a bug in the harness. Don't press Enter on it; tell `manager-chat` with the
+boxes before trusting the rest. A box trusts its own folder at every start
+(Codex: discobox#571, PR 707, 2026-11-05): a "Trust this folder?" dialog on a
+worker is a bug in the harness. Don't press Enter on it; tell `manager-chat` with the
 box's ID and the server version.
 
 **Workers push to the bot's forks** (owner, 2026-11-03): the bot can't write

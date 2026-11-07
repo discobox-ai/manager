@@ -9,8 +9,8 @@
 # (workers.harness), the fork owner and the repository's default
 # branch; from the skill, the role it runs under; from `discobox-access`, the one
 # delegated GitHub secret. It then runs the box, tags it, moves the issue to
-# status/in-progress (deliver and ADR jobs). A Codex box trusts its folder by
-# itself (discobox#571, PR 707): nothing here answers a dialog.
+# status/in-progress (deliver and ADR jobs). A box trusts its folder by itself
+# (Codex: discobox#571, PR 707): nothing here answers a dialog.
 #
 # It refuses to launch when this checkout is dirty or not pushed (the box installs
 # its skills from the pushed main), or when workers.paused is true.
