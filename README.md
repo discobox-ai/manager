@@ -30,9 +30,6 @@ discobox run -d --discobox-api --no-project-skills \
 - Its prompt runs the `start` skill, the one entry point. That first sends
   `roles/manager-request.json` (a use part for itself and a delegate part for
   its workers), which the owner approves once.
-- The box's services start at boot: the owner's site on port 4400
-  (`manager-site`) and the artifact's sync (`manager-sync`), both from
-  `.discobox/services/`.
 - `/start` copies the side-pane mod (`.agents/skills/start/mods/`) into the
   session; Claude Code asks once to "Turn them on".
 
@@ -40,7 +37,7 @@ discobox run -d --discobox-api --no-project-skills \
 needs lives in one. Start a new session in this repository and type `/start`;
 it rebuilds everything from GitHub, the box tags and
 `~/.local/state/discobox-manager/`. Run it in one session only: that session
-is the manager. Other sessions in the box (to work on the site, say) are fine,
+is the manager. Other sessions in the box are fine,
 but don't `/start` them.
 
 Then the owner talks to it in that box.

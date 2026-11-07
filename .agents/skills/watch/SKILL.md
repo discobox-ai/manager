@@ -26,16 +26,6 @@ for r in discobox vm manager review; do
 done
 # Workers: state, primary terminal busy/idle, secret requests.
 discobox-monitor enable discobox-box --name workers -o created-by=me
-# The owner's buttons on the manager site (site/): one line per action.
-discobox-monitor enable file --name site-actions -o path=$HOME/.local/state/discobox-manager/actions.jsonl
-# The owner's chat on the site and artifact: one line per message (table skill, "Chat").
-discobox-monitor enable file --name site-chat -o path=$HOME/.local/state/discobox-manager/chat.jsonl
-# The artifact's sync agent stalling: site/sync.ts writes a line when nothing has left the
-# outbox for 10 minutes ("stalled: …"), and again when it moves ("recovered: …").
-discobox-monitor enable file --name artifact-sync -o path=$HOME/.local/state/discobox-manager/artifact-sync/alerts.log
-# The artifact's sync flushing: site/sync.ts appends a line to changed.log when it queues
-# batches; each one starts a sync pass (below).
-discobox-monitor enable file --name artifact-flush -o path=$HOME/.local/state/discobox-manager/artifact-sync/changed.log
 # Disk.
 discobox-monitor enable command --name disk -o cmd='df -BG --output=avail / | tail -1' -o every=5m
 ```
@@ -73,20 +63,6 @@ Monitor(
   `discobox-power sleep --wake-in` timer has been seen not to fire, 2026-11-03).
   Start that worker and type one line: its PR is green, finish it (`open-pr`)
   and mark it ready.
-- **The status artifact's sync passes** (owner, 2026-11-04). The "Manager
-  status" artifact is fed by `site/sync.ts` (service `manager-sync`), which
-  queues `write_db` batches in
-  `~/.local/state/discobox-manager/artifact-sync/outbox/` and appends a line to
-  `changed.log` on each flush (the `artifact-flush` monitor reports it). It
-  folds what hasn't been sent yet into the new batches, so the outbox stays as
-  small as the table. Sending is **one-shot passes, not a watcher**: a
-  watching subagent can't outlive its Monitor's 30 minutes and isn't told when
-  that ends. On an `artifact-flush` event, or an `artifact-sync` `stalled:`
-  line (nothing sent for 10 minutes), start a pass (Agent, `model: haiku`,
-  `run_in_background`, the brief in the `table` skill, The status artifact)
-  unless one is already running; when it reports, start another if the outbox
-  is not empty. It sends the outbox, pulls the owner's presses and chat into
-  `inbox/`, and exits. No pass is ever stopped, nudged or replaced.
 - While a box waiting on the owner is due to be paused (`workers`, Power),
   check it when it's due rather than waiting for an event.
 

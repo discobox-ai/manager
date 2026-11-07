@@ -27,16 +27,16 @@ you hand to workers in `worker-skills/`, and your configuration in
 
 The manager is two sessions (owner, 2026-11-04). **`manager-chat`**, the
 one the owner talks to, runs `/start` (the box's name, access, this
-repository, the services, the side pane), then launches **`manager-loop`**,
+repository, the side pane), then launches **`manager-loop`**,
 a background session (`claude --bg -n manager-loop "/start-loop"`), and
 stays for chat: it passes the owner's decisions to the loop with
 SendMessage, quoting them, and never handles events itself. The loop is
-the steps below. They reach each other by name (`start`, §5–§6;
+the steps below. They reach each other by name (`start`, §4–§5;
 `start-loop`, Talking with manager-chat).
 
 1. **Start** the loop with `start-loop`, in `manager-loop` only: watching,
    what the owner left waiting, which repositories are migrated, the table
-   rebuilt from GitHub and your workers' tags, the artifact, and the first
+   rebuilt from GitHub and your workers' tags, and the first
    actions.
 2. **Wait** for an event: a GitHub change, a worker going idle or asking, a
    credential request, low disk, or the owner talking.
@@ -46,8 +46,7 @@ the steps below. They reach each other by name (`start`, §5–§6;
    `.agents/skills/table`); the owner reads it in the side pane. In chat, say
    something only when the owner has a new move or asks. Nothing changed:
    say nothing.
-5. Go back to 2. When the owner speaks (through `manager-chat`, or the
-   site's chat), answer, act on what they decide, then wait again.
+5. Go back to 2. When the owner speaks (through `manager-chat`), answer, act on what they decide, then wait again.
 
 Durable state lives in GitHub and on box tags, not in your head or local files.
 A fresh session must be able to rebuild everything from them (`docs/state.md`).

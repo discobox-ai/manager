@@ -1,14 +1,14 @@
 ---
 name: start-loop
-description: The manager's loop — watching, the owner's waiting buttons and site chat, label migration, the status table rebuilt from GitHub and its workers' tags, the artifact's sending, the first actions, then every event. Runs only in the background session `manager-loop`, which `/start` launches (`claude --bg -n manager-loop /start-loop`). Use when your launch prompt is /start-loop, or `manager-chat` asks you to restart the loop.
+description: The manager's loop — watching, label migration, the status table rebuilt from GitHub and its workers' tags, the first actions, then every event. Runs only in the background session `manager-loop`, which `/start` launches (`claude --bg -n manager-loop /start-loop`). Use when your launch prompt is /start-loop, or `manager-chat` asks you to restart the loop.
 ---
 
 # Start the loop
 
 You are `manager-loop`: the background session that **is** the manager's
 loop. The owner talks to `manager-chat`, the interactive session that ran
-`/start` and launched you; it did the box's name, access, this repository
-and the services, so check them only as the steps below need them. You
+`/start` and launched you; it did the box's name, access and this
+repository, so check them only as the steps below need them. You
 handle every event, write the table, steer the workers. Everything you
 need is in GitHub, on the boxes' tags and in
 `~/.local/state/discobox-manager/` (`docs/state.md`); nothing from an
@@ -41,33 +41,23 @@ them).
   status message, summary or recap: end the turn with nothing, or at most
   one word. Anything the owner needs goes on the table; anything
   `manager-chat` asked for goes to it with SendMessage.
-- The site's chat (`scripts/chat`) is yours: the `site-chat` monitor wakes
-  you, and you reply there (`table` skill, Chat).
 - If you find this repository's checkout dirty while `manager-chat` is
   editing it, wait for its push before launching a worker.
 
 ## 1. Watching
 
 `discobox-monitor status`. Enable whatever of the `watch` skill's monitors is
-missing (the list there is complete: GitHub, workers, the site's buttons and
-chat, the artifact's flushes and stalls, submit requests, disk), and disable
-instances for repositories no longer in `manager.yaml`. A `github-repo`
+missing (the list there is complete: GitHub, workers, submit requests,
+disk), and disable instances for repositories no longer in `manager.yaml`,
+and any `site-actions`, `site-chat`, `artifact-sync` or `artifact-flush`
+instance left from before the site was removed (owner, 2026-11-07). A `github-repo`
 instance failing with 401 keeps the token it was enabled with: once
 `discobox-access list` shows `GH_TOKEN`, `disable` and `enable` it again
-(`--update` is not enough), then rebuild from GitHub (§4) for the gap. Then drain what queued
+(`--update` is not enough), then rebuild from GitHub (§3) for the gap. Then drain what queued
 while no session was running: `discobox-monitor pop`, and keep the events for
-§6.
+§4.
 
-## 2. What the owner left waiting
-
-Buttons pressed and chat sent while no session ran are still on file:
-
-- `scripts/action list`: carry out each pending action (`table` skill, The
-  manager site).
-- `scripts/chat list`: answer each message in the thread (`table` skill,
-  Chat), oldest first, even if only to say you're back and on it.
-
-## 3. Which repositories are migrated
+## 2. Which repositories are migrated
 
 For each repository in `manager.yaml`:
 
@@ -79,7 +69,7 @@ A repository is migrated when it has every `status/*` and `type/*` label
 (`docs/labels.md`). **In one that isn't, every open issue looks new, and
 none is.** Start no triage there. Its row on the table is "label migration".
 
-## 4. Rebuild the table
+## 3. Rebuild the table
 
 From GitHub, for each repository:
 
@@ -112,23 +102,9 @@ Match them up by `repo` and `issue`. Then:
   (`workers`, Retire).
 
 Write the table (`scripts/table`, `table` skill) and its slots line
-(`scripts/table slots`); the owner reads it in the side pane, on the site and
-in the artifact.
+(`scripts/table slots`); the owner reads it in the side pane.
 
-## 5. The artifact
-
-Nothing reaches the "Manager status" artifact while no session sends it
-(`table` skill, The status artifact). Start one sync pass now (Agent,
-`model: haiku`, `run_in_background`, the pass brief in the `table` skill) if
-`artifact-sync/outbox/` holds anything or `scripts/chat list` showed messages
-from the artifact; after that the `artifact-flush` and `artifact-sync`
-monitors start them (`watch`).
-
-To republish the page later from this session (after a change to
-`site/app/`), read the artifact first (Artifact tool, `action: read`, its
-URL): a session may update an artifact only after it has read it.
-
-## 6. First actions
+## 4. First actions
 
 If `workers.paused` is true in `manager.yaml`, start no new boxes except for
 the issues in `workers.pausedExcept`. Work already in progress carries on as
@@ -156,7 +132,7 @@ this order, within `workers.max` and `disk.minFreeGiB`:
 
 Update the rows that changed (`scripts/table`).
 
-## 7. Wait
+## 5. Wait
 
 Start the Monitor tool streaming `discobox-monitor pop --follow` (`watch`
 skill), and go to the loop's step 2 (`AGENTS.md`). Send `manager-chat`

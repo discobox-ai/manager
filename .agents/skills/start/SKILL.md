@@ -1,6 +1,6 @@
 ---
 name: start
-description: The manager's one entry point — start (or restart) everything from nothing: the box's name, access, this repository, the box's services (the site and the artifact sync) and the side-pane mod, then launch the loop as the background session `manager-loop` (/start-loop) and stay as `manager-chat`, the session the owner talks to. Use when the manager's box starts (its launch prompt is /start), in any new session that is to be the manager's chat, after a restart, or whenever the owner says /start.
+description: The manager's one entry point — start (or restart) everything from nothing: the box's name, access, this repository and the side-pane mod, then launch the loop as the background session `manager-loop` (/start-loop) and stay as `manager-chat`, the session the owner talks to. Use when the manager's box starts (its launch prompt is /start), in any new session that is to be the manager's chat, after a restart, or whenever the owner says /start.
 ---
 
 # Start
@@ -11,7 +11,7 @@ The manager is two Claude sessions on this box (owner, 2026-11-04):
   `/start`, holds the side pane, answers the owner, and passes what they
   decide to the loop. It never pops events or acts on them.
 - **`manager-loop`**: a background session (`claude --bg`) running
-  `/start-loop`: watching, the table, the workers, the artifact, every event.
+  `/start-loop`: watching, the table, the workers, every event.
   Not a subagent: it outlives this session and its 30-minute monitors.
 
 Everything either needs is in GitHub, on its boxes' tags and in
@@ -42,7 +42,7 @@ try:
 except (OSError, ValueError):
     m = {}
 m["name"] = "Discobox manager"
-m.setdefault("description", "The manager: watches discobox-ai's repositories, runs workers, keeps the status table.\nSite on :4400; start with /start.")
+m.setdefault("description", "The manager: watches discobox-ai's repositories, runs workers, keeps the status table.\nStart with /start.")
 m.setdefault("tags", {})["manager"] = ""
 text = json.dumps(m, indent=2)
 open(p, "w").write(text)
@@ -51,7 +51,7 @@ jq . ~/.discobox/meta.json
 ```
 
 Never give it a `job` tag: that marks a worker (`AGENTS.md`). The session's
-own name is the owner's to set (`/rename`, which only they can type); §6
+own name is the owner's to set (`/rename`, which only they can type); §5
 asks for `manager-chat`.
 
 ## 1. Access
@@ -88,30 +88,7 @@ Pushing to discobox-ai/manager). Pull if GitHub is ahead. Workers install
 their skills from the pushed `main`. Changes another session left uncommitted
 are that session's: say so, and don't commit them for it.
 
-## 3. The box's services
-
-The owner's site and the artifact's sync are discobox services, declared in
-`.discobox/services/` and started by discobox when the box boots, in dev mode
-(`site/README.md`). Nothing restarts one that exits. Check both:
-
-```sh
-curl -sf -o /dev/null localhost:4400/api/state && echo site up
-# the sync writes relay.json every cycle (60 s)
-find ~/.local/state/discobox-manager/artifact-sync/relay.json -mmin -3 | grep -q . && echo sync up
-```
-
-One that's down: start it by hand, detached, from the repository root, and
-tell the owner in one line (it comes back by itself at the next boot):
-
-```sh
-setsid nohup .discobox/services/manager-site > ~/.local/state/discobox-manager/site.log 2>&1 < /dev/null &
-setsid nohup .discobox/services/manager-sync > ~/.local/state/discobox-manager/sync.log 2>&1 < /dev/null &
-```
-
-Never start a second copy of one that's up: `ss -ltnp | grep :4400` and
-`pgrep -f 'remix/node-tsx sync.ts'` say whether it is.
-
-## 4. The side pane
+## 3. The side pane
 
 The table's side pane is the `manager-table` mod, kept in this skill's
 `mods/` folder (the repository is its home: edit it there). A session loads
@@ -127,12 +104,10 @@ a mod only from its own mods folder, so each new manager session gets a copy:
    "Turn them on". After that the session loads it on every resume.
 
 The pane opens by itself only in a terminal at least 144 columns wide;
-`/table-pane` opens it at any width. The `artifact-sync` mod beside it is a
-prototype that sends the artifact's outbox without a model; it does nothing
-unless `artifact-sync/mod.on` exists, so leave that file alone unless the
-owner turns it on.
+`/table-pane` opens it at any width. It is the owner's only view of the
+table: there is no site or artifact (owner, 2026-11-07).
 
-## 5. The loop
+## 4. The loop
 
 Launch `manager-loop` unless it is already running:
 
@@ -155,9 +130,9 @@ claude agents --json | jq -r '.[] | select(.name=="manager-loop") | "\(.id) \(.s
 `claude logs manager-loop` shows its recent output; `claude attach
 manager-loop` opens it for the owner. It sends you one line when it's up.
 
-## 6. Chat
+## 5. Chat
 
-Say one line to the owner: started, the loop's id, what §1–§4 need from them
+Say one line to the owner: started, the loop's id, what §1–§3 need from them
 (an approval, "Turn them on" for the side pane), and, when this session isn't
 named yet, that `/rename manager-chat` names it so the loop can reach it.
 
@@ -172,10 +147,10 @@ From then on, in this session:
   there.
 - **The owner changes the process:** edit this repository and push it
   (`github` skill, Pushing to discobox-ai/manager), then tell the loop what
-  changed, so it reloads the skill (and restart it, §5, if `start-loop`
+  changed, so it reloads the skill (and restart it, §4, if `start-loop`
   itself changed and the owner agrees).
 - **"Stop the loop":** `claude stop <id>` for `manager-loop`, nothing else.
-  Boxes, services and monitors are left as they are; events queue until a
+  Boxes and monitors are left as they are; events queue until a
   loop starts again.
 - Never `discobox-monitor pop`, start a Monitor on the queue, or act on
   a worker yourself: that is the loop's, and two of you acting answers

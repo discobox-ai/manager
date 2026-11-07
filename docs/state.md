@@ -16,12 +16,7 @@ manager, rebuilds the whole table from three places:
 
 On the box, in `~/.local/state/discobox-manager/`:
 
-- `table.json` (the table) and `artifact-sync/` (the artifact's outbox and
-  state) are caches: `/start` rebuilds the table, and the sync re-sends.
-- `actions.jsonl`, `actions-done.jsonl`, `chat.jsonl` and
-  `chat-replies.jsonl` are the owner's button presses and chat with you, and
-  your answers. They outlive any session (a new one finds what waited, `start`
-  §6), but not the box.
+- `table.json` (the table) is a cache: `/start` rebuilds it.
 
 The side-pane mod is kept in the repository (`.agents/skills/start/mods/`);
 a session's own copy of it is a copy.
