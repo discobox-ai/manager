@@ -202,7 +202,12 @@ would type wrong.
 ## Capture
 
 Stdout, response bodies, screenshots, pane dumps. Captured output is
-evidence; your memory isn't. Something unexpected? Don't route around
+evidence; your memory isn't. **Never commit captures to the product
+repository** (owner, 2026-11-07: PR 778 carried 150 screenshot files for
+6 changed source files). Keep them out of the tree (`/tmp`, the review card)
+and show them in the PR: the one frame that matters in the Evidence, the
+rest in a comment or the review card. Only a test fixture the code reads is
+committed. Something unexpected? Don't route around
 it — capture, note, decide if it's the change or the environment.
 Unrelated breakage is a finding, not noise.
 
