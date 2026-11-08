@@ -455,7 +455,9 @@ Workers sleep whenever they wait and power off when they're done (the
   dialog stops the agent from sleeping itself. Note the time it went idle
   when the event comes, and while any such box is pending, keep the waiting
   `pop` no longer than the time left (`watch`). The row stays "Answer in the
-  box": opening it starts it again.
+  box": opening it starts it again. **Never an owner's box** (`job=prototype`
+  or `adhoc`): the owner drives it and it waits on them by design, so a
+  pause only makes them ask for it back (owner, 2026-11-08).
 - **A box you stopped that starts again is the owner** (owner, 2026-11-04):
   you didn't start it, so they opened it to work in it. Leave it running and
   never stop it again while it's in use; stop it only once its screen has
