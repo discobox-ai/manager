@@ -260,7 +260,9 @@ disk.
 When the owner says they want to prototype something ("prototype X on
 discobox"), start an ad-hoc box with the `prototype` skill: same launch and
 role, prompt `/prototype <the idea, in a few words>`, tags `repo=<repo>
-job=prototype`. The box knows it's prototyping: something working fast, no
+job=prototype`. When they want no main source but others to read from, use
+`--no-source` with `-i OWNER/REPO` for each (`scripts/launch`; public
+repositories only). The box knows it's prototyping: something working fast, no
 tests, review or ADRs, and a `~/prototype.md` of decisions and shortcuts.
 Treat it as an ad-hoc box in everything else: on the table Doing "owner
 prototyping", and you don't type into it.

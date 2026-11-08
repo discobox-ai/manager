@@ -2,7 +2,11 @@
 # Start one worker box for a job, the way the `workers` skill's Launch section says.
 #
 #   scripts/launch SKILL --repo OWNER/NAME [--issue N] [--job JOB] [-p PROMPT]
-#                  [--role ROLE] [--base BRANCH] [--no-source] [--no-label] [--dry-run]
+#                  [--role ROLE] [--base BRANCH] [--no-source] [-i SOURCE]... [--no-label] [--dry-run]
+#
+# -i SOURCE brings an extra source into the box (repeat it), as `discobox run -i`
+# does: OWNER/REPO[@REF]. Only public repositories: from inside a box the CLI
+# lends no Git credentials, so a private one never arrives.
 #
 # The box starts from, and its PR targets, the repository's default branch, or
 # the branch of the feature track whose epic lists the issue (manager.yaml
@@ -24,7 +28,7 @@ cd "$(dirname "$0")/.."
 
 die() { echo "launch: $*" >&2; exit 1; }
 
-SKILL="" REPO="" ISSUE="" JOB="" PROMPT="" ROLE="" NOSRC="" NOLABEL="" DRY="" BASEARG=""
+SKILL="" REPO="" ISSUE="" JOB="" PROMPT="" ROLE="" NOSRC="" NOLABEL="" DRY="" BASEARG="" INCLUDES=()
 [ $# -gt 0 ] || die "usage: scripts/launch SKILL --repo OWNER/NAME [--issue N] [--job JOB] [-p PROMPT] [--role ROLE] [--base BRANCH] [--no-source] [--no-label] [--dry-run]"
 SKILL=$1; shift
 while [ $# -gt 0 ]; do
@@ -35,6 +39,7 @@ while [ $# -gt 0 ]; do
     -p|--prompt) PROMPT=$2; shift 2 ;;
     --role) ROLE=$2; shift 2 ;;
     --base) BASEARG=$2; shift 2 ;;
+    -i|--include) INCLUDES+=("$2"); shift 2 ;;
     --no-source) NOSRC=1; shift ;;
     --no-label) NOLABEL=1; shift ;;
     --dry-run) DRY=1; shift ;;
@@ -129,6 +134,9 @@ SRC="https://github.com/$REPO@$BRANCH"
 ARGS=(run -d -H "$HARNESS" --skills "$PWD/worker-skills")
 [ "$ROLE" = none ] || ARGS+=(--bind "$BIND")
 if [ -n "$NOSRC" ]; then ARGS+=(--no-source); else ARGS+=("$SRC"); fi
+for inc in "${INCLUDES[@]}"; do
+  case $inc in */*) ARGS+=(-i "https://github.com/${inc}") ;; *) die "-i takes OWNER/REPO[@REF]" ;; esac
+done
 ARGS+=(-p "$PROMPT")
 
 if [ -n "$DRY" ]; then
