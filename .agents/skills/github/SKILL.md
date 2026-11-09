@@ -53,6 +53,25 @@ tour or manager text that means a discobox issue is wrong (owner,
   as <repo>#N.` Triage it like any new issue (`triage-intake`). If the worker
   is stopped waiting on the number, type the link into its box. A worker
   asking for a credential to file an issue gets pointed here instead.
+- **A PR says on its face whether it's ready for the owner** (owner,
+  2026-11-09: "How can I know if a PR is ready for review when looking at
+  it"). Every open PR in a watched repository carries exactly one `status/*`
+  label, set by you in the same step as its table row:
+  - `status/in-review`: **review it now.** Out of draft, every check green,
+    discobox-review signed off, verify done or its gap stated, your process
+    comment posted for this head. The row is "Review and merge".
+  - `status/in-progress`: a worker is still on it (a draft, checks running,
+    review not finished, a rebase or fix owed), or it's a PR being taken over
+    (the bot's PR will supersede it). Nothing for the owner yet.
+  - `status/needs-input` / `status/needs-decision`: waiting on the owner for
+    an answer, not a review (say what in the row).
+  - `status/blocked`: parked (its milestone isn't being worked, or it waits
+    on another PR).
+  Swap the label whenever that changes (a new push to an `in-review` PR goes
+  back to `in-progress` until its checks and process comment are fresh again).
+  `gh api -X POST repos/<repo>/issues/<PR>/labels -f 'labels[]=status/…'` and
+  `-X DELETE repos/<repo>/issues/<PR>/labels/<old>`. A merged or closed PR
+  drops its status label.
 - **A PR carries its issue's milestone** (owner, 2026-11-07, PR 782). When
   a worker's PR appears, set the PR's milestone to its issue's (`Closes` or
   `Part of #N`) with

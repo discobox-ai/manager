@@ -13,7 +13,7 @@ none, which means new). The other groups describe it.
 | `status/needs-input` | Its worker is waiting on the owner in the box (a question on its screen) | manager, from the box's `needs-input` tag or its screen |
 | `status/ready` | Go: the next free worker takes it | owner, or the manager per `gates.md` |
 | `status/in-progress` | A worker is on it (its box is tagged `issue=N`) | manager |
-| `status/in-review` | Its PR is green, waiting for the owner | manager |
+| `status/in-review` | Its PR is green, waiting for the owner. On a PR: ready for the owner's review now (`github`, Filing and editing) | manager |
 | `status/blocked` | Waiting on another issue, named in a comment | manager or worker |
 
 ## type/*
