@@ -188,7 +188,7 @@ only through site's `main`. Two steps, each an issue in discobox-ai/site
    the manifest records the tag and SHA; make vX.Y the current line in the
    versions manifest (a patch release refreshes its line's snapshot and
    changes nothing else); build and run the docs checks; open the PR into
-   `preview`. Evidence: the pages on preview.discobox.ai once it's merged
+   `preview`. Evidence: the pages on https://preview-discobot-ai.acorn-io.workers.dev/ (the preview branch's deploy; preview.discobox.ai is stale, site#30) once it's merged
    there, `/docs/` redirecting to `/docs/vX.Y/`, the version shown on each
    page matching the tag. Row for the owner: "Review and merge" (site PRs are
    the owner's to merge, like product PRs).
