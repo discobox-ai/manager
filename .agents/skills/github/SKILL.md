@@ -65,8 +65,12 @@ tour or manager text that means a discobox issue is wrong (owner,
     (the bot's PR will supersede it). Nothing for the owner yet.
   - `status/needs-input` / `status/needs-decision`: waiting on the owner for
     an answer, not a review (say what in the row).
-  - `status/blocked`: parked (its milestone isn't being worked, or it waits
-    on another PR).
+  - `status/blocked`: waiting on something specific (another PR or issue,
+    an owner action);
+  - `status/paused`: parked on purpose (its milestone isn't being worked).
+
+  Either of the last two needs a comment in the same step saying what it
+  waits on, with a link (`docs/labels.md`, owner 2026-11-09).
   Swap the label whenever that changes (a new push to an `in-review` PR goes
   back to `in-progress` until its checks and process comment are fresh again).
   `gh api -X POST repos/<repo>/issues/<PR>/labels -f 'labels[]=status/…'` and

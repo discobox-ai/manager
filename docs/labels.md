@@ -14,7 +14,16 @@ none, which means new). The other groups describe it.
 | `status/ready` | Go: the next free worker takes it | owner, or the manager per `gates.md` |
 | `status/in-progress` | A worker is on it (its box is tagged `issue=N`) | manager |
 | `status/in-review` | Its PR is green, waiting for the owner. On a PR: ready for the owner's review now (`github`, Filing and editing) | manager |
-| `status/blocked` | Waiting on another issue, named in a comment | manager or worker |
+| `status/blocked` | Waiting on something specific that isn't done: another issue or PR (linked), an owner action, an outside fix. A comment says what | manager or worker |
+| `status/paused` | Parked on purpose: nothing wrong, just not now (its milestone isn't being worked, the owner deferred it). A comment says why and what resumes it | manager |
+
+**A blocked or paused label never stands alone** (owner, 2026-11-09): when you
+set either one, post a comment in the same step that says what it waits on,
+with a link (`Blocked on discobox-ai/discobox#865` / `Paused: v0.20 work; the
+owner is working v0.19.x only (2026-11-07). Resumes when v0.20 starts.`). When
+the reason changes, comment again; when it clears, swap the label and say so.
+An issue or PR that waits on another one also links it in its body where the
+template has room (`Depends on #N`).
 
 ## type/*
 

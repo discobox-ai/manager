@@ -25,6 +25,7 @@ triaged) and one `type/*`:
 | `status/in-progress` | A worker is on it |
 | `status/in-review` | Its PR is green, waiting for the owner |
 | `status/blocked` | Waiting on something named in a comment |
+| `status/paused` | Parked on purpose, not now; a comment says why |
 | `type/bug` | Behaviour is wrong |
 | `type/feature` | New behaviour |
 | `type/chore` | Cleanup, docs, build, no behaviour change |
