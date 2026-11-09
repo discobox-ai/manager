@@ -87,7 +87,13 @@ Status line: `implemented: <what>, tests <pass/fail>, checks <state>`.
 ## 2. Review
 
 Invoke `discobox-review` and drive it to full sign-off. Its rules hold: you
-fix or push back with a reason, the reviewer resolves.
+fix or push back with a reason, the reviewer resolves. **It is always
+available:** the `discobox-review` command is in every box, and its skill is
+at `/usr/local/share/discobox/skills/discobox-review/SKILL.md`. If your
+harness doesn't list the skill (seen on Claude Code boxes, 2026-11-09), read
+that file and follow it. Never substitute another review (a built-in
+code-review, a single self-review): the owner wants the discobox-review
+reviewers, and the PR isn't ready for them without it.
 
 Status line: `reviewed: <rounds> rounds, <what it found>`.
 
