@@ -95,6 +95,12 @@ that file and follow it. Never substitute another review (a built-in
 code-review, a single self-review): the owner wants the discobox-review
 reviewers, and the PR isn't ready for them without it.
 
+Before you call it signed off, run `discobox-review status` once the last
+reviewer has finished, and check every file is approved by every reviewer.
+Approvals made at the same moment can drop one (discobox-ai/review#21): if
+one shows nullified on an unchanged file, have that reviewer approve again,
+alone, and check again.
+
 Status line: `reviewed: <rounds> rounds, <what it found>`.
 
 ## 3. Verify
