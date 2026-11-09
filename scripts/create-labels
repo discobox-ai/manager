@@ -1,19 +1,33 @@
 #!/usr/bin/env bash
-# Create the manager's label set (docs/labels.md) in a repository, or bring
-# an existing label's color and description in line. Run it as the owner:
-# the bot has Triage on product repositories, and creating labels needs Write.
+# Create the manager's label set (docs/labels.md) in one or more repositories,
+# or bring an existing label's color and description in line. Run it as the
+# owner: the bot has Triage on product repositories, and creating labels needs
+# Write.
 #
-#   ./scripts/create-labels discobox-ai/release-validation
-#   ./scripts/create-labels --dry-run discobox-ai/hooks
+#   ./scripts/create-labels --all                 every repository in manager.yaml
+#   ./scripts/create-labels discobox-ai/site discobox-ai/tour
+#   ./scripts/create-labels --dry-run --all
 #
 # It only creates and updates the labels below. It never deletes a label or
 # changes an issue's labels; moving issues onto them is the migrate-labels
 # worker's job. Safe to run again.
 set -euo pipefail
 
-dry=
-if [ "${1:-}" = "--dry-run" ]; then dry=1; shift; fi
-repo=${1:?usage: create-labels [--dry-run] OWNER/REPO}
+cd "$(dirname "$0")/.."
+dry= all=
+repos=()
+for a in "$@"; do
+  case $a in
+    --dry-run) dry=1 ;;
+    --all) all=1 ;;
+    -*) echo "create-labels: unknown option $a" >&2; exit 2 ;;
+    *) repos+=("$a") ;;
+  esac
+done
+if [ -n "$all" ]; then
+  while read -r r; do repos+=("$r"); done < <(awk '/^repos:/ {r=1; next} r && /^[^ #]/ {r=0} r && $1=="-" && $2=="name:" {print $3}' manager.yaml)
+fi
+[ ${#repos[@]} -gt 0 ] || { echo "usage: create-labels [--dry-run] (--all | OWNER/REPO...)" >&2; exit 2; }
 command -v gh >/dev/null || { echo "create-labels: needs the gh CLI" >&2; exit 1; }
 
 # name<TAB>color<TAB>description, as in discobox-ai/discobox (2026-11-04).
@@ -22,8 +36,9 @@ status/needs-decision	0e8a16	The owner has to decide something before work start
 status/needs-input	0e8a16	Its worker is waiting on the owner in the box
 status/ready	0e8a16	Go: the next free worker takes it
 status/in-progress	0e8a16	A worker is on it
-status/in-review	0e8a16	Its PR is green, waiting for the owner
-status/blocked	0e8a16	Waiting on something named in a comment
+status/in-review	0e8a16	Its PR is green, waiting for the owner; on a PR: ready for the owner to review now
+status/blocked	0e8a16	Waiting on something specific; a comment says what, with a link
+status/paused	c5def5	Parked on purpose, not now; a comment says why and what resumes it
 type/bug	1d4ed8	Behaviour is wrong
 type/feature	1d4ed8	New behaviour
 type/adr	1d4ed8	The issue is a design decision
@@ -36,29 +51,35 @@ priority/low	c2e0c6	Polish, rare edge cases, nice-to-haves
 platform/macos	555555	Only happens on macOS; needs a macOS agent to reproduce and fix
 platform/windows	0078D6	Only happens on Windows; needs a Windows agent to reproduce and fix'
 
-existing=$(gh api "repos/$repo/labels?per_page=100" --paginate \
-  --jq '.[] | [.name, (.color|ascii_downcase), .description // ""] | @tsv')
+sync_repo() {
+  local repo=$1 created=0 updated=0 same=0 existing have name color desc
+  existing=$(gh api "repos/$repo/labels?per_page=100" --paginate \
+    --jq '.[] | [.name, (.color|ascii_downcase), .description // ""] | @tsv')
+  while IFS=$'\t' read -r name color desc; do
+    color=$(printf %s "$color" | tr 'A-F' 'a-f')
+    have=$(printf '%s\n' "$existing" | awk -F'\t' -v n="$name" '$1 == n' || true)
+    if [ -z "$have" ]; then
+      echo "$repo  create  $name"
+      [ -n "$dry" ] || gh api -X POST "repos/$repo/labels" \
+        -f name="$name" -f color="$color" -f description="$desc" >/dev/null
+      created=$((created + 1))
+    elif [ "$have" != "$name"$'\t'"$color"$'\t'"$desc" ]; then
+      echo "$repo  update  $name"
+      [ -n "$dry" ] || gh api -X PATCH "repos/$repo/labels/$(enc "$name")" \
+        -f color="$color" -f description="$desc" >/dev/null
+      updated=$((updated + 1))
+    else
+      same=$((same + 1))
+    fi
+  done <<<"$labels"
+  echo "$repo: $created created, $updated updated, $same already right${dry:+ (dry run: nothing changed)}"
+}
 
 # Label names hold a slash, so they're sent URL-encoded in the path.
 enc() { jq -rn --arg s "$1" '$s|@uri'; }
 
-created=0 updated=0 same=0
-while IFS=$'\t' read -r name color desc; do
-  color=$(printf %s "$color" | tr 'A-F' 'a-f')
-  have=$(printf '%s\n' "$existing" | awk -F'\t' -v n="$name" '$1 == n' || true)
-  if [ -z "$have" ]; then
-    echo "create  $name"
-    [ -n "$dry" ] || gh api -X POST "repos/$repo/labels" \
-      -f name="$name" -f color="$color" -f description="$desc" >/dev/null
-    created=$((created + 1))
-  elif [ "$have" != "$name"$'\t'"$color"$'\t'"$desc" ]; then
-    echo "update  $name"
-    [ -n "$dry" ] || gh api -X PATCH "repos/$repo/labels/$(enc "$name")" \
-      -f color="$color" -f description="$desc" >/dev/null
-    updated=$((updated + 1))
-  else
-    same=$((same + 1))
-  fi
-done <<<"$labels"
-
-echo "$repo: $created created, $updated updated, $same already right${dry:+ (dry run: nothing changed)}"
+rc=0
+for repo in "${repos[@]}"; do
+  sync_repo "$repo" || { echo "$repo: failed" >&2; rc=1; }
+done
+exit $rc
