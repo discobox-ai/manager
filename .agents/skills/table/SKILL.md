@@ -28,7 +28,9 @@ the table. Each row has:
   - "Look at it" for a failing PR its worker can't make green.
   - "Answer in the box" for a box tagged `needs-input` (or showing a question
     it didn't tag; tag it first, `workers`).
-  - A concrete decision ("Decide A or B on the issue").
+  - A concrete decision ("Decide A or B on the issue"). Before asking the
+    owner anything about an issue (a milestone, a choice), read its comments:
+    the owner often answered there already (#876, 2026-11-09).
   - An ADR PR that's green is "Review and merge": merging it accepts it.
 - **The merge queue** is the rows at "Review and merge", in rank order.
   Every PR in it is kept rebased: after every merge or close, recheck them
