@@ -30,7 +30,11 @@ repository is public; `curl` to `api.github.com` with no token):
   (`GET /repos/$REPO/compare/$SHA...<default branch>` has `status` `ahead`
   or `identical`).
 - That commit's CI is green: `GET /repos/$REPO/commits/$SHA/check-runs`, every
-  run `completed` with `success`, `skipped` or `neutral`.
+  run `completed` with `success`, `skipped` or `neutral`. **And complete:**
+  the same set of check names as the last full CI run on the default branch
+  (the most recent push run with the most jobs). A run that skipped or never
+  created jobs (v0.19.1-rc.1's commit ran 3 of 8, 2026-11-09) is not green:
+  tag `blocked` and say which checks are missing.
 
 Any check fails: tag `blocked`, write one line on the screen saying which and
 why, and stop. Don't pick another commit or name.
