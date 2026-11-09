@@ -56,6 +56,14 @@ Monitor(
   stream is up, or it takes events away from the stream.
 - The Monitor tool expires after 30 minutes. Re-arm it with the same
   command straight away; events that came in meanwhile are still queued.
+  **A missed re-arm stops the manager silently**: on 2026-11-09 the stream
+  lapsed, no `pop` was running, 15 events sat queued, and v0.19.1-rc.1's
+  validation started only when the owner asked. So the loop also keeps a
+  safety net, a CronCreate job every 10 minutes (prompt: "watch: is the
+  `discobox-monitor pop --follow` stream up? If not, re-arm it now and
+  handle what's queued"). It fires only when the loop is idle, which is
+  exactly when a lapse goes unnoticed. Create it at start (`start-loop`)
+  and check `CronList` on each heartbeat that it still exists.
   Each expiry is the heartbeat: check disk, and say nothing unless something
   changed.
   Also on each heartbeat: any worker PR that is green but still a draft, with

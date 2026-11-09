@@ -135,7 +135,8 @@ Update the rows that changed (`scripts/table`).
 ## 5. Wait
 
 Start the Monitor tool streaming `discobox-monitor pop --follow` (`watch`
-skill), and go to the loop's step 2 (`AGENTS.md`). Send `manager-chat`
+skill), create its 10-minute CronCreate safety net (`watch`, re-arming) if
+`CronList` doesn't already show it, and go to the loop's step 2 (`AGENTS.md`). Send `manager-chat`
 (SendMessage) one line: the loop is up, and the first "Your move". Then say
 nothing to it unless it asks, or the owner has a new move it should hear of
 before the table shows it. Don't write a status message in your own transcript
