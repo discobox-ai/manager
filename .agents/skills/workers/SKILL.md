@@ -326,6 +326,17 @@ discobox#786, merged by you.
 - **On the table:** one row per track issue with a box or a PR; the epic's
   row says the phase it's in.
 
+### Repositories with an interactive pre-harness
+
+A repository with `.discobox/scripts/pre-harness` (discobox-ai/tour: the tour
+itself) runs it before the harness on every primary terminal start, so a
+worker launched there waits at that script's screen and never starts its
+prompt (discobox#876, 2026-11-09). Until #876 gives a way to skip it, after
+launching a worker in such a repository read its screen, step through the
+script to the harness (for the tour: Enter, then `c`), and if the harness
+then says "No conversation found to continue", type the task in yourself.
+Don't let it idle into a pause first.
+
 ### Taking over a PR (owner, 2026-11-07)
 
 The owner (or a teammate) opened a PR by hand, and asks you to "take over
