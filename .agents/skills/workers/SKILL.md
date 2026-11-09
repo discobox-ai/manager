@@ -384,6 +384,11 @@ you:
   the worker had answered it and opened its PR.
 - A screen still showing `esc to interrupt`, or a running background shell or
   monitor, means the worker is working, whatever the title says.
+- **A stopped box's screen is readable too** (owner, 2026-11-09):
+  `discobox capture <id>` prints its last screen without starting it, and
+  `--scrollback N` the lines above. Read it before deciding a stopped box
+  finished, asked something, or died (an API or credit error ends a turn
+  without a question). Start a box only to type into it.
 
 ## A question without its tag
 
