@@ -35,6 +35,13 @@ repository is public; `curl` to `api.github.com` with no token):
 Any check fails: tag `blocked`, write one line on the screen saying which and
 why, and stop. Don't pick another commit or name.
 
+**CI still running** (some runs `queued` or `in_progress`, none failed) is not
+a failure (owner, 2026-11-09: approve now, walk away): go on to §2 and ask
+for the credential now, then before §3 wait for every run to complete
+(poll `check-runs` every minute, up to 50 minutes, inside the credential's
+hour). All green: tag. Any failure, or still running at 50 minutes: tag
+nothing, tag the box `blocked`, and say which check and why.
+
 ## 2. Ask for the credential
 
 Exactly these routes, for this repository, for an hour:
