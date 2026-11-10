@@ -99,7 +99,11 @@ Before you call it signed off, run `discobox-review status` once the last
 reviewer has finished, and check every file is approved by every reviewer.
 Approvals made at the same moment can drop one (discobox-ai/review#21): if
 one shows nullified on an unchanged file, have that reviewer approve again,
-alone, and check again.
+alone, and check again. If the tool still keeps only one reviewer's verdict
+on a file after each has approved its current content alone, in turn, stop
+re-approving: the sign-off counts when every reviewer's approval of that
+file's current digest is in the review's history. Name the files and paste
+those approvals (reviewer, digest, time) in the PR's Process check.
 
 Status line: `reviewed: <rounds> rounds, <what it found>`.
 
