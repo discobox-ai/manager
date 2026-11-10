@@ -33,8 +33,8 @@ cd "$(dirname "$0")/.."
 
 die() { echo "launch: $*" >&2; exit 1; }
 
-SKILL="" REPO="" ISSUE="" JOB="" PROMPT="" ROLE="" NOSRC="" NOLABEL="" DRY="" BASEARG="" HARNESSARG="" INCLUDES=()
-[ $# -gt 0 ] || die "usage: scripts/launch SKILL --repo OWNER/NAME [--issue N] [--job JOB] [-p PROMPT] [--role ROLE] [--base BRANCH] [--no-source] [--no-label] [--dry-run]"
+SKILL="" REPO="" ISSUE="" JOB="" PROMPT="" ROLE="" NOSRC="" NOLABEL="" DRY="" BASEARG="" HARNESSARG="" INCLUDES=() EXTRABINDS=()
+[ $# -gt 0 ] || die "usage: scripts/launch SKILL --repo OWNER/NAME [--issue N] [--job JOB] [-p PROMPT] [--role ROLE] [--base BRANCH] [--bind SECRET:VAR@HOSTS]... [--no-source] [--no-label] [--dry-run]"
 SKILL=$1; shift
 while [ $# -gt 0 ]; do
   case $1 in
@@ -46,6 +46,7 @@ while [ $# -gt 0 ]; do
     --base) BASEARG=$2; shift 2 ;;
     --harness) HARNESSARG=$2; shift 2 ;;
     -i|--include) INCLUDES+=("$2"); shift 2 ;;
+    --bind) EXTRABINDS+=("$2"); shift 2 ;;
     --no-source) NOSRC=1; shift ;;
     --no-label) NOLABEL=1; shift ;;
     --dry-run) DRY=1; shift ;;
@@ -155,6 +156,10 @@ SRC="https://github.com/$REPO@$BRANCH"
 # credentials: the box waits for its source forever (2026-11-05).
 ARGS=(run -d -H "$HARNESS" --skills "$PWD/worker-skills")
 [ "$ROLE" = none ] || ARGS+=(--bind "$BIND")
+# Provider credentials (manager.yaml providers), always narrowed to their hosts.
+for b in "${EXTRABINDS[@]}"; do
+  case $b in *@*) ARGS+=(--bind "$b") ;; *) die "--bind takes SECRET:VAR@HOST[,HOST]: name the hosts" ;; esac
+done
 if [ -n "$NOSRC" ]; then ARGS+=(--no-source); else ARGS+=("$SRC"); fi
 for inc in "${INCLUDES[@]}"; do
   case $inc in */*) ARGS+=(-i "https://github.com/${inc}") ;; *) die "-i takes OWNER/REPO[@REF]" ;; esac

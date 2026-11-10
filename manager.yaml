@@ -101,6 +101,19 @@ tracks:
     # solution, we want this to run without intervention").
     decide: recommended
 
+# Provider credentials the owner delegated for real-API work (owner,
+# 2026-11-10: "i can give creds ... just request for the API domains"). Bind
+# one only to a box whose job needs the real provider (the remote-drivers
+# track, discobox#947), always narrowed to its hosts with
+# `scripts/launch --bind`. The secret's name is what the owner chose on
+# approval; check `discobox-access list -json` if a bind fails.
+providers:
+  boxd:
+    bind: "boxd-test4:BOXD_API_KEY@boxd.sh,*.boxd.sh"
+    expires: 2026-12-10
+  archil:
+    bind: "archil-2:ARCHIL_API_KEY@*.archil.com"
+
 # The owner's Mac agent (owner, 2026-11-10): the only place macOS and vz
 # work can run. One agent, so its jobs are serialized; only manager-loop sends
 # them (`workers` § The macOS worker).

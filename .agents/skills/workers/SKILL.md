@@ -365,6 +365,18 @@ discobox#786, merged by you.
 - **On the table:** one row per track issue with a box or a PR; the epic's
   row says the phase it's in.
 
+### Provider credentials (owner, 2026-11-10)
+
+The owner delegated boxd and archil API keys (`manager.yaml` `providers`)
+for the remote-drivers track. Bind one at launch, only to a box whose job
+needs that real provider (its issue says so, or its worker asks), with
+`scripts/launch ... --bind "<providers.X.bind>"`. Always with the hosts:
+the boxd delegation came back as any host, so the bind is what keeps the
+key on boxd.sh. A box already running that needs one asks with
+`discobox-access request` for exactly that secret and those hosts, and you
+approve it. Anything else (another provider, a wider host) goes to the
+owner. The boxd grant expires 2026-12-10: ask the owner again before then.
+
 ### The macOS worker (owner, 2026-11-10)
 
 We can't run macOS boxes. The owner runs one agent on a Mac, `macos-worker`
