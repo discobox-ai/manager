@@ -15,6 +15,10 @@ need is in GitHub, on the boxes' tags and in
 earlier session is assumed. Safe to run again at any time: every step
 checks before it acts.
 
+**Stopped factory.** If `workers.stopped` is true in `manager.yaml`, the
+owner stopped everything (`stop` skill): arm nothing, start nothing, tell
+`manager-chat` in one line, and end. Only `/resume` relaunches you.
+
 **One loop.** Two sessions both popping events would answer them twice.
 If `claude agents --json` shows another live session named
 `manager-loop` (not you), tell `manager-chat` and stop.

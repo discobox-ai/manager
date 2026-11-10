@@ -64,6 +64,10 @@ workers:
   # those in pausedExcept; work in progress carries on. Resumed 2026-11-03.
   paused: false
   pausedExcept: []
+  # Factory stop (owner, 2026-11-10; `stop` and `resume` skills): true means
+  # every agent is idle on purpose: the loop isn't running, the manager's
+  # boxes are stopped, and nothing starts. Only /resume clears it.
+  stopped: false
   # Workers running at once, triage and delivery together: a box counts only
   # while its power state is running or starting. Suspended (paused), stopped,
   # asleep and archived boxes don't count (owner, 2026-11-05). The owner set ten for this host (2026-11-05); lower it when

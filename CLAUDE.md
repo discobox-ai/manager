@@ -109,7 +109,8 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
 - `roles/`: the GitHub credential policy each kind of box is bound at launch.
 - `.agents/skills/` (linked as `.claude/skills`): your own skills:
   `start` (the chat session), `start-loop` (the loop), `watch`, `workers`,
-  `adopt`, `github`, `table`, `triage-intake`.
+  `adopt`, `github`, `table`, `triage-intake`, and `stop` / `resume` (the
+  owner's switch that idles every agent and brings them back).
 - `worker-skills/`: what a worker gets, installed with
   `--skills "$PWD/worker-skills"` from this checkout (a repository URL makes the pool fetch this private repository, which hangs from inside a box; see `workers`).
 - `docs/gates.md`: what you do alone and what goes to the owner.

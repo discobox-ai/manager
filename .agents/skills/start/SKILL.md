@@ -109,7 +109,11 @@ table: there is no site or artifact (owner, 2026-11-07).
 
 ## 4. The loop
 
-Launch `manager-loop` unless it is already running:
+**Stopped factory:** if `workers.stopped` is true in `manager.yaml`, don't
+launch the loop. The owner stopped everything (`stop` skill), and only
+`/resume` starts it again. Tell the owner in §5 that the factory is stopped.
+
+Otherwise, launch `manager-loop` unless it is already running:
 
 ```sh
 claude agents --json | jq -r '.[] | select(.name=="manager-loop") | "\(.id) \(.status)"'
