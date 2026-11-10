@@ -79,6 +79,9 @@ Closes #<N>
 - **Verify:** PASS | FAIL | BLOCKED | SKIP: <what was observed at the
   product's surface, or why there was nothing to run>; not run here:
   <paths, or none>
+- **Screenshots:** <for a visible change: the frame that matters embedded,
+  `![what](https://raw.githubusercontent.com/ibuildthecloud-bot/<repo>/assets/<repo>/<N>/<file>.png)`,
+  from the fork's `assets` branch (`verify`, Capture); or "nothing visible">
 - **Tests:** <what ran and its result; pre-existing failures named>
 - **Done when:** <each item of the issue's Done when, and how it's met>
 

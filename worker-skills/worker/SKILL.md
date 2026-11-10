@@ -191,7 +191,10 @@ and don't ask for a credential: your role allows `POST repos/$REPO/issues`.
    ```
 
    then the footer (Comments, below). Never set labels, a milestone or an
-   assignee: the manager triages it.
+   assignee: the manager triages it. Something visible (a broken layout,
+   a wrong dialog, an error on screen) gets a screenshot in `## Today`,
+   uploaded to the fork's `assets` branch and linked by raw URL (`verify`,
+   Capture; owner, 2026-11-10), never committed to the product repository.
 3. Comment once on your own issue (or PR): `Filed #<M>: <title>`, with the
    footer, so the manager sees it.
 

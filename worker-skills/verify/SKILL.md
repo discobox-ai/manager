@@ -204,10 +204,49 @@ would type wrong.
 Stdout, response bodies, screenshots, pane dumps. Captured output is
 evidence; your memory isn't. **Never commit captures to the product
 repository** (owner, 2026-11-07: PR 778 carried 150 screenshot files for
-6 changed source files). Keep them out of the tree (`/tmp`, the review card)
-and show them in the PR: the one frame that matters in the Evidence, the
-rest in a comment or the review card. Only a test fixture the code reads is
-committed. Something unexpected? Don't route around
+6 changed source files). Keep them out of the tree (`/tmp`, the review card).
+Only a test fixture the code reads is committed.
+
+**Screenshots go in the PR and the issue, from the fork's `assets`
+branch** (owner, 2026-11-10). Anything a person sees changed (the desktop
+app, the TUI, the site, a dialog, an error) gets screenshots in its PR's
+Evidence, and an issue about something visible gets one of the problem.
+Upload them to the orphan branch `assets` of the bot's fork
+(`ibuildthecloud-bot/<repo>`), never to the product repository or your PR's
+branch, and link them by raw URL:
+
+```sh
+REPO=<repo name, e.g. discobox>; N=<issue>; FORK=ibuildthecloud-bot
+A=$(mktemp -d); H='!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f'
+g() { git -C "$A" -c credential.helper= -c credential.helper="$H" "$@"; }
+g init -q
+if g fetch -q --depth 1 "https://github.com/$FORK/$REPO.git" assets 2>/dev/null; then
+  g checkout -q -B assets FETCH_HEAD
+else   # first use: an orphan branch with only a README (no product history)
+  g checkout -q --orphan assets
+  printf '# Assets\n\nScreenshots for discobox-ai issues and PRs, kept out of the product repositories. Append only: never rewrite this branch.\n' > "$A/README.md"
+fi
+mkdir -p "$A/$REPO/$N" && cp <your pngs> "$A/$REPO/$N/"
+g add -A && g -c user.name=ibuildthecloud-bot -c user.email=ibuildthecloud-bot@users.noreply.github.com \
+  commit -q -m "assets: $REPO#$N"
+until g push -q "https://github.com/$FORK/$REPO.git" assets; do   # another worker pushed: rebase onto it
+  g pull -q --rebase "https://github.com/$FORK/$REPO.git" assets || break
+done
+echo "https://raw.githubusercontent.com/$FORK/$REPO/assets/$REPO/$N/<file>.png"
+```
+
+- Name files for what they show (`sidebar-dark.png`, `before.png`,
+  `after.png`), under `<repo>/<issue>/`. A file name already there gets a
+  new name. Never overwrite or delete one, since a merged PR links to it.
+- PNG, cropped to what matters, a few per PR, not dozens. A recording is
+  fine as a short GIF.
+- In the PR's Evidence, embed the frame that matters, `![sidebar, dark](<raw
+  URL>)`, and put the rest in a comment. Before and after when the change
+  alters something already visible.
+- Never force-push or rewrite `assets`, and never push anything but
+  captures to it. Its whole history is append-only.
+- The push goes to the fork, which your role already reaches. A refused
+  push means stop and say so, never fall back to the product repository. Something unexpected? Don't route around
 it — capture, note, decide if it's the change or the environment.
 Unrelated breakage is a finding, not noise.
 

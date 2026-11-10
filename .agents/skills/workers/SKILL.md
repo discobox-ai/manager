@@ -318,7 +318,9 @@ discobox#786, merged by you.
   doesn't. A track PR is ready when its checks on its head are green (until
   the track's own CI exists, discobox#788, there may be none: then its
   Evidence must show the repository's suites passing locally), its review
-  has signed off, its verify passed or says why it couldn't, its process
+  has signed off, its verify passed or says why it couldn't, a visible
+  change has its screenshots in the Evidence, from the bot fork's `assets`
+  branch (`verify`, Capture; owner, 2026-11-10), its process
   comment is posted, and it's rebased on the track's branch with nothing
   between them. Then have the track's **merge box** fast-forward the branch
   to the PR's head: type `Merge PR #<P> at <sha>` into it. That box
