@@ -1,0 +1,4 @@
+# Editor swap files: an open editor must not block scripts/launch.
+*.swp
+*.swo
+*~
