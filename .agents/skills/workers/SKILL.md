@@ -365,6 +365,36 @@ discobox#786, merged by you.
 - **On the table:** one row per track issue with a box or a PR; the epic's
   row says the phase it's in.
 
+### The macOS worker (owner, 2026-11-10)
+
+We can't run macOS boxes. The owner runs one agent on a Mac, `macos-worker`
+(`manager.yaml` `macosWorker`), reachable by SendMessage like any session
+(`ListAgents` shows it as `macos-worker [<ref>]`; it's on Remote Control,
+so nothing reports back on delivery). It holds the ibuildthecloud-bot
+credential. It is **one agent: its work is serialized.**
+
+- **Only `manager-loop` gives it jobs**, one at a time, and keeps the queue:
+  a "macos-worker" row on the table lists the job running and those waiting,
+  in track priority. `manager-chat` never sends it work; it relays the
+  owner's words to the loop.
+- **What goes to it:** only what needs a Mac: darwin builds and tests, vz
+  real-guest runs (Linux and macOS guests), and fixes that only show on
+  macOS. The code is written by Linux workers in boxes as usual; when a PR
+  needs Mac proof, its worker says so (Evidence: "needs macOS verification")
+  and you queue it.
+- **A job is one message**, self-contained: the repository and issue, the
+  PR and its head sha (or the branch), exactly what to run, what counts as
+  pass, and where to report. It reports on the issue or PR as a comment
+  (the durable record, which the watch sees) and replies to `manager-loop`
+  with one line: done, failed or blocked, and the comment's link. It may
+  push fixes to that PR's branch on the bot fork; it opens no PR of its own
+  and never merges.
+- **Next job** only after the last one's comment is up. No reply and no
+  comment within the job's own time estimate: send one status question,
+  never a resend of the job.
+- **Credentials** beyond the bot's (an Apple Developer ID, signing, a
+  provider account) go to the owner, as for any worker.
+
 ### Repositories with an interactive pre-harness
 
 A repository with `.discobox/scripts/pre-harness` (discobox-ai/tour: the tour

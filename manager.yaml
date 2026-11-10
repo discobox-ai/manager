@@ -101,6 +101,12 @@ tracks:
     # solution, we want this to run without intervention").
     decide: recommended
 
+# The owner's Mac agent (owner, 2026-11-10): the only place macOS and vz
+# work can run. One agent, so its jobs are serialized; only manager-loop sends
+# them (`workers` § The macOS worker).
+macosWorker:
+  agent: macos-worker
+
 disk:
   # Below this, stop starting workers and have idle ones free build caches.
   minFreeGiB: 60
