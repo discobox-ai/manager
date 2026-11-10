@@ -56,6 +56,10 @@ workers:
   # switched from codex back to claude-code by the owner, 2026-11-07).
   # Boxes already running keep theirs.
   harness: claude-code
+  # Bug fixes run this harness instead (owner, 2026-11-10): deliver-issue on an
+  # issue labelled type/bug or type/flake, and fix-ci. Everything else (ADRs,
+  # features, chores, triage, validation, releases) runs `harness`.
+  bugHarness: codex
   # Intake pause (owner): true starts no new triage or delivery boxes but
   # those in pausedExcept; work in progress carries on. Resumed 2026-11-03.
   paused: false

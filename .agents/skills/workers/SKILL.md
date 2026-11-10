@@ -54,8 +54,16 @@ Empty means none or more than one: launch nothing, and tell the owner which
 (`discobox-access list`). Never fall back to `github`.
 
 **Workers run the harness `workers.harness` names** (owner, 2026-11-04;
-`manager.yaml`, now `claude-code`; codex from 2026-11-04 to 2026-11-07): read it with
-`HARNESS=$(sed -n 's/^  harness: *//p' manager.yaml)` and pass `-H "$HARNESS"`
+`manager.yaml`, now `claude-code`; codex from 2026-11-04 to 2026-11-07),
+**except bug fixes, which run `workers.bugHarness`** (now `codex`; owner,
+2026-11-10: "bug fixes are done with codex harness and other work is done
+with claude-code"). A bug fix is `deliver-issue` on an issue labelled
+`type/bug` or `type/flake`, or `fix-ci`; `scripts/launch` picks it by itself
+(its dry run prints `(bug fix)`), and `--harness` overrides it. An issue's
+type is set at triage, so label it before launching. A box keeps the harness
+it started with, even if its issue's type changes. Starting a box by hand,
+read it with
+`HARNESS=$(sed -n 's/^  harness: *//p' manager.yaml)` (or `bugHarness:`) and pass `-H "$HARNESS"`
 to every `discobox run` below. Boxes already running keep theirs. The prompts
 and the screen-reading in this skill were written against Claude Code (its
 permission prompts, `AskUserQuestion` dialogs): check a new harness's first

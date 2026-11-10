@@ -2,7 +2,12 @@
 # Start one worker box for a job, the way the `workers` skill's Launch section says.
 #
 #   scripts/launch SKILL --repo OWNER/NAME [--issue N] [--job JOB] [-p PROMPT]
-#                  [--role ROLE] [--base BRANCH] [--no-source] [-i SOURCE]... [--no-label] [--dry-run]
+#                  [--role ROLE] [--base BRANCH] [--harness H] [--no-source] [-i SOURCE]...
+#                  [--no-label] [--dry-run]
+#
+# The harness is workers.harness, except for bug fixes: deliver-issue on an issue
+# labelled type/bug or type/flake, and fix-ci, run workers.bugHarness (owner,
+# 2026-11-10). --harness overrides both.
 #
 # -i SOURCE brings an extra source into the box (repeat it), as `discobox run -i`
 # does: OWNER/REPO[@REF]. Only public repositories: from inside a box the CLI
@@ -28,7 +33,7 @@ cd "$(dirname "$0")/.."
 
 die() { echo "launch: $*" >&2; exit 1; }
 
-SKILL="" REPO="" ISSUE="" JOB="" PROMPT="" ROLE="" NOSRC="" NOLABEL="" DRY="" BASEARG="" INCLUDES=()
+SKILL="" REPO="" ISSUE="" JOB="" PROMPT="" ROLE="" NOSRC="" NOLABEL="" DRY="" BASEARG="" HARNESSARG="" INCLUDES=()
 [ $# -gt 0 ] || die "usage: scripts/launch SKILL --repo OWNER/NAME [--issue N] [--job JOB] [-p PROMPT] [--role ROLE] [--base BRANCH] [--no-source] [--no-label] [--dry-run]"
 SKILL=$1; shift
 while [ $# -gt 0 ]; do
@@ -39,6 +44,7 @@ while [ $# -gt 0 ]; do
     -p|--prompt) PROMPT=$2; shift 2 ;;
     --role) ROLE=$2; shift 2 ;;
     --base) BASEARG=$2; shift 2 ;;
+    --harness) HARNESSARG=$2; shift 2 ;;
     -i|--include) INCLUDES+=("$2"); shift 2 ;;
     --no-source) NOSRC=1; shift ;;
     --no-label) NOLABEL=1; shift ;;
@@ -69,6 +75,20 @@ if [ -z "$BASEARG" ] && [ -n "$ISSUE" ]; then
   done < <(awk '/^tracks:/ {t=1; next} t && /^[^ #]/ {t=0} t && $1=="repo:" {r=$2} t && $1=="branch:" {b=$2} t && $1=="epic:" {print r, b, $2}' manager.yaml)
 fi
 [ -z "$BASEARG" ] || BRANCH=$BASEARG
+# Bug fixes run workers.bugHarness (owner, 2026-11-10).
+BUGHARNESS=$(sed -n 's/^  bugHarness: *//p' manager.yaml | head -1)
+KIND=""
+if [ -n "$BUGHARNESS" ]; then
+  case $SKILL in
+    fix-ci) KIND=bug ;;
+    deliver-issue)
+      if [ -n "$ISSUE" ] && gh api "repos/$REPO/issues/$ISSUE" --jq '.labels[].name' 2>/dev/null | grep -qxE 'type/(bug|flake)'; then
+        KIND=bug
+      fi ;;
+  esac
+  [ "$KIND" != bug ] || HARNESS=$BUGHARNESS
+fi
+[ -z "$HARNESSARG" ] || HARNESS=$HARNESSARG
 if [ "$PAUSED" = true ]; then die "workers.paused is true in manager.yaml: no new boxes (pausedExcept names the exceptions)"; fi
 OWNER=${REPO%%/*} NAME=${REPO#*/}
 
@@ -140,7 +160,7 @@ done
 ARGS+=(-p "$PROMPT")
 
 if [ -n "$DRY" ]; then
-  echo "harness=$HARNESS job=$JOB role=$ROLE fork=${PUSHES:+$FORK} base=$BRANCH${TRACK:+ track=#$TRACK}"
+  echo "harness=$HARNESS${KIND:+ (bug fix)} job=$JOB role=$ROLE fork=${PUSHES:+$FORK} base=$BRANCH${TRACK:+ track=#$TRACK}"
   echo "discobox ${ARGS[*]}"
   exit 0
 fi
