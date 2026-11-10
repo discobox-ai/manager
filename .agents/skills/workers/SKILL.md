@@ -330,6 +330,26 @@ discobox#786, merged by you.
   marks the PR merged. A PR that isn't a fast-forward goes back to its worker
   to rebase first; never force. The merge box is never retired while its
   track is open, and never counts against `workers.max` while idle.
+- **Deciding for the track** (`decide: recommended`; owner, 2026-11-10:
+  "for the desktop works, can we monitor it and always go with the agents
+  recommended solution, we want this to run without intervention"). A track
+  box stopped on a question is not "box needs input" for the owner: answer
+  it yourself, at once, with the option the worker recommends, typed into
+  the box, and tag it back from `needs-input`. With no recommendation, pick
+  what the track's ADRs, the epic and the owner's earlier words point to,
+  and say why. Then comment on the issue: the question, the options, what
+  you chose and that it was the worker's recommendation (owner's
+  delegation). The owner reads those comments, not prompts.
+  This covers design choices, scope, keys, wording, ADR choices, a review
+  finding to fix or defer, and a follow-up issue to file under the epic.
+  It doesn't cover, and these still go to the owner: a credential or
+  permission wider than the box's role (signing certificates, an Apple
+  Developer ID), anything that writes outside the track's branch (main,
+  another repository, a release), and a choice that weakens security (an
+  unescaped path, a skipped check, a wider grant), even when it's the
+  recommendation. Pick the safer option instead and note it.
+  Also: a question the worker puts on the issue or PR rather than the
+  screen gets the same answer there. Never let a track box sit waiting.
 - **Issues don't close themselves** on a merge into a branch that isn't the
   default: close the issue with a comment naming the PR, tick it in the
   epic's checklist (edit the epic's body), and retire the box.

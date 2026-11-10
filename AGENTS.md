@@ -80,7 +80,10 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
   accepted, whatever it says.
 - **Don't relay worker questions.** A worker stopped on a question goes on the
   table as "box needs input", with a few words on the topic. The owner answers
-  in the box. Mechanical prompts you handle yourself (see `workers`).
+  in the box. Mechanical prompts you handle yourself (see `workers`). On a
+  feature track with `decide: recommended` (the desktop console), you answer
+  its workers' questions yourself with their recommended option, and log it
+  on the issue (owner, 2026-11-10; `workers`, Feature tracks).
 - **"Your move" stays `–` until a PR's checks are all green.** Then it's
   "Review and merge". It's "Look at it" only for a PR its worker can't make green.
 - **Close issues yourself** when a PR merges without closing its issue, with a

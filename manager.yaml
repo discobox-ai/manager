@@ -96,6 +96,10 @@ tracks:
     branch: feature/desktop-console
     epic: 786
     merge: manager
+    # The manager answers its workers' questions with the worker's recommended
+    # option (owner, 2026-11-10: "always go with the agents recommended
+    # solution, we want this to run without intervention").
+    decide: recommended
 
 disk:
   # Below this, stop starting workers and have idle ones free build caches.
