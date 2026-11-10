@@ -305,6 +305,15 @@ discobox#786, merged by you.
   work and before anything else, in the epic's phase order (P0 first) and
   each issue's "Depends on". Suspend track boxes while release validation
   measures timing (§ Release validation boxes), like any non-release work.
+  **A track never idles by itself.** "Release work goes first" orders slots
+  when they're short. It never stops the track while slots are free. An
+  issue in the epic's checklist whose "Depends on" are all done is ready,
+  label or not: label it `status/ready` and start it. Only the owner pauses
+  a track, and an open PR from the track's branch to main is not a pause.
+  On every heartbeat with free slots, a quiet host and no validation timing,
+  check: no track box running, but the epic has ready issues, means a
+  stall. Start them (2026-11-10: the desktop track sat idle five hours on
+  an unlabelled #811 and a misread priority).
 - **Merging into the branch** (`merge: manager`): you merge, the owner
   doesn't. A track PR is ready when its checks on its head are green (until
   the track's own CI exists, discobox#788, there may be none: then its
