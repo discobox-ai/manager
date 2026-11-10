@@ -106,6 +106,7 @@ if [ -z "$JOB" ]; then
     migrate-labels) JOB=labels ;;
     cut-release) JOB=tag ;;
     merge-track) JOB=merge ;;
+    merge-release) JOB=release ;;
     *) JOB=$SKILL ;;
   esac
 fi

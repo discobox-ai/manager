@@ -18,6 +18,7 @@ are the source.
 | `github-labels` | `migrate-labels` workers | Read; create and edit labels; set and remove labels on issues; comment (delegated for discobox-ai/manager only: elsewhere the bot has Triage, which can't create labels, so the owner creates them; owner, 2026-11-04) |
 | (none) | `cut-release` boxes | Bound nothing: the box asks the owner for a credential that can create one tag (`POST git/tags`, `git/refs`), since the bot has Triage |
 | (none) | `merge-track` boxes | Bound nothing: the box asks the owner for a credential that reaches one feature track branch's ref (`PATCH git/refs/heads/<branch>`, fast-forward only) and reads, for 30 days |
+| (none) | `merge-release` boxes | Bound nothing: asks the owner for `PUT pulls/<P>/merge`, `POST git/tags`, `POST git/refs` and reads in one repository, for 24 hours; only on the owner's own request to merge that PR and tag |
 | `github-manager` | The manager itself, once per watched repository | Read; file, comment on, label and close issues; re-run failed CI. No git, no PRs |
 | `github-push` | The manager itself, for discobox-ai/manager only | Git fetch and push |
 
