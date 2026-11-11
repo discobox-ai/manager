@@ -114,11 +114,16 @@ providers:
   archil:
     bind: "archil-2:ARCHIL_API_KEY@*.archil.com"
 
-# The owner's Mac agent (owner, 2026-11-10): the only place macOS and vz
-# work can run. One agent, so its jobs are serialized; only manager-loop sends
-# them (`workers` § The macOS worker).
-macosWorker:
-  agent: macos-worker
+# The owner's platform agents (owner, 2026-11-10, 2026-11-11): the only places
+# macOS/vz and Windows/hcs work can run. One agent each, so each one's jobs
+# are serialized; only manager-loop sends them (`workers` § Platform workers).
+platformWorkers:
+  - agent: macos-worker
+    platform: darwin
+  - agent: win-worker
+    platform: windows
+    # Its project root is the latest discobox-ai/vm main.
+    repo: discobox-ai/vm
 
 disk:
   # Below this, stop starting workers and have idle ones free build caches.

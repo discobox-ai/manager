@@ -377,30 +377,39 @@ key on boxd.sh. A box already running that needs one asks with
 approve it. Anything else (another provider, a wider host) goes to the
 owner. The boxd grant expires 2026-12-10: ask the owner again before then.
 
-### The macOS worker (owner, 2026-11-10)
+### Platform workers: macOS and Windows (owner, 2026-11-10, 2026-11-11)
 
-We can't run macOS boxes. The owner runs one agent on a Mac, `macos-worker`
-(`manager.yaml` `macosWorker`), reachable by SendMessage like any session
-(`ListAgents` shows it as `macos-worker [<ref>]`; it's on Remote Control,
-so nothing reports back on delivery). It holds the ibuildthecloud-bot
-credential. It is **one agent: its work is serialized.**
+We can't run macOS or Windows boxes. The owner runs one agent on each
+platform (`manager.yaml` `platformWorkers`): `macos-worker` on a Mac and
+`win-worker` on Windows (its project root is the latest disco-vm `main`).
+Each is reachable by SendMessage like any session (`ListAgents` shows
+`<name> [<ref>]`; they're on Remote Control, so nothing reports back on
+delivery) and holds the ibuildthecloud-bot credential. **Each is one
+agent: its work is serialized**, a separate queue per worker.
 
-- **Only `manager-loop` gives it jobs**, one at a time, and keeps the queue:
-  a "macos-worker" row on the table lists the job running and those waiting,
-  in track priority. `manager-chat` never sends it work; it relays the
+- **Only `manager-loop` gives them jobs**, one at a time each, and keeps the
+  queues: one table row per worker lists the job running and those waiting,
+  in track priority. `manager-chat` never sends them work; it relays the
   owner's words to the loop.
-- **What goes to it:** only what needs a Mac: darwin builds and tests, vz
-  real-guest runs (Linux and macOS guests), and fixes that only show on
-  macOS. The code is written by Linux workers in boxes as usual; when a PR
-  needs Mac proof, its worker says so (Evidence: "needs macOS verification")
-  and you queue it.
+- **What goes to them:** what needs that platform: darwin or windows
+  builds and tests, real-guest runs (vz on the Mac, hcs on Windows), and
+  fixes that only show there. Linux-doable code is written by Linux workers
+  in boxes as usual; when a PR needs platform proof, its worker says so
+  (Evidence: "needs macOS/Windows verification") and you queue it.
+- **Two kinds of job.** *Verify:* run a PR or branch and report; it may push
+  fixes to that PR's branch on the bot fork. *Deliver:* an issue whose work
+  can only be done and run on that platform (the owner assigns it, e.g.
+  vm#74 to win-worker): it branches on the bot fork from the repository's
+  default branch, fixes, runs it for real, reviews with `discobox-review` to
+  sign-off, and opens one PR that `Closes #N` with an Evidence section
+  (what it ran on which host, review state), as `deliver-issue` asks of any
+  worker. Never merges. An ADR-sized choice inside it goes on the issue as a
+  question for the owner, with its recommendation, not into the code.
 - **A job is one message**, self-contained: the repository and issue, the
-  PR and its head sha (or the branch), exactly what to run, what counts as
-  pass, and where to report. It reports on the issue or PR as a comment
+  PR and its head sha (or the branch), what to run or fix, what counts as
+  done, and where to report. It reports on the issue or PR as a comment
   (the durable record, which the watch sees) and replies to `manager-loop`
-  with one line: done, failed or blocked, and the comment's link. It may
-  push fixes to that PR's branch on the bot fork; it opens no PR of its own
-  and never merges.
+  with one line: done, failed or blocked, and the link.
 - **Next job** only after the last one's comment is up. No reply and no
   comment within the job's own time estimate: send one status question,
   never a resend of the job.
