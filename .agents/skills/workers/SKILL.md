@@ -59,7 +59,9 @@ Empty means none or more than one: launch nothing, and tell the owner which
 2026-11-10: "bug fixes are done with codex harness and other work is done
 with claude-code"). A bug fix is `deliver-issue` on an issue labelled
 `type/bug` or `type/flake`, or `fix-ci`; `scripts/launch` picks it by itself
-(its dry run prints `(bug fix)`), and `--harness` overrides it. An issue's
+(its dry run prints `(bug fix)`), and `--harness` overrides it. **A repository
+with its own `harness` in `manager.yaml` runs that for all its work**, bug or
+not: discobox-ai/review runs codex (owner, 2026-11-11). An issue's
 type is set at triage, so label it before launching. A box keeps the harness
 it started with, even if its issue's type changes. Starting a box by hand,
 read it with

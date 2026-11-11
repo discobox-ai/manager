@@ -7,7 +7,8 @@
 #
 # The harness is workers.harness, except for bug fixes: deliver-issue on an issue
 # labelled type/bug or type/flake, and fix-ci, run workers.bugHarness (owner,
-# 2026-11-10). --harness overrides both.
+# 2026-11-10). A repository's own harness in manager.yaml (repos[].harness)
+# overrides both, and --harness overrides everything.
 #
 # -i SOURCE brings an extra source into the box (repeat it), as `discobox run -i`
 # does: OWNER/REPO[@REF]. Only public repositories: from inside a box the CLI
@@ -89,6 +90,10 @@ if [ -n "$BUGHARNESS" ]; then
   esac
   [ "$KIND" != bug ] || HARNESS=$BUGHARNESS
 fi
+# A repository's own harness (repos[].harness) wins over both (owner, 2026-11-11:
+# discobox-ai/review runs codex for all its work).
+REPOHARNESS=$(awk -v r="$REPO" '$1=="-" && $2=="name:" {cur=$3; next} cur==r && $1=="harness:" {print $2; exit} /^[^ #]/ {cur=""}' manager.yaml)
+if [ -n "$REPOHARNESS" ]; then HARNESS=$REPOHARNESS; KIND=""; fi
 [ -z "$HARNESSARG" ] || HARNESS=$HARNESSARG
 STOPPED=$(sed -n 's/^  stopped: *\([a-z]*\).*/\1/p' manager.yaml | head -1)
 if [ "$STOPPED" = true ]; then die "workers.stopped is true in manager.yaml: the factory is stopped (/stop); only /resume starts boxes again"; fi
