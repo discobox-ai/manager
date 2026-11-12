@@ -72,6 +72,16 @@ ranked as it's added. Run `scripts/table rank` (or `rank KEY`) after any
 change to a label, a milestone or `manager.yaml`'s `release`, and at the
 start of the loop. A row whose issue is closed lands in Done: remove it.
 
+**Focus comes first** (owner, 2026-11-12). Group 0, above blockers, is the
+streams in `manager.yaml` `focus`, in the owner's order. Within a stream, rows
+with an owner move come first, then priority. A row is in a stream when its
+issue or PR is listed there, or when it carries `stream=<name>`. Whenever you
+file or start an issue for a focus stream (from its plan PR, a follow-up, a
+worker's side finding that blocks it), add `stream=<name>` to its row in the
+same write. Workers for focus rows take free slots before anything else.
+Only the owner adds or removes a stream; when a stream's issues are all
+closed, tell the owner and ask what's next.
+
 Fields: `item agent issue pr doing move why blocker`. `move` is "Your move", `–`
 when there's none. Issues, PRs and boxes are links in their rows (boxes as `discobox:///<id>`);
 there's no link list under the table (owner, 2026-11-03). The file is `~/.local/state/discobox-manager/table.json`; the

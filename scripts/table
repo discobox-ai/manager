@@ -201,6 +201,32 @@ def release_config():
     return cfg
 
 
+def focus_config():
+    """manager.yaml's focus: [(stream, [owner/repo#n, ...]), ...], in the owner's order."""
+    streams = []
+    try:
+        lines = open(os.path.join(ROOT, "manager.yaml")).read().splitlines()
+    except OSError:
+        return streams
+    inside = False
+    for line in lines:
+        if re.match(r"^focus:\s*(#.*)?$", line):
+            inside = True
+            continue
+        if inside and line and not line.startswith(" ") and not line.startswith("#"):
+            break
+        if not inside:
+            continue
+        m = re.match(r"^  - \s*stream:\s*(\S+)", line)
+        if m:
+            streams.append((m.group(1).strip("'\""), []))
+            continue
+        m = re.match(r"^      - \s*([\w.-]+/[\w.-]+#\d+)", line)
+        if m and streams:
+            streams[-1][1].append(m.group(1))
+    return streams
+
+
 def target(r, owner, default_repo):
     """The GitHub issue or PR a row is about, as (owner/repo, number), or None."""
     for field in ("issue", "pr"):
@@ -234,8 +260,17 @@ def classify(r, info, cfg, owner):
     if t:
         repo, num = t
         ref = f"{repo}#{num}" if repo != cfg["repo"] else f"{cfg['repo']}#{num}"
+    stream = r.get("stream") if r.get("stream") in {s for s, _ in focus_config()} else None
+    if not stream and ref:
+        stream = next((s for s, items in focus_config() if ref in items), None)
+    if stream:
+        r["stream"] = stream
+    else:
+        r.pop("stream", None)
     if info and info.get("state") == "closed":
         g = 5
+    elif stream:
+        return 0, prio, f"0 Focus: {stream} ({prio})"
     elif "type/flake" in labels or str(r.get("blocker", "")).lower() in ("yes", "true", "1"):
         g = 1
     elif info and cfg["milestone"] and info.get("milestone") == cfg["milestone"]:
@@ -265,10 +300,19 @@ def rank(rows, keys=None):
 
 def sort_rows(rows):
     """Stable: by group, then priority; rows never ranked keep their place relative to their neighbours' group 4."""
+    streams = [s for s, _ in focus_config()]
     def k(r):
         g = r.get("group", 4)
+        g = g if isinstance(g, int) else 4
         p = r.get("prio", "none")
-        return (g if isinstance(g, int) else 4, PRIOS.index(p) if p in PRIOS else len(PRIOS))
+        pi = PRIOS.index(p) if p in PRIOS else len(PRIOS)
+        if g == 0:
+            # Focus: by stream in the owner's order, the owner's moves first.
+            s = r.get("stream")
+            si = streams.index(s) if s in streams else len(streams)
+            mine = 0 if str(r.get("yourMove", "–")).strip() not in ("", "–", "-") else 1
+            return (0, si, mine, pi)
+        return (g, 0, 0, pi)
     rows.sort(key=k)
 
 

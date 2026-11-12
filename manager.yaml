@@ -54,6 +54,32 @@ release:
   # The release after it (owner created it 2026-11-04): what's decided, but later.
   next: v0.20 Release
 
+# Focus (owner, 2026-11-12: "I want to complete those two streams, prioritize
+# that work and keep me focused on it"). The streams the owner is driving now,
+# in order. Their rows rank above everything else on the table (group 0, ahead
+# of blockers), and within a stream the owner's moves come first. Their workers
+# take free slots first. A row is in a stream when its issue or PR is listed
+# here, or when it carries `stream=<name>` (`scripts/table set KEY
+# stream=boxd`). Every issue filed for a stream is added here or tagged so.
+# Only the owner adds or removes a stream.
+focus:
+  - stream: boxd
+    items:
+      - discobox-ai/discobox#947
+      - discobox-ai/discobox#1012
+      - discobox-ai/discobox#1006
+      - discobox-ai/discobox#997
+      - discobox-ai/discobox#456
+      - discobox-ai/discobox#455
+      - discobox-ai/vm#84
+  - stream: macOS
+    items:
+      - discobox-ai/discobox#42
+      - discobox-ai/discobox#59
+      - discobox-ai/discobox#63
+      - discobox-ai/vm#75
+      - discobox-ai/discobox#696
+
 workers:
   # The harness every new worker box runs (`discobox run -H`; owner, 2026-11-04;
   # switched from codex back to claude-code by the owner, 2026-11-07).
