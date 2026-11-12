@@ -317,6 +317,14 @@ def main(argv):
         d["links"] = [l for l in d["links"] if not any(l.startswith(a + ":") for a in args)]
     else:
         sys.exit(f"table: unknown command {cmd!r}")
+    # Every write refreshes the slots line from the boxes' power state, so the
+    # pane's "N/max running" never shows a box that has since paused or stopped
+    # (owner, 2026-11-12). Best effort: a failed `discobox ls` keeps the old one.
+    if cmd != "slots":
+        try:
+            d["slots"] = slots()
+        except Exception:
+            pass
     sort_rows(d["rows"])
     save(d)
 

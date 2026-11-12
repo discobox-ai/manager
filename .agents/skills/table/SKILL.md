@@ -79,9 +79,14 @@ command writes it atomically and stamps it, and the pane turns "Stale" when
 it's 15 minutes old.
 
 **Slots** (owner, 2026-11-03): the top of the pane shows
-"N/max running" and one line per running worker. Run `scripts/table slots`
-(it reads `discobox ls`) on every worker `box.state` event that starts or
-stops a box, and on each heartbeat.
+"N/max running" and one line per running worker. **Running means the box's
+power state is `running` or `starting`, nothing else:** a suspended (paused),
+stopped, asleep or archived box is not running and never counts, whatever its
+job or row says (owner, 2026-11-05, restated 2026-11-12). Every `scripts/table`
+write refreshes the slots from `discobox ls`. Run `scripts/table slots` too on
+every worker `box.state` event that starts, pauses or stops a box, and on each
+heartbeat. When deciding capacity, count from a fresh `scripts/table slots`,
+never from a remembered number.
 
 ## The side pane
 
