@@ -15,7 +15,7 @@ for a row with no issue, or a name for anything else ("finished").
   table rank [KEY ...]             re-read each row's labels and milestone from GitHub
                                    (all rows, or the KEYs) and re-sort the table
 
-Fields: item agent issue pr doing move why blocker ("move" is "Your move"; "–" is
+Fields: item agent issue pr doing move why blocker stream ("move" is "Your move"; "–" is
 none; blocker=yes puts a row in group 1 when no label says so, e.g. broken CI).
 Every write is atomic (a temp file, then a rename) and stamps postedAt.
 
@@ -36,7 +36,7 @@ import json
 import re, os, sys, time
 
 PATH = os.path.expanduser(os.environ.get("MANAGER_TABLE", "~/.local/state/discobox-manager/table.json"))
-FIELDS = {"item": "item", "agent": "agent", "issue": "issue", "pr": "pr", "doing": "doing", "move": "yourMove", "yourMove": "yourMove", "why": "why", "blocker": "blocker"}
+FIELDS = {"item": "item", "agent": "agent", "issue": "issue", "pr": "pr", "doing": "doing", "move": "yourMove", "yourMove": "yourMove", "why": "why", "blocker": "blocker", "stream": "stream"}
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 PRIOS = ["critical", "high", "medium", "low"]
 
@@ -340,7 +340,7 @@ def main(argv):
             rows[i].setdefault("key", key)
             if pos:
                 place(rows, rows.pop(i), pos)
-            if "blocker" in fields or "issue" in fields or "pr" in fields:
+            if "blocker" in fields or "issue" in fields or "pr" in fields or "stream" in fields:
                 rank(rows, {key})
     elif cmd == "rm":
         d["rows"] = [r for r in rows if key_of(r) not in set(args)]
