@@ -182,6 +182,20 @@ too, in a second pass on fresh state). Keep the output. Any onboarding or
 migration prompt the upgrade shows goes into the record (§2), under
 "Upgrade".
 
+**Then wait for the system to settle before any check** (owner,
+2026-11-13: "not until all pools are upgraded do we pass the healthcheck
+... In testing we can wait for that condition"). An upgrade is a process:
+the server opens its port at once, but isn't ready until every pool has
+been upgraded. Wait until the server's health check reports ready. On a
+release that doesn't report that yet, wait until every pool from §3 is
+listed as ready/online on `<to>`'s agent. Record the wait as its own
+number, **time to ready** (from the upgrade command's end), with the load
+average beside it. Errors while it settles (a box that won't start, an
+exec that 502s, a pool restarting) are not findings; note them in the
+record under "Settling". Only what still fails once it's ready is checked
+in §5. A system that never becomes ready within 15 minutes is a FAIL of its
+own ("never ready after upgrade"), and the checks after it are SKIP.
+
 ## 4b. A workaround, only when you're told
 
 A failure that stops the run (the upgraded CLI refuses to start, say) ends
