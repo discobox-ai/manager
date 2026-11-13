@@ -89,6 +89,8 @@ focus:
       - discobox-ai/discobox#63
       - discobox-ai/vm#75
       - discobox-ai/discobox#696
+      # The owner's attached-drive direction (2026-11-13), replacing vm#83.
+      - discobox-ai/vm#110
 
 workers:
   # The harness every new worker box runs (`discobox run -H`; owner, 2026-11-04;
