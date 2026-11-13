@@ -35,6 +35,11 @@ repos:
   # Added by the owner 2026-11-05: the hello-world tour (discobox#633). Public.
   - name: discobox-ai/tour
     defaultBranch: main
+  # Added by the owner 2026-11-13: the repository standard (go tool repocheck
+  # sync) whose templates vm, hooks and others are synced from (vm#104). The
+  # bot has Triage. defaultBranch assumed; check once the bot can read it.
+  - name: discobox-ai/repostd
+    defaultBranch: main
 
 # The release being worked toward (owner, 2026-11-04). Its milestone's issues
 # come next after blockers (docs/labels.md, Next up). The owner creates the
