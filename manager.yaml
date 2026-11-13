@@ -78,6 +78,10 @@ focus:
       - discobox-ai/discobox#455
       - discobox-ai/vm#84
       - discobox-ai/discobox#1090
+      # #1090's follow-ups (owner, 2026-11-13: "Lets go ahead with this
+      # approach for boxd"): in-machine auth for a boxd pool.
+      - discobox-ai/discobox#1092
+      - discobox-ai/vm#109
   - stream: macOS
     items:
       - discobox-ai/discobox#42
