@@ -14,6 +14,9 @@ for a row with no issue, or a name for anything else ("finished").
   table slots                      refresh the slot list (running workers) from discobox ls
   table rank [KEY ...]             re-read each row's labels and milestone from GitHub
                                    (all rows, or the KEYs) and re-sort the table
+  table sync                       reconcile rows with GitHub: clear a "Your move" whose
+                                   PRs have all merged or closed, and drop rows whose issue
+                                   is closed with no open PR named; prints what changed
 
 Fields: item agent issue pr doing move why blocker stream ("move" is "Your move"; "–" is
 none; blocker=yes puts a row in group 1 when no label says so, e.g. broken CI).
@@ -298,6 +301,65 @@ def rank(rows, keys=None):
         r["group"], r["prio"], r["why"] = g, prio, why
 
 
+# --- sync ---------------------------------------------------------------------
+# A move names PRs as "PR 1102", "vm PR 112" or "discobox-ai/x PR 2"; a bare
+# "PR N" is in the row's own repository.
+PR_REF = re.compile(r"(?:(?:discobox-ai/)?([a-z][\w.-]*) )?PR (\d+)")
+
+
+def pr_state(repo, num):
+    import subprocess
+    out = subprocess.run(["gh", "api", f"repos/{repo}/pulls/{num}", "--jq",
+                          "if .merged_at then \"merged\" else .state end"], capture_output=True, text=True)
+    return out.stdout.strip() if out.returncode == 0 else None
+
+
+def sync(rows):
+    """Clear moves that name only finished PRs; drop rows whose issue closed. Returns notes."""
+    cfg = release_config()
+    owner = cfg["repo"].split("/")[0]
+    names = {r["name"].split("/")[-1] for r in repos_config()} or {"discobox"}
+    notes, keep = [], []
+    for r in rows:
+        t = target(r, owner, cfg["repo"])
+        own_repo = t[0] if t else cfg["repo"]
+        move = str(r.get("yourMove", "–"))
+        refs = []
+        for m in PR_REF.finditer(move):
+            name = m.group(1)
+            repo = f"{owner}/{name}" if name and name in names | {"x", "ultraviolet"} else own_repo
+            refs.append((repo, m.group(2)))
+        # Only a move that asks for a merge: "Release X (PR 7 is merged)" is not one.
+        asks_merge = re.search(r"\b(?:merge|merging)\b", move, re.I) and not re.search(r"\bis merged\b", move, re.I)
+        if refs and asks_merge and move.strip() not in ("–", "-", ""):
+            states = [pr_state(repo, n) for repo, n in refs]
+            if all(s in ("merged", "closed") for s in states):
+                done = ", ".join(f"{repo.split('/')[-1]} PR {n} {s}" for (repo, n), s in zip(refs, states))
+                r["yourMove"] = "–"
+                r["doing"] = f"{done}. " + str(r.get("doing", "")).split(" | was: ")[0][:200]
+                notes.append(f"{key_of(r)}: move cleared ({done})")
+        if t and r.get("group") == 5:
+            open_pr = any(pr_state(repo, n) == "open" for repo, n in refs)
+            if not open_pr:
+                notes.append(f"{key_of(r)}: removed (issue closed)")
+                continue
+        keep.append(r)
+    rows[:] = keep
+    return notes
+
+
+def repos_config():
+    out, cur = [], None
+    try:
+        for line in open(os.path.join(ROOT, "manager.yaml")):
+            m = re.match(r"^  - name:\s*(\S+)", line)
+            if m:
+                out.append({"name": m.group(1)})
+    except OSError:
+        pass
+    return out
+
+
 def sort_rows(rows):
     """Stable: by group, then priority; rows never ranked keep their place relative to their neighbours' group 4."""
     streams = [s for s, _ in focus_config()]
@@ -306,6 +368,10 @@ def sort_rows(rows):
         g = g if isinstance(g, int) else 4
         p = r.get("prio", "none")
         pi = PRIOS.index(p) if p in PRIOS else len(PRIOS)
+        if g == 1 and str(r.get("blocker", "")).lower() in ("yes", "true", "1"):
+            # A row the owner fast-tracked (blocker=yes) tops the table, above
+            # the focus streams; a flake stays a plain blocker below them.
+            return (-1, 0, 0, pi)
         if g == 0:
             # Focus: by stream in the owner's order, the owner's moves first.
             s = r.get("stream")
@@ -357,6 +423,10 @@ def main(argv):
         d["slots"] = slots()
     elif cmd == "rank":
         rank(rows, set(args) or None)
+    elif cmd == "sync":
+        rank(rows)
+        for note in sync(rows):
+            print(note)
     elif cmd == "unlink":
         d["links"] = [l for l in d["links"] if not any(l.startswith(a + ":") for a in args)]
     else:

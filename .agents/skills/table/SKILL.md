@@ -80,7 +80,18 @@ file or start an issue for a focus stream (from its plan PR, a follow-up, a
 worker's side finding that blocks it), add `stream=<name>` to its row in the
 same write. Workers for focus rows take free slots before anything else.
 Only the owner adds or removes a stream; when a stream's issues are all
-closed, tell the owner and ask what's next.
+closed, tell the owner and ask what's next. One row goes above focus: one
+the owner fast-tracked, with `blocker=yes` (#1101, #1156). A flake is still a
+plain blocker, below the focus rows.
+
+**The table is kept true to GitHub** (owner, 2026-11-14: the rows had drifted
+far behind). Run `scripts/table sync` on every heartbeat, and after any merge
+event. It re-ranks every row, clears a "Your move" that asks for a merge once
+every PR it names has merged or closed, and drops a row whose issue has closed
+when no PR it names is still open. It prints each change. Then rewrite the
+`doing` of each row it touched in your own words. A row the owner's merge
+leaves without a next step is yours to update at that event, not at the next
+heartbeat.
 
 Fields: `item agent issue pr doing move why blocker`. `move` is "Your move", `–`
 when there's none. Issues, PRs and boxes are links in their rows (boxes as `discobox:///<id>`);
