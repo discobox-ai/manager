@@ -417,6 +417,16 @@ agent: its work is serialized**, a separate queue per worker.
   never a resend of the job.
 - **Credentials** beyond the bot's (an Apple Developer ID, signing, a
   provider account) go to the owner, as for any worker.
+- **Nothing mounts on win-worker's host** (owner, 2026-11-14: "last time
+  the testing froze the machine by mounting something and that locked the
+  entire machine"). Every win-worker job message carries this guard: no
+  VHD/VHDX or ISO mounts (`Mount-DiskImage`, `Mount-VHD`, `diskpart
+  attach`), no HCS or WSL operation that attaches a disk at host level, and
+  no host SMB or virtiofs mounts. If a job truly needs one, the worker stops
+  and asks the owner on that machine first, naming exactly what it would
+  mount and how it unmounts. It runs only on the owner's go-ahead,
+  time-boxed, with the unmount in a `finally`. Prefer unit tests, builds and
+  the `windows` CI target's own commands.
 
 ### Repositories with an interactive pre-harness
 
