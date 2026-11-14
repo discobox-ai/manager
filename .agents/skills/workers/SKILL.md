@@ -619,8 +619,16 @@ A PR that conflicts with its base needs a rebase only if it's about to be
 merged. Rebasing every conflicting PR after each merge is a rebase storm:
 each rebase reruns CI, and the next merge makes most of them conflict again.
 
-- **The merge queue** is the PRs at "Review and merge" on the table, in its
-  ranked order (`table`).
+- **The merge queue** is every PR of yours that has been green and ready,
+  in the table's ranked order (`table`). That includes a PR whose row shows
+  some other move: a box stopped on a question ("box needs input", a
+  security question) still has its PR in the queue. PR 1102 sat
+  conflicting while its box waited on the owner's §9 question, because its
+  row didn't say "Review and merge" (owner, 2026-11-14). A `pr.conflict`
+  event on any PR of yours with a box is a rebase wake, unless the PR is
+  `status/paused`. The wake asks for the rebase alone, and the question
+  stays parked: `PR #<P> conflicts with <base>; rebase it (deliver-issue
+  §6). Your question stays parked for the owner; don't act on it.`
 - **Every PR in the queue is kept rebased** (owner, 2026-11-05; it was the
   top 3 only, and the owner kept finding conflicts lower down: they merge in
   any order). When one is `dirty`, wake its worker at once: `PR #<P>
