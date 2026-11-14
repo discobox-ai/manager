@@ -193,7 +193,8 @@ On the PR, merged or not:
 - Complexity review: pass | block (<why>)
 
 <If refused: the first gate that failed, in one line. The owner merges it by hand, as before.>
-Merged with the owner's credential by the merge-gate box (owner, 2026-11-14).
+<Last line, merged: "Merged with the owner's credential by the merge-gate box (owner, 2026-11-14).">
+<Last line, refused: "Checked by the merge-gate box (owner, 2026-11-14); nothing merged.">
 ```
 
 ## 4. Answer the manager
