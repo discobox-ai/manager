@@ -405,9 +405,9 @@ stops it at once.
   referenced issue was opened by `ibuildthecloud` or `ibuildthecloud-bot`
   (owner, 2026-11-14), and never ADR or feature-track PRs.
 - **Stopping it:** when `autoMerge.enabled` turns false, or the owner says
-  stop, tell the box (SendMessage to it, or type into it) to stop watching.
+  stop, type into the box to stop watching.
   Tell it to start again when it turns back on.
-- **Its reports** (it messages you after each verdict): `Merged …` means the PR is in main, with the label
+- **Its reports** are its "Merge gate" PR comments, which your GitHub watch sees (a box can't message sessions): `Merged …` means the PR is in main, with the label
   `auto-merged` and a "Merge gate" comment. Treat it like an owner merge:
   close the issue if the PR didn't, retire the worker, run `scripts/table
   sync`, and note it in the next status to the owner ("auto-merged: …").

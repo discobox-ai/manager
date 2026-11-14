@@ -221,14 +221,13 @@ On the PR, merged or not:
 
 ## 4. Tell the manager
 
-After each verdict, one line to `manager-loop` (SendMessage), then go back to
-watching:
-
-- `Merged <repo>#<P> at <sha> (rebase), labelled auto-merged`;
-- or `Refused <repo>#<P> at <sha>: <gate> — <reason>`.
+The "Merge gate" comment (§3) **is** the report: the manager's GitHub watch
+sees it. A box can't message sessions, so don't try. After each verdict, go
+back to watching.
 
 Never merge two PRs at once. Never re-run, push, rebase, comment on code or
-edit a PR. If the manager or the owner tells you to stop, stop watching and
-merge nothing until told to start again (the manager tells you when
-`manager.yaml` `autoMerge.enabled` turns false; your credential can't read
-that repository). Don't sleep the box, so the credential and the watch stay with it.
+edit a PR. The manager reaches you by typing into this box: if it, or the
+owner, says stop, stop watching and merge nothing until told to start again
+(the manager tells you when `manager.yaml` `autoMerge.enabled` turns false;
+your credential can't read that repository). Don't sleep the box, so the
+credential and the watch stay with it.
