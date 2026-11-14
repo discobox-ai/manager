@@ -551,10 +551,23 @@ discobox secret request ls -o json            # .secretRequests[] with status pe
 discobox secret request approve <id>
 ```
 
-- Approve **without `--secret`**. With it, the CLI first reads the box's
-  bindings (GET `/secret-bindings`), which a box's role refuses (`403 ... not
-  in the sandbox role`), and never sends the approval. Without it, the
-  approval goes straight through (2026-11-04; discobox#616).
+- Approve **without `--secret`** while the manager holds only one delegated
+  secret. With it, the CLI first reads the box's bindings (GET
+  `/secret-bindings`), which a box's role refuses (`403 ... not in the
+  sandbox role`), and never sends the approval (2026-11-04; discobox#616).
+  When more than one secret is delegated (github-bot, archil, boxd), the
+  server answers `400 ... name which with --secret` and lists their ids:
+  pass `--secret <sec_ id of github-bot>` (2026-11-14, that worked).
+- **One path per route.** The server approves only a request whose every
+  route is provably within one delegated route. A route listing two paths
+  (`GET /repos/a/**,/repos/b/**`) or mixing a fork's push with upstream
+  reads is refused with `403 no live delegation covers this whole grant`.
+  Deny it and send the worker the exact list, one method and path per
+  route: the fork's `.git/**`, GET each `/repos/<owner>/<repo>/**`, POST
+  `issues/*/comments`, POST `pulls`, PATCH `pulls/*` (2026-11-14, #1096).
+- A worker asking for the `github` secret (not `github-bot`), or for push
+  to an upstream `.git`, is wider than its role: deny it and say which to
+  ask for.
 - `secret request get` and `ls` can't decode an approved request today
   (`unexpected field "approvedAs"`). Read a pending request before approving.
   Afterwards, the box's own `discobox-access list` or the workers monitor
