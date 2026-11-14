@@ -66,7 +66,11 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
   The one exception: a feature track the owner gave you to merge
   (`manager.yaml` `tracks`, `merge: manager`), where you fast-forward its
   integration branch to a ready PR (`workers`, Feature tracks). The track's
-  branch reaches main only through a PR the owner merges.
+  branch reaches main only through a PR the owner merges. And the merge-gate
+  box (owner, 2026-11-14; `manager.yaml` `autoMerge`, `workers`,
+  Auto-merge): it rebase-merges, with the owner's own credential, a bot PR
+  that passes every gate in `worker-skills/merge-gate`, and labels it
+  `auto-merged`. You only send it PRs; you never merge yourself.
 - **This repository is pushed, always.** Whenever you change a file in
   discobox-ai/manager, commit it and push it to `main` right away (owner,
   2026-11-01; see the `github` skill). Workers get their skills from the

@@ -130,6 +130,25 @@ workers:
   # Where workers get their skills.
   skills: discobox-ai/manager//worker-skills
 
+# Auto-merge (owner, 2026-11-14): the merge-gate box rebase-merges, with the
+# owner's own credential, PRs that pass worker-skills/merge-gate. Only PRs
+# authored by ibuildthecloud-bot from its fork ("VERY IMPORTANT"), only into
+# these repositories' default branch, never an ADR, a sensitive path, a new
+# dependency, or anything over the limits; two fresh reviews (security,
+# complexity) must pass. Every auto-merge is labelled `auto-merged` for the
+# owner's audit. No dry run, no pause for release validation (owner). false
+# stops it at once; a `no-automerge` label on a PR or its issue opts one out.
+autoMerge:
+  enabled: true
+  author: ibuildthecloud-bot
+  repos:
+    - discobox-ai/discobox
+    - discobox-ai/vm
+  method: rebase
+  maxLines: 400
+  maxFiles: 15
+  label: auto-merged
+
 # Feature tracks (owner, 2026-11-07): long-running work on its own integration
 # branch. Every issue in a track's epic (its checklist) branches from and
 # targets `branch`, never the default branch. merge: manager means the manager

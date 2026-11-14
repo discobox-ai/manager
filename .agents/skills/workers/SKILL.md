@@ -379,6 +379,44 @@ key on boxd.sh. A box already running that needs one asks with
 approve it. Anything else (another provider, a wider host) goes to the
 owner. The boxd grant expires 2026-12-10: ask the owner again before then.
 
+### Auto-merge: the merge-gate box (owner, 2026-11-14)
+
+The owner: "I want to setup an auto merge bot. But I want to ensure that we
+don't introduction security issues, skip critical design, or violate our
+process ... this will work as something that I effectively take
+responsibility for." And: "only auto merge PRs from ibuildthecloud-bot. VERY
+IMPORTANT." `manager.yaml` `autoMerge` holds the settings; `enabled: false`
+stops it at once.
+
+- **One box, long-lived:** `scripts/launch merge-gate --repo
+  discobox-ai/discobox --no-source -p '/merge-gate'`, tagged
+  `job=merge-gate`. It asks the owner for their own
+  credential, narrowed to merge, label, comment and read in discobox and vm
+  (the skill's §1). The owner approves; you never do. Never retire it, and
+  it never counts against `workers.max` while idle. If it's gone or its
+  credential lapsed, relaunch it or put "approve merge-gate's credential" on
+  the table.
+- **What you send it,** one at a time, `Gate <owner/repo> PR #<P> at <sha>`:
+  every PR in `autoMerge.repos` that is authored by `autoMerge.author`, into
+  the default branch, green, ready, with your Process check posted for that
+  sha, and no `no-automerge` label. Send it the moment you post the Process
+  check. Don't pre-judge the gates beyond that: the box checks everything
+  again itself, and a refusal costs nothing.
+- **Never send it:** an ADR PR (merging is the owner's acceptance), a PR on a
+  feature track's branch (merge-track's), anything authored by
+  `ibuildthecloud` or anyone else (platform-worker PRs pushed under the
+  owner's account included), or a PR in any other repository.
+- **Its answer:** `Merged …` means the PR is in main, with the label
+  `auto-merged` and a "Merge gate" comment. Treat it like an owner merge:
+  close the issue if the PR didn't, retire the worker, run `scripts/table
+  sync`, and note it in the next status to the owner ("auto-merged: …").
+  `Refused …: <gate>` leaves the PR on the table as "Review and merge" for
+  the owner, with the reason in the row's `doing`. A "needs a rebase"
+  refusal wakes its worker for a rebase, then you send it again at the new
+  sha.
+- **The owner's audit:** the label `auto-merged`. Never remove it, never add
+  it by hand.
+
 ### Platform workers: macOS and Windows (owner, 2026-11-10, 2026-11-11)
 
 We can't run macOS or Windows boxes. The owner runs one agent on each
