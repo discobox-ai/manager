@@ -40,6 +40,11 @@ repos:
   # bot has Triage. defaultBranch assumed; check once the bot can read it.
   - name: discobox-ai/repostd
     defaultBranch: main
+  # Added by the owner 2026-11-14: discobox's Go binding to Apple's
+  # Virtualization.framework (#1114's handle crash). defaultBranch assumed;
+  # check once the bot can read it.
+  - name: discobox-ai/vz
+    defaultBranch: main
 
 # The release being worked toward (owner, 2026-11-04). Its milestone's issues
 # come next after blockers (docs/labels.md, Next up). The owner creates the

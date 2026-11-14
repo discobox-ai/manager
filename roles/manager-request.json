@@ -71,6 +71,13 @@
         "owner": "discobox-ai",
         "repo": "repostd"
       }
+    },
+    {
+      "file": "roles/github-manager.json",
+      "args": {
+        "owner": "discobox-ai",
+        "repo": "vz"
+      }
     }
   ],
   "delegate": {
@@ -215,6 +222,21 @@
         "args": {
           "owner": "discobox-ai",
           "repo": "repostd"
+        }
+      },
+      {
+        "file": "roles/github-deliver.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "vz",
+          "forkOwner": "ibuildthecloud-bot"
+        }
+      },
+      {
+        "file": "roles/github-triage.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "vz"
         }
       }
     ]
