@@ -396,24 +396,24 @@ stops it at once.
   it never counts against `workers.max` while idle. If it's gone or its
   credential lapsed, relaunch it or put "approve merge-gate's credential" on
   the table.
-- **What you send it,** one at a time, `Gate <owner/repo> PR #<P> at <sha>`:
-  every PR in `autoMerge.repos` that is authored by `autoMerge.author`, into
-  the default branch, green, ready, with your Process check posted for that
-  sha, and no `no-automerge` label. Send it the moment you post the Process
-  check. Don't pre-judge the gates beyond that: the box checks everything
-  again itself, and a refusal costs nothing.
-- **Never send it:** an ADR PR (merging is the owner's acceptance), a PR on a
-  feature track's branch (merge-track's), anything authored by
-  `ibuildthecloud` or anyone else (platform-worker PRs pushed under the
-  owner's account included), or a PR in any other repository.
-- **Its answer:** `Merged …` means the PR is in main, with the label
+- **It watches discobox and vm itself** (owner, 2026-11-14: "can we just
+  have the merge gate monitor the PRs directly? We don't need to feed the
+  merge requests to it"). You don't send it PRs. Your part is the Process
+  check: post it, in the github skill's checklist format, on every ready
+  PR for its head sha, as before, because the gate only considers a PR
+  that has one. It merges only PRs by `autoMerge.author` whose every
+  referenced issue was opened by `ibuildthecloud` or `ibuildthecloud-bot`
+  (owner, 2026-11-14), and never ADR or feature-track PRs.
+- **Stopping it:** when `autoMerge.enabled` turns false, or the owner says
+  stop, tell the box (SendMessage to it, or type into it) to stop watching.
+  Tell it to start again when it turns back on.
+- **Its reports** (it messages you after each verdict): `Merged …` means the PR is in main, with the label
   `auto-merged` and a "Merge gate" comment. Treat it like an owner merge:
   close the issue if the PR didn't, retire the worker, run `scripts/table
   sync`, and note it in the next status to the owner ("auto-merged: …").
   `Refused …: <gate>` leaves the PR on the table as "Review and merge" for
   the owner, with the reason in the row's `doing`. A "needs a rebase"
-  refusal wakes its worker for a rebase, then you send it again at the new
-  sha.
+  refusal wakes its worker for a rebase; the gate sees the new sha by itself.
 - **The owner's audit:** the label `auto-merged`. Never remove it, never add
   it by hand.
 

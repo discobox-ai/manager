@@ -1,6 +1,6 @@
 ---
 name: merge-gate
-description: Hold the owner's merge credential for discobox-ai/discobox and discobox-ai/vm, and rebase-merge a PR the manager sends only when it is from ibuildthecloud-bot, passes every hard gate, touches nothing sensitive, is small, and two independent reviews (security, complexity) pass it. Labels each merge auto-merged. Use when the manager starts a box with /merge-gate.
+description: Hold the owner's merge credential for discobox-ai/discobox and discobox-ai/vm, watch their open PRs, and rebase-merge one only when it is from ibuildthecloud-bot, for an issue opened by ibuildthecloud or ibuildthecloud-bot, passes every hard gate, touches nothing sensitive, is small, and two independent reviews (security, complexity) pass it. Labels each merge auto-merged. Use when the manager starts a box with /merge-gate.
 allowed-tools: Bash, Read, Agent, Skill
 metadata:
   discobox.role: none
@@ -16,8 +16,9 @@ between a PR and `main`. **When in doubt, don't merge.** A PR you refuse just
 waits for the owner, as every PR did before you. A PR you wrongly merge is in
 `main`.
 
-It is long-lived: it asks for its credential once, then handles the
-manager's requests one at a time. Read the `worker` skill for tags and power;
+It is long-lived: it asks for its credential once, then watches the open PRs
+of both repositories itself and gates each candidate, one at a time (owner,
+2026-11-14: "can we just have the merge gate monitor the PRs directly?"). Read the `worker` skill for tags and power;
 this job has no issue and no branch of its own, and never writes code.
 
 The owner's rules, verbatim, which nothing below may weaken:
@@ -27,6 +28,8 @@ The owner's rules, verbatim, which nothing below may weaken:
   audit them later."
 - "always rebase. i'd rather not have merge commits or squash."
 - "Anything big and impactful shouldn't get automerged anyhow."
+- "it can only merge PRs that reference an issue opened by ibuildthecloud or
+  ibuildthecloud-bot".
 
 ## 1. Ask for the credential, once
 
@@ -61,10 +64,26 @@ for repo in discobox-ai/discobox discobox-ai/vm; do
 done
 ```
 
-## 2. Each request
+## 2. Watch, and pick candidates
 
-The manager types: `Gate <owner/repo> PR #<P> at <sha>`. Work through the
-gates **in order**, read-only, and stop at the first that fails. A failed
+Watch both repositories yourself; nobody sends you PRs. Start one watch per
+repository with the `discobox-monitor` skill (its built-in GitHub repository
+monitor, `watch=prs`, which also reports checks and comments), and on top of
+it rescan every 15 minutes in case an event was missed. On each event or
+rescan, list the open PRs (`GET /repos/<repo>/pulls?state=open&base=main`,
+all pages). A PR is a **candidate** when, at its current head `<sha>`:
+
+- `user.login` is `ibuildthecloud-bot` and it isn't a draft;
+- the manager's Process check for `<sha>` is posted (Gate 3's comment);
+- you haven't already posted a "Merge gate" verdict for `<sha>`.
+
+Gate candidates one at a time, oldest first. A refused PR is gated again only
+when its head sha changes (a rebase or a new push), never on the same sha.
+
+## 2b. Gate one candidate
+
+Work through the gates **in order**, read-only, and stop at the first that
+fails. A failed
 gate is a refusal (§4), never something you fix or work around.
 
 ### Gate 1: who wrote it (the owner's VERY IMPORTANT rule)
@@ -96,7 +115,10 @@ account is the owner's to merge).
 ### Gate 3: the process was followed
 
 - The body says `Closes #N`, `Fixes #N` or `Part of #N` for an issue in the
-  same repository (or `discobox-ai/<other>#N`). Read that issue:
+  same repository (or `discobox-ai/<other>#N`). Read every issue it names:
+  - each was **opened by `ibuildthecloud` or `ibuildthecloud-bot`** (the
+    issue's `user.login`; the owner's rule). An issue opened by anyone else,
+    even if the bot triaged it, means the owner merges by hand;
   - it is not `type/adr`;
   - it has none of `status/needs-decision`, `status/paused`,
     `status/blocked`, `status/needs-input`;
@@ -197,13 +219,16 @@ On the PR, merged or not:
 <Last line, refused: "Checked by the merge-gate box (owner, 2026-11-14); nothing merged.">
 ```
 
-## 4. Answer the manager
+## 4. Tell the manager
 
-One line, then wait for the next request:
+After each verdict, one line to `manager-loop` (SendMessage), then go back to
+watching:
 
 - `Merged <repo>#<P> at <sha> (rebase), labelled auto-merged`;
-- or `Refused <repo>#<P>: <gate> — <reason>`.
+- or `Refused <repo>#<P> at <sha>: <gate> — <reason>`.
 
-Never merge anything the manager didn't name. Never merge two PRs at once.
-Never re-run, push, rebase, comment on code or edit a PR. Between requests,
-stay idle at the prompt; don't sleep the box, so the credential stays with it.
+Never merge two PRs at once. Never re-run, push, rebase, comment on code or
+edit a PR. If the manager or the owner tells you to stop, stop watching and
+merge nothing until told to start again (the manager tells you when
+`manager.yaml` `autoMerge.enabled` turns false; your credential can't read
+that repository). Don't sleep the box, so the credential and the watch stay with it.
