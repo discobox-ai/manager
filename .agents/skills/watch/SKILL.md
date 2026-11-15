@@ -66,7 +66,10 @@ Monitor(
   and check `CronList` on each heartbeat that it still exists.
   Each expiry is the heartbeat: check disk, and say nothing unless something
   changed.
-  Also on each heartbeat, **run `scripts/stuck-drafts --wake`**: every
+  Also on each heartbeat, **run `scripts/stuck-drafts --wake` and
+  `scripts/finished-boxes --retire`**. The second archives every worker box
+  whose PR has merged or closed, or whose issue closed with no PR (owner,
+  2026-11-15: ten finished boxes had lingered, one a day). For the first: every
   cron "watch:" turn, every Monitor expiry, and every `scripts/table sync`.
   It finds each open draft PR of ours whose checks have all completed and
   whose box isn't running, starts the box, and types the CI-done nudge

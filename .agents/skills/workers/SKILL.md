@@ -724,7 +724,10 @@ each rebase reruns CI, and the next merge makes most of them conflict again.
 ## Retire
 
 When a worker's PR merges or closes, or its job needs nothing more, retire
-it right away, without waking it to do anything: **archive it**,
+it right away, **in the same turn as the pr.merged or pr.closed event**
+(whoever merged it: the owner, merge-gate or a track), without waking it to
+do anything. `scripts/finished-boxes --retire` sweeps any you missed, on
+every heartbeat (`watch`). To retire: **archive it**,
 `discobox rm <id>` (owner, 2026-11-03; the sandbox role archives the boxes
 you created, ADR 26-11-03-724). No tag first: writing a tag starts a
 sleeping box. Archiving keeps its workspace for the retention period, so
