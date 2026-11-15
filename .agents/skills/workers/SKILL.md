@@ -628,6 +628,14 @@ discobox secret request approve <id>
 Workers sleep whenever they wait and power off when they're done (the
 `worker` skill, Power). You do the parts they can't:
 
+- **Wake a worker whose CI finished.** On a `pr.checks` completion for a
+  draft PR of ours whose box isn't running, start the box and type the
+  CI-done nudge ("Manager here: every check on PR <P> has finished. Finish
+  your skill: evidence in the PR body, mark it ready, tag ready."). Don't wait
+  for the worker's own `--wake-in`: a server restart loses it (discobox#1192;
+  on 2026-11-15 four green drafts sat 90 minutes). `scripts/stuck-drafts
+  --wake` does the same as a sweep on every heartbeat (`watch`).
+
 - **Pause a box waiting on the owner.** A box tagged `needs-input` or
   `blocked` whose primary terminal has been idle for `workers.pauseAfter`
   (the `workers` monitor reports busy/idle): `discobox stop <id>`. A question

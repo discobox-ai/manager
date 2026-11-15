@@ -66,11 +66,14 @@ Monitor(
   and check `CronList` on each heartbeat that it still exists.
   Each expiry is the heartbeat: check disk, and say nothing unless something
   changed.
-  Also on each heartbeat: any worker PR that is green but still a draft, with
-  no push for 20 minutes, means its worker slept and wasn't woken (a
-  `discobox-power sleep --wake-in` timer has been seen not to fire, 2026-11-03).
-  Start that worker and type one line: its PR is green, finish it (`open-pr`)
-  and mark it ready.
+  Also on each heartbeat, **run `scripts/stuck-drafts --wake`**: every
+  cron "watch:" turn, every Monitor expiry, and every `scripts/table sync`.
+  It finds each open draft PR of ours whose checks have all completed and
+  whose box isn't running, starts the box, and types the CI-done nudge
+  (finish `open-pr`, mark it ready). A `discobox-power sleep --wake-in` timer
+  doesn't fire if the server restarts while it's pending (discobox#1192;
+  seen 2026-11-03 and 2026-11-15, when four green drafts sat for 90 minutes).
+  It's a rule you run, not a judgement you make: run the script.
 - While a box waiting on the owner is due to be paused (`workers`, Power),
   check it when it's due rather than waiting for an event.
 
