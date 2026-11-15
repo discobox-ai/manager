@@ -144,6 +144,9 @@ autoMerge:
   repos:
     - discobox-ai/discobox
     - discobox-ai/vm
+    # Its "validate: ..." run PRs only, any verdict (owner, 2026-11-15),
+    # through merge-gate §2c; the owner merges every other PR there.
+    - discobox-ai/release-validation
   method: rebase
   # No size limit (owner, 2026-11-15): the complexity review judges impact.
   label: auto-merged

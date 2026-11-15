@@ -404,6 +404,16 @@ stops it at once.
   that has one. It merges only PRs by `autoMerge.author` whose every
   referenced issue was opened by `ibuildthecloud` or `ibuildthecloud-bot`
   (owner, 2026-11-14), and never ADR or feature-track PRs.
+- **release-validation run PRs too** (owner, 2026-11-15: "can we hvae the
+  auto merge watch release-validation and auto merge the "validate: ..."
+  PRs", any verdict). It merges a `validate: …` PR there by its own gates
+  (`merge-gate` §2c: the bot's, mergeable, a tracking issue the owner or
+  the bot opened, files under `runs/`, `baselines/`, `checks/` only, no
+  secret in them). They need no Process check from you. Merging one
+  accepts the run, so its report and timing on the tracking issue still go
+  to the owner as before. A refused "needs a rebase" gets a `rebase-pr`
+  worker, as in Release validation boxes. Every other release-validation PR
+  (a notes fold, a skill change) the owner still merges.
 - **Stopping it:** when `autoMerge.enabled` turns false, or the owner says
   stop, type into the box to stop watching.
   Tell it to start again when it turns back on.

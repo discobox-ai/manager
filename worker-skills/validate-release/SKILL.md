@@ -264,7 +264,12 @@ No baseline: say this run sets the first one.
 ## 7. Report, and update what the next run reads
 
 1. **One PR to discobox-ai/release-validation** (from your fork, `open-pr`
-   for the form), from branch `validate/<mode>-<to>`. The two runs of a
+   for the form), from branch `validate/<mode>-<to>`, titled
+   `validate: <mode> <from → ><to>`, its body saying `Part of #<N>` (your
+   tracking issue). The merge-gate box may merge it with no human looking
+   (owner, 2026-11-15), and only when it touches nothing outside `runs/`,
+   `baselines/` and `checks/`, and holds no credential: keep every token,
+   key and cookie out of what you capture (a sentinel is fine). The two runs of a
    release open their PRs at the same time and are merged one after the
    other, so **a run PR only touches files no other run touches** (owner,
    2026-11-07: every release's second PR conflicted on the notes file):

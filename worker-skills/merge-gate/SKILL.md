@@ -1,6 +1,6 @@
 ---
 name: merge-gate
-description: Hold the owner's merge credential for discobox-ai/discobox and discobox-ai/vm, watch their open PRs, and rebase-merge one only when it is from ibuildthecloud-bot, for an issue opened by ibuildthecloud or ibuildthecloud-bot, passes every hard gate, touches nothing sensitive, is small, and two independent reviews (security, complexity) pass it. Labels each merge auto-merged. Use when the manager starts a box with /merge-gate.
+description: Hold the owner's merge credential for discobox-ai/discobox, discobox-ai/vm and discobox-ai/release-validation, watch their open PRs, and rebase-merge one only when it is from ibuildthecloud-bot and passes its gates — in discobox and vm, for an issue opened by ibuildthecloud or ibuildthecloud-bot, every hard gate, nothing sensitive, and two independent reviews (security, complexity); in release-validation, only a "validate: …" run PR that touches run files alone and leaks no secret. Labels each merge auto-merged. Use when the manager starts a box with /merge-gate.
 allowed-tools: Bash, Read, Agent, Skill
 metadata:
   discobox.role: none
@@ -17,7 +17,7 @@ waits for the owner, as every PR did before you. A PR you wrongly merge is in
 `main`.
 
 It is long-lived: it asks for its credential once, then watches the open PRs
-of both repositories itself and gates each candidate, one at a time (owner,
+of its three repositories itself and gates each candidate, one at a time (owner,
 2026-11-14: "can we just have the merge gate monitor the PRs directly?"). Read the `worker` skill for tags and power;
 this job has no issue and no branch of its own, and never writes code.
 
@@ -30,14 +30,19 @@ The owner's rules, verbatim, which nothing below may weaken:
 - "Anything big and impactful shouldn't get automerged anyhow."
 - "it can only merge PRs that reference an issue opened by ibuildthecloud or
   ibuildthecloud-bot".
+- (2026-11-15) "can we hvae the auto merge watch release-validation and auto
+  merge the "validate: ..." PRs", whatever the run's verdict (the owner chose
+  "Any verdict" over PASS-only). In release-validation those run PRs are the
+  only ones you merge, through their own gates (§2c), never §2b's.
 
 ## 1. Ask for the credential, once
 
-For `discobox-ai/discobox` and `discobox-ai/vm` only, 30 days:
+For `discobox-ai/discobox`, `discobox-ai/vm` and
+`discobox-ai/release-validation` only, 30 days:
 
 ```sh
 args=""
-for repo in discobox-ai/discobox discobox-ai/vm; do
+for repo in discobox-ai/discobox discobox-ai/vm discobox-ai/release-validation; do
   args="$args -route PUT api.github.com/repos/$repo/pulls/*/merge"
   args="$args -route POST api.github.com/repos/$repo/issues/*/labels"
   args="$args -route POST api.github.com/repos/$repo/issues/*/comments"
@@ -45,20 +50,23 @@ for repo in discobox-ai/discobox discobox-ai/vm; do
   args="$args -route GET api.github.com/repos/$repo/**"
 done
 discobox-access request -name github-merge -env-var GH_TOKEN -ttl 720h $args \
-  -justification "Auto-merge (rebase) PRs authored by ibuildthecloud-bot in discobox and vm that pass the merge gate (owner, 2026-11-14); label them auto-merged and comment the verdict. No push, no ref writes, no settings." \
+  -justification "Auto-merge (rebase) PRs authored by ibuildthecloud-bot in discobox and vm that pass the merge gate (owner, 2026-11-14), and its validate: run PRs in release-validation (owner, 2026-11-15); label them auto-merged and comment the verdict. No push, no ref writes, no settings." \
   -wait -timeout 24h
 ```
 
 No push, no `git/refs`, no branch update, no settings, no workflow routes.
 Tag the box `needs-input` while it waits; denied: tag `blocked`, say so,
-stop. When it lapses, ask again the same way.
+stop. When it lapses, ask again the same way. **A credential granted before
+release-validation was added** (its routes name only discobox and vm, as
+`discobox-access list` shows) is asked again the same way, now, with all
+three; keep gating discobox and vm on the old one while you wait.
 
 Once granted, make sure the label exists in each repository (a 422 means it
 already does):
 
 ```sh
 eval "$(discobox-access env)"
-for repo in discobox-ai/discobox discobox-ai/vm; do
+for repo in discobox-ai/discobox discobox-ai/vm discobox-ai/release-validation; do
   gh api -X POST repos/$repo/labels -f name=auto-merged -f color=5319e7 \
     -f description='Merged by the merge-gate box with the owner credential; audit me' >/dev/null 2>&1 || true
 done
@@ -66,7 +74,7 @@ done
 
 ## 2. Watch, and pick candidates
 
-Watch both repositories yourself; nobody sends you PRs. Start one watch per
+Watch all three repositories yourself; nobody sends you PRs. Start one watch per
 repository with the `discobox-monitor` skill (its built-in GitHub repository
 monitor, `watch=prs`, which also reports checks and comments), and on top of
 it rescan every 15 minutes in case an event was missed. On each event or
@@ -74,7 +82,10 @@ rescan, list the open PRs (`GET /repos/<repo>/pulls?state=open&base=main`,
 all pages). A PR is a **candidate** when, at its current head `<sha>`:
 
 - `user.login` is `ibuildthecloud-bot` and it isn't a draft;
-- the manager's Process check for `<sha>` is posted (Gate 3's comment);
+- in discobox and vm, the manager's Process check for `<sha>` is posted
+  (Gate 3's comment). In release-validation, instead, its title starts
+  `validate: `, and it is gated by §2c alone; every other release-validation
+  PR is never a candidate (no verdict, the owner merges it);
 - you haven't already posted a "Merge gate" verdict for `<sha>`.
 
 Gate candidates one at a time, oldest first. A refused PR is gated again only
@@ -210,6 +221,57 @@ head moved. A 405 or 409 is a refusal ("GitHub refused the merge: <message>").
 If the merge succeeded but labelling failed, try once more, then report it
 loudly: an unlabelled auto-merge breaks the owner's audit.
 
+## 2c. Gate a release-validation run PR
+
+A `validate: …` PR in `discobox-ai/release-validation` is one validation
+run's record (the `validate-release` worker skill, §7): its baselines, its
+`runs/<mode>-<to>/` captures and its check files. Merging it is accepting
+the run, and the owner gave you that for **any verdict**, PASS or FAIL
+(2026-11-15): a run's findings live on its tracking issue and are filed
+there, not held back by its PR. The repository has no CI, no Process check
+and no discobox-review, so §2b's Gates 3–5 don't apply. These do, in order,
+stopping at the first that fails:
+
+1. **Who wrote it:** Gate 1 exactly, with `<repo>` being
+   `discobox-ai/release-validation`, plus the title starts `validate: `.
+2. **Final state:** `state` open, not a draft, `head.sha` is `<sha>`,
+   `mergeable` true and `mergeable_state` `clean`. The repository has no
+   checks; any check run or status that does exist must be green, as in
+   Gate 2. Two candidates' runs rewrite the same baselines, so an older
+   run's PR often conflicts after a newer one merges: that's not `clean`,
+   refuse it ("needs a rebase"), and the manager has it rebased.
+3. **Its tracking issue:** the body names an issue in release-validation
+   (`Part of #N`, or the run's "for #N" / "(#N)"). That issue was opened by
+   `ibuildthecloud` or `ibuildthecloud-bot`, has none of
+   `status/needs-decision`, `status/paused`, `status/blocked`; neither it
+   nor the PR has `no-automerge`.
+4. **Run files only:** every file in `GET /repos/<repo>/pulls/<P>/files`
+   (all pages) is under `runs/`, `baselines/` or `checks/` (added, changed,
+   renamed within them, or a `checks/` file deleted). Anything else (a
+   skill, `.agents/**`, `.claude/**`, `scripts/**`, `.github/**`, a README,
+   a top-level file) refuses: run PRs never touch them (`validate-release`
+   §7), so one that does is not routine. The sensitive-name list of Gate 4
+   doesn't apply here: a capture called `egress.txt` is a record, not code.
+5. **No secret leaked:** one subagent (Agent tool), fresh, given only the
+   PR's diff (`Accept: application/vnd.github.diff`; a diff too large to
+   return whole is read file by file through `/pulls/<P>/files` and each
+   file's `raw_url`). "You are checking a release validation run's logs,
+   captures and notes before they are merged into a repository, with no
+   human looking. Block if any file holds a live credential: an API key or
+   token (`ghp_`, `github_pat_`, `gho_`, `bxd_`, `sk-`, `xox`, AWS keys, a
+   JWT, a bearer header with a real value), a private key, a password, a
+   cookie or session id, a provisioning key, or a discobox credential that
+   is not a sentinel. A discobox sentinel or a placeholder, a hash, a
+   fingerprint, an image digest, a commit sha, a sandbox or box id, and a
+   redacted value are fine. If you are not sure, block. Return
+   {"verdict":"pass"|"block","findings":[{"file","line","issue"}],"why":"<one line>"}."
+   A `block`, or a reply that isn't that JSON: refuse, naming the file and
+   line (never the value) in the verdict.
+
+Then merge exactly as §2b's **Merge** says (rebase, `sha=<sha>`, the
+`auto-merged` label), and post the verdict (§3) in its release-validation
+form.
+
 ## 3. The verdict comment, every time
 
 On the PR, merged or not:
@@ -227,6 +289,18 @@ On the PR, merged or not:
 <If refused: the first gate that failed, in one line. The owner merges it by hand, as before.>
 <Last line, merged: "Merged with the owner's credential by the merge-gate box (owner, 2026-11-14).">
 <Last line, refused: "Checked by the merge-gate box (owner, 2026-11-14); nothing merged.">
+```
+
+In release-validation (§2c), the same header and last lines, with these in
+between:
+
+```markdown
+- Author: ibuildthecloud-bot from ibuildthecloud-bot/<name>, title `validate: …` ✓
+- State: GitHub mergeable (clean), <n> checks (none is fine), <n> behind main ✓
+- Tracking issue: #<N>, opened by <login> ✓
+- Scope: <files> files, all under runs/, baselines/, checks/ ✓
+- Run verdict: PASS | FAIL (accepted whatever it is; owner, 2026-11-15)
+- Secret scan: pass | block (<file>:<line>, never the value)
 ```
 
 ## 4. Tell the manager
