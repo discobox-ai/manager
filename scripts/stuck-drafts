@@ -15,6 +15,7 @@ boxes=$(discobox ls -o json)
 repos=$(yq -r '.repos[].name' manager.yaml 2>/dev/null || awk '/^  - name: /{print $3}' manager.yaml)
 
 echo "$boxes" | jq -r '.sandboxes[] | select(.meta.tags.pr != null and .meta.tags.repo != null)
+  | select(.meta.tags.blocked == null and .meta.tags["needs-input"] == null)
   | [.meta.tags.repo, .meta.tags.pr, .id, (.runtime.runtimeState // "")] | @tsv' |
 while IFS=$'\t' read -r repo pr id state; do
   case "$state" in running|starting) continue ;; esac
