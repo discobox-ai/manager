@@ -163,7 +163,7 @@ ARGS=(run -d -H "$HARNESS" --skills "$PWD/worker-skills")
 [ "$ROLE" = none ] || ARGS+=(--bind "$BIND")
 # Provider credentials (manager.yaml providers), always narrowed to their hosts.
 for b in "${EXTRABINDS[@]}"; do
-  case $b in *@*) ARGS+=(--bind "$b") ;; *) die "--bind takes SECRET:VAR@HOST[,HOST]: name the hosts" ;; esac
+  case $b in *@*|*,policy=*) ARGS+=(--bind "$b") ;; *) die "--bind takes SECRET:VAR@HOST[,HOST] or SECRET:VAR,policy=roles/<file>.json: name the hosts or the routes" ;; esac
 done
 if [ -n "$NOSRC" ]; then ARGS+=(--no-source); else ARGS+=("$SRC"); fi
 for inc in "${INCLUDES[@]}"; do

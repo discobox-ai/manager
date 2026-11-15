@@ -177,8 +177,12 @@ tracks:
 # approval; check `discobox-access list -json` if a bind fails.
 providers:
   boxd:
-    bind: "boxd-test4:BOXD_API_KEY@boxd.sh,*.boxd.sh"
-    expires: 2026-12-10
+    # Routes from roles/boxd-key.json: boxd's API, and the token exchange
+    # with the key's body place /api_key (owner, 2026-11-15: B6's 401 was the
+    # missing body place, not the key). <secret> is the name the owner gives
+    # request sreq_zwgh99e5r1e3h45z on approval; boxd-test4 had no body route.
+    bind: "<secret>:BOXD_API_KEY,policy=roles/boxd-key.json"
+    expires: 2026-12-15
   archil:
     bind: "archil-2:ARCHIL_API_KEY@*.archil.com"
 

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "description": "A boxd API key (bxd_...) for a box that runs boxd for real: boxd's gRPC API on boxd.sh and its regions, and the key-for-token exchange, where the key travels in the JSON body at /api_key and the proxy swaps the sentinel there (owner, 2026-11-15: the 401 in B6 was the body place missing, not the key).",
+  "parameters": {},
+  "routes": [
+    {
+      "hosts": ["boxd.sh", "*.boxd.sh"]
+    },
+    {
+      "hosts": ["app.boxd.sh"],
+      "methods": ["POST"],
+      "paths": ["/api/v1/auth/token"],
+      "body": { "places": ["/api_key"] }
+    }
+  ]
+}
