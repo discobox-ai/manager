@@ -231,6 +231,14 @@ Each a line in the report, PASS / FAIL / SKIP with the evidence:
   marker); working trees kept.
 - A **new** box starts in each pool and runs a shell command.
 - `discobox doctor` (or the release's health command) is clean.
+- **The guest each VM pool boots is the release's** (owner, 2026-11-15:
+  v0.19.4 shipped the September `vm/v6` guest while the source had moved to
+  sid). For each libkrun or vz pool, record the pool VM's `uname -r` and
+  `/etc/os-release`, and the image digest the server says it booted. Compare
+  with the release manifest's `images.vm` (`discobox-manifest-<os>-<arch>.json`)
+  and with what that `vm/vN` was built from. A guest that isn't the
+  manifest's, or a manifest that doesn't match the release's
+  `vm-image/Dockerfile`, is a FAIL.
 - Nothing in the server's log at error level that the release doesn't explain.
 - Startup latency (§2b): each T3 total within 25% of the baseline's.
 
