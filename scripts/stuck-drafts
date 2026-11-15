@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# List worker PRs that are drafts with every check finished and whose box is
+# not running: the worker slept and its wake never fired (watch skill,
+# heartbeat). Prints "<repo> <pr> <box id> <box state>" per stuck PR; prints
+# nothing when none are stuck. Read-only.
+#
+#   scripts/stuck-drafts            # list
+#   scripts/stuck-drafts --wake     # also start each box and type the nudge
+set -euo pipefail
+cd "$(dirname "$0")/.."
+eval "$(discobox-access env)"
+wake=0; [ "${1:-}" = --wake ] && wake=1
+
+boxes=$(discobox ls -o json)
+repos=$(yq -r '.repos[].name' manager.yaml 2>/dev/null || awk '/^  - name: /{print $3}' manager.yaml)
+
+echo "$boxes" | jq -r '.sandboxes[] | select(.meta.tags.pr != null and .meta.tags.repo != null)
+  | [.meta.tags.repo, .meta.tags.pr, .id, (.runtime.runtimeState // "")] | @tsv' |
+while IFS=$'\t' read -r repo pr id state; do
+  case "$state" in running|starting) continue ;; esac
+  pj=$(gh api "repos/$repo/pulls/$pr" 2>/dev/null) || continue
+  [ "$(jq -r .state <<<"$pj")" = open ] || continue
+  [ "$(jq -r .draft <<<"$pj")" = true ] || continue
+  sha=$(jq -r .head.sha <<<"$pj")
+  pending=$(gh api "repos/$repo/commits/$sha/check-runs?per_page=100" \
+    --jq '[.check_runs[] | select(.status != "completed")] | length')
+  total=$(gh api "repos/$repo/commits/$sha/check-runs?per_page=100" --jq '.check_runs | length')
+  [ "$total" -gt 0 ] && [ "$pending" -eq 0 ] || continue
+  printf '%s %s %s %s\n' "$repo" "$pr" "$id" "$state"
+  if [ $wake = 1 ]; then
+    discobox start "$id" >/dev/null 2>&1 || true
+    sleep 20
+    discobox send "$id" "Manager here: every check on PR $pr has finished. Your wake didn't fire; finish your skill now (fix anything red, evidence in the PR body, mark it ready, tag ready), then stop." \
+      && discobox send-key "$id" Enter
+  fi
+done
