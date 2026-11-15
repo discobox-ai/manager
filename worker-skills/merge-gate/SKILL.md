@@ -106,8 +106,24 @@ account is the owner's to merge).
 
 - `state` is `open`, `draft` is false, `head.sha` is `<sha>`;
 - `mergeable` is true and `mergeable_state` is `clean`;
-- `GET /repos/<repo>/compare/<base>...<sha>`: `behind_by` is 0, so CI ran on
-  the current base. If it's behind, refuse with "needs a rebase";
+- **Up to date, or behind only on unrelated work** (owner, 2026-11-15, option
+  2: "just go with 2"). `GET /repos/<repo>/compare/<base>...<sha>` gives
+  `behind_by` and the merge base. If `behind_by` is 0, this check passes:
+  CI ran on the current base. If it's behind, list the files the missing
+  commits changed (`GET /repos/<repo>/compare/<sha>...<base>`, its `files`,
+  all pages) and the files the PR changes (Gate 4's list). It may still merge
+  only if **all** of these hold:
+  - no file is in both lists;
+  - no directory holding a changed `.go` file is in both. One Go package
+    changed on both sides is a refusal, even in different files;
+  - the missing commits change nothing that reaches everything: `go.mod`,
+    `go.sum`, `go.work*`, `Taskfile.yml`, `flake.*`, `.github/**`,
+    `api/openapi/**`, `**/gen/**`, or any `Dockerfile`;
+  - `mergeable_state` is still `clean`.
+
+  Otherwise refuse with "needs a rebase: <the file or package both
+  changed>". Say in the verdict which way this passed: "up to date" or
+  "behind <n>, no overlap".
 - every check run on `<sha>` (`GET /repos/<repo>/commits/<sha>/check-runs`,
   all pages) is `completed` with `success`, `skipped` or `neutral`, and there
   is at least one; every status (`/commits/<sha>/status`) is `success`.
@@ -215,7 +231,7 @@ On the PR, merged or not:
 **Merge gate** at `<sha>`: **auto-merged** (rebase) | **not auto-merged**
 
 - Author: ibuildthecloud-bot from ibuildthecloud-bot/<name> ✓
-- State: CI <n>/<n> green, up to date with main, mergeable ✓
+- State: CI <n>/<n> green, up to date with main | behind <n> with no overlap, mergeable ✓
 - Process: <issue>, Process check at this sha, review signed off ✓
 - Scope: <files> files, <lines> lines (no size limit), no sensitive paths ✓
 - Security review: pass | block (<why>)
