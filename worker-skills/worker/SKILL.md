@@ -227,6 +227,19 @@ can then find the box that wrote it (owner, 2026-11-03):
 line, last. When you edit a body, keep the footer last. Leave it off only when
 `DISCOBOX_ADDRESS` is unset.
 
+
+### Rebasing a PR
+
+**Say you're rebasing, first** (owner, 2026-11-15: "whenever a worker is
+rebasing a PR that they first comment that they are rebasing. That way when
+I see a merge conflict I know what if the worker is doing something to
+address it"). Before you start rebasing a PR that's already open, post one
+PR comment: `Rebasing onto <base> (<base sha, 7 chars>) to resolve <the
+conflict, or "the base moving">. Box: discobox:///<this box's id>.` When the
+push is done, post `Rebased onto <base sha>; CI running.` If you stop
+without pushing, say why in a comment and tag `blocked`. This applies to
+every rebase of a published PR, whoever asked for it.
+
 ## Power: never sit idle
 
 A box that's waiting costs the pool as much as one that's working. **Sleep

@@ -14,6 +14,9 @@ headRefName -q .headRefName`.
 Invoking this skill is authorization to force-push that one branch with a
 lease. Nothing else.
 
+0. **Comment first** (`worker` skill, Rebasing a PR): `Rebasing onto
+   <base> (<sha>) to resolve <what>. Box: discobox:///<id>.` Post it before
+   anything else, so the owner seeing the conflict knows it's being handled.
 1. Fetch the base from the repository and the branch from the fork (never a
    local mirror): `git fetch "$UP_URL" "$BASE"` (keep its `FETCH_HEAD`), then
    `git fetch "$GH_URL" <branch>`, and check out the branch.
@@ -24,5 +27,6 @@ lease. Nothing else.
 4. Push with an explicit lease on the branch's head on GitHub, and only to
    that branch:
    `git push --force-with-lease=refs/heads/<branch>:<its head on GitHub> "$GH_URL" HEAD:refs/heads/<branch>`.
-5. Drive CI green (`open-pr` §§3–4) and tag `ready`. A conflict you can't
+5. Comment `Rebased onto <base sha>; CI running.` Drive CI green (`open-pr`
+   §§3–4) and tag `ready`. A conflict you can't
    resolve keeping both sides: tag `blocked` and say which, in a PR comment.

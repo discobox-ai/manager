@@ -684,6 +684,11 @@ it sleeps is awake afterwards: stop it again if it has nothing to do.
 
 ## Rebases
 
+Every worker comments on the PR before it starts a rebase, and again when
+it has pushed (`worker` skill, Rebasing a PR; owner, 2026-11-15), so the
+owner seeing a conflict knows it's being handled. The platform workers don't
+read that skill: put the same instruction in any rebase job you send them.
+
 A PR that conflicts with its base needs a rebase only if it's about to be
 merged. Rebasing every conflicting PR after each merge is a rebase storm:
 each rebase reruns CI, and the next merge makes most of them conflict again.

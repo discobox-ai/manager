@@ -158,8 +158,9 @@ gh pr checks $P --repo $REPO --json name,bucket
 ```
 
 - **Rebase, when the manager asks for it** (and only then: it decides which
-  PRs are near enough the front of the merge queue to be worth it). Fetch
-  `BASE`, rebase onto it keeping both sides of every conflict, run the tests
+  PRs are near enough the front of the merge queue to be worth it). First
+  comment on the PR that you're rebasing (`worker` skill, Rebasing a PR).
+  Then fetch `BASE`, rebase onto it keeping both sides of every conflict, run the tests
   the conflict touched, and push with the lease from §5. A PR that's `dirty`
   but you weren't asked to rebase: leave it.
 - **A new review, review comment or PR comment** from anyone: read a
