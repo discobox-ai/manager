@@ -147,9 +147,12 @@ account is the owner's to merge).
     `package.json`, `*.lock`, `Cargo.toml` (a new or moved dependency);
 - is named as security-sensitive by any `REVIEW.md` in the repository.
 
-And refuse if the PR is big: more than **400** changed lines (additions plus
-deletions) or more than **15** files, not counting `*_test.go`,
-`**/testdata/**` and generated files (`**/gen/**`, `*.pb.go`, `*_gen.go`).
+There is no size limit (owner, 2026-11-15: "can we make the max changes
+larger, or remove it all together. most simple PRs don't even land in that
+range"). Whether a change is big and impactful is the complexity reviewer's
+call in Gate 5, made on what the change does, not on its line count. Do
+record the counts (changed lines without tests and generated files, and
+files) in the verdict, for the owner's audit.
 
 ### Gate 5: two independent reviews
 
@@ -170,7 +173,11 @@ you are not sure, block. Return
 {"verdict":"pass"|"block","findings":[{"file","line","issue"}],"why":"<one line>"}."
 
 **Complexity and design reviewer.** "You are deciding whether a pull request
-is small and routine enough to merge with no human review. Block it if it
+is routine enough to merge with no human review. Judge what it does, not how
+many lines it has: a long mechanical change can pass, a short one that
+changes behaviour widely can't. Block it if it is big and impactful in
+effect (the owner: "Anything big and impactful shouldn't get automerged"),
+if it
 makes a design choice that isn't obvious from its issue, changes a public API,
 CLI flag or file format, adds a dependency or a new module, couples modules
 that weren't coupled, changes behaviour beyond what the issue asks, lacks
@@ -210,7 +217,7 @@ On the PR, merged or not:
 - Author: ibuildthecloud-bot from ibuildthecloud-bot/<name> ✓
 - State: CI <n>/<n> green, up to date with main, mergeable ✓
 - Process: <issue>, Process check at this sha, review signed off ✓
-- Scope: <files> files, <lines> lines (limit 15 / 400), no sensitive paths ✓
+- Scope: <files> files, <lines> lines (no size limit), no sensitive paths ✓
 - Security review: pass | block (<why>)
 - Complexity review: pass | block (<why>)
 
