@@ -432,28 +432,28 @@ stops it at once.
 The owner: "spin up a dedicated worker that have merge privileges and will
 only merge after ibuildthecloud github user has approved the PR. It's
 important that the merging it done in order and basically manage the
-rebasing chaos."
+rebasing chaos." And: "we don't want the merge-queue to manage the rebase,
+just notify the worker that ones the PR to rebase."
 
 - **One box, long-lived:** `scripts/launch merge-queue --repo
   discobox-ai/discobox --no-source -p '/merge-queue'`, tagged
-  `job=merge-queue`. It asks the owner for their own credential (merge,
-  labels, comments, reads, and push to an approved PR's head branch on the
-  bot's fork). The owner approves; you never do. Never retire it; it never
-  counts against `workers.max`.
+  `job=merge-queue`. It asks the owner for their own credential, API only:
+  merge, labels, comments and reads in discobox and vm. It has no git push.
+  The owner approves; you never do. Never retire it; it never counts
+  against `workers.max`.
 - **It watches by itself.** A PR the owner has approved on GitHub (the user
-  `ibuildthecloud`) enters the queue, labelled `merge-queue`. It merges in
-  approval order, one at a time, rebasing each onto `main` and waiting for
-  green CI first. Merged PRs get the label `queue-merged`.
-- **Your part:**
-  - on a "Merge queue: … blocked" comment (a conflict it won't guess at, or
-    red CI), wake that PR's worker to fix it; the owner approves again
-    afterwards;
-  - treat its merges like owner merges (close the issue, retire the box,
-    `scripts/table sync`);
-  - keep "Review and merge" rows as they are: approving on GitHub is now
-    how the owner merges;
-  - don't rebase a PR yourself while it's labelled `merge-queue`: the
-    queue owns its branch.
+  `ibuildthecloud`) enters the queue, labelled `merge-queue`. When two are
+  ready, the older approval merges first. One merge at a time, once GitHub
+  says it's mergeable and its CI is green. Merged PRs get `queue-merged`.
+- **Rebases are yours to start, never the queue's.** When the queue labels a
+  PR `needs-rebase` (it conflicts with main), wake that PR's worker at once
+  to rebase it (`rebase-pr`, comment first), even with every slot full,
+  then remove the label once it's pushed. The approval survives a rebase
+  with the same patch, and the PR keeps its place. On a red-CI
+  `status/blocked` from the queue, wake the worker to fix it.
+- Treat queue merges like owner merges (close the issue, retire the box,
+  `scripts/table sync`). "Review and merge" rows stay as they are:
+  approving on GitHub is now how the owner merges.
 
 ### Platform workers: macOS and Windows (owner, 2026-11-10, 2026-11-11)
 
