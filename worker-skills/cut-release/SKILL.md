@@ -40,11 +40,12 @@ repository is public; `curl` to `api.github.com` with no token):
   v0.19.4 shipped the September `vm/v6` guest after `vm-image/` had moved to
   sid). Find the newest `vm/v*` tag (`GET /repos/$REPO/git/matching-refs/tags/vm/v`).
   `GET /repos/$REPO/compare/<that tag>...$SHA` must change no file under
-  `vm-image/` outside `vm-image/kernel/`. If it does, a guest hasn't been
+  `vm-image/` outside `vm-image/kernel/`, not counting Markdown (`*.md`),
+  which isn't built into the image. If it does, a guest hasn't been
   published for the tree. And `server/providers/guestimage/image.go` at
   `$SHA` must pin that tag's published digest: the "VM image" run for the
   tag prints it. Do the same for the newest `vm-kernel/v*` tag, against
-  `vm-image/kernel/` and `libkrun.DefaultKernelImage`. Either one stale:
+  `vm-image/kernel/` (Markdown aside) and `libkrun.DefaultKernelImage`. Either one stale:
   `blocked`, naming the tag to publish or the pin to update.
 
 Any check fails: tag `blocked`, write one line on the screen saying which and
