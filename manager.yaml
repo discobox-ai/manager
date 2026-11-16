@@ -51,18 +51,16 @@ repos:
 # milestone; the manager applies it.
 release:
   repo: discobox-ai/discobox
-  milestone: v0.19 Release
-  # Its parts in other repositories, which a discobox milestone can't hold.
-  # Not same-named milestones elsewhere: from v0.20 a release is a GitHub
-  # Project across repositories (owner, 2026-11-05; discobox#693).
-  alsoIn:
-    - discobox-ai/manager#2
-    - discobox-ai/manager#4
-    - discobox-ai/site#2
-    - discobox-ai/site#3
-    - discobox-ai/site#4
-  # The release after it (owner created it 2026-11-04): what's decided, but later.
-  next: v0.20 Release
+  # v0.20 is the release being worked toward (owner, 2026-11-16: "lets skip
+  # the 0.19.7 release and just start working on 0.20"). v0.19.6 stays
+  # tagged and unreleased; no further v0.19.x is planned.
+  milestone: v0.20 Release
+  # Its parts in other repositories, which a discobox milestone can't hold
+  # (from v0.20 a release is a GitHub Project across repositories; owner,
+  # 2026-11-05; discobox#693). Add them here as they're filed.
+  alsoIn: []
+  # The release after it: none created yet.
+  next: ""
 
 # Focus (owner, 2026-11-12: "I want to complete those two streams, prioritize
 # that work and keep me focused on it"). The streams the owner is driving now,
@@ -73,20 +71,6 @@ release:
 # stream=boxd`). Every issue filed for a stream is added here or tagged so.
 # Only the owner adds or removes a stream.
 focus:
-  - stream: boxd
-    items:
-      - discobox-ai/discobox#947
-      - discobox-ai/discobox#1012
-      - discobox-ai/discobox#1006
-      - discobox-ai/discobox#997
-      - discobox-ai/discobox#456
-      - discobox-ai/discobox#455
-      - discobox-ai/vm#84
-      - discobox-ai/discobox#1090
-      # #1090's follow-ups (owner, 2026-11-13: "Lets go ahead with this
-      # approach for boxd"): in-machine auth for a boxd pool.
-      - discobox-ai/discobox#1092
-      - discobox-ai/vm#109
   - stream: macOS
     items:
       - discobox-ai/discobox#42
