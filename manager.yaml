@@ -71,6 +71,20 @@ release:
 # stream=boxd`). Every issue filed for a stream is added here or tagged so.
 # Only the owner adds or removes a stream.
 focus:
+  # archil (owner, 2026-11-16: "now that boxd is working can we get archil
+  # done"): PR 949's archil plan (A0-A10), which Q7 had put after v0.20.
+  - stream: archil
+    items:
+      - discobox-ai/vm#86
+      - discobox-ai/discobox#1053
+      - discobox-ai/discobox#1054
+      - discobox-ai/discobox#1055
+      - discobox-ai/discobox#1056
+      - discobox-ai/discobox#1057
+      - discobox-ai/discobox#1058
+      - discobox-ai/discobox#1059
+      - discobox-ai/discobox#1060
+      - discobox-ai/discobox#1061
   - stream: macOS
     items:
       - discobox-ai/discobox#42
