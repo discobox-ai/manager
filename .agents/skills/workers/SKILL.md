@@ -427,6 +427,34 @@ stops it at once.
 - **The owner's audit:** the label `auto-merged`. Never remove it, never add
   it by hand.
 
+### The merge queue (owner, 2026-11-16)
+
+The owner: "spin up a dedicated worker that have merge privileges and will
+only merge after ibuildthecloud github user has approved the PR. It's
+important that the merging it done in order and basically manage the
+rebasing chaos."
+
+- **One box, long-lived:** `scripts/launch merge-queue --repo
+  discobox-ai/discobox --no-source -p '/merge-queue'`, tagged
+  `job=merge-queue`. It asks the owner for their own credential (merge,
+  labels, comments, reads, and push to an approved PR's head branch on the
+  bot's fork). The owner approves; you never do. Never retire it; it never
+  counts against `workers.max`.
+- **It watches by itself.** A PR the owner has approved on GitHub (the user
+  `ibuildthecloud`) enters the queue, labelled `merge-queue`. It merges in
+  approval order, one at a time, rebasing each onto `main` and waiting for
+  green CI first. Merged PRs get the label `queue-merged`.
+- **Your part:**
+  - on a "Merge queue: … blocked" comment (a conflict it won't guess at, or
+    red CI), wake that PR's worker to fix it; the owner approves again
+    afterwards;
+  - treat its merges like owner merges (close the issue, retire the box,
+    `scripts/table sync`);
+  - keep "Review and merge" rows as they are: approving on GitHub is now
+    how the owner merges;
+  - don't rebase a PR yourself while it's labelled `merge-queue`: the
+    queue owns its branch.
+
 ### Platform workers: macOS and Windows (owner, 2026-11-10, 2026-11-11)
 
 We can't run macOS or Windows boxes. The owner runs one agent on each
