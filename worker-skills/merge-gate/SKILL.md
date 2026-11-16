@@ -210,16 +210,22 @@ during the gate"). Then:
 
 ```sh
 eval "$(discobox-access env)"
+gh api -X POST repos/<repo>/issues/<P>/labels -f 'labels[]=auto-merged'
 gh api -X PUT repos/<repo>/pulls/<P>/merge \
   -f merge_method=rebase -f sha=<sha> \
   -f commit_title='' >/dev/null
-gh api -X POST repos/<repo>/issues/<P>/labels -f 'labels[]=auto-merged'
 ```
+
+**Label first, then merge** (2026-11-16). A label added to a PR that has
+already merged starts a `pull_request` run whose ref is the base branch,
+and it cancels `main`'s own push run (discobox#1265). On an open PR the
+labeled run stays in the PR's own group. If the merge is then refused,
+remove the label at once (`DELETE …/issues/<P>/labels/auto-merged`), so
+the label only ever marks real auto-merges.
 
 Only `rebase`, never `merge` or `squash`. `sha` makes GitHub refuse if the
 head moved. A 405 or 409 is a refusal ("GitHub refused the merge: <message>").
-If the merge succeeded but labelling failed, try once more, then report it
-loudly: an unlabelled auto-merge breaks the owner's audit.
+Never add or remove a label on a PR after it has merged.
 
 ## 2c. Gate a release-validation run PR
 

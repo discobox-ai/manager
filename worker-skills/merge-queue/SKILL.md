@@ -107,9 +107,12 @@ Go down the queue from the oldest entry. Only one merge is ever in flight.
    ```sh
    gh api -X PUT repos/<repo>/pulls/<P>/merge -f merge_method=rebase -f sha=<head>
    ```
-   Rebase only, never merge commits or squash. Label it `queue-merged`,
-   remove `merge-queue`, and comment `Merged by the merge queue at <sha>
-   (approved by ibuildthecloud at <time>).`
+   Rebase only, never merge commits or squash. **Label it `queue-merged`
+   and remove `merge-queue` before the merge call, not after**: a label
+   change on a merged PR starts a run that cancels `main`'s own push run
+   (discobox#1265). If the merge is refused, put the labels back. After it
+   merges, only comment: `Merged by the merge queue at <sha> (approved by
+   ibuildthecloud at <time>).`
 6. Start again from the top. **Every merge moves `main`**, so re-read each
    PR's mergeability before merging it: one that was clean may now
    conflict.
