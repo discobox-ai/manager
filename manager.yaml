@@ -58,7 +58,8 @@ release:
   # Its parts in other repositories, which a discobox milestone can't hold
   # (from v0.20 a release is a GitHub Project across repositories; owner,
   # 2026-11-05; discobox#693). Add them here as they're filed.
-  alsoIn: []
+  alsoIn:
+    - discobox-ai/vm#86
   # The release after it: none created yet.
   next: ""
 
