@@ -199,6 +199,10 @@ if [ -n "$ISSUE" ] && [ -z "$NOLABEL" ]; then
   case $JOB in deliver|adr)
     gh api -X DELETE "repos/$REPO/issues/$ISSUE/labels/status%2Fready" --silent 2>/dev/null || true
     gh api -X POST "repos/$REPO/issues/$ISSUE/labels" -f 'labels[]=status/in-progress' --silent
+    # in-progress always names its box (owner, 2026-11-16): the label is set
+    # only here, after the box exists, and the issue says which box it is.
+    gh api -X POST "repos/$REPO/issues/$ISSUE/comments" --silent \
+      -f body="**In progress:** a \`$JOB\` worker is on this issue in discobox:///$ID (launched by the manager)."
     ;;
   esac
 fi

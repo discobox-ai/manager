@@ -12,10 +12,23 @@ none, which means new). The other groups describe it.
 | `status/needs-decision` | The owner has to decide something before work starts; the issue says what | manager |
 | `status/needs-input` | Its worker is waiting on the owner in the box (a question on its screen) | manager, from the box's `needs-input` tag or its screen |
 | `status/ready` | Go: the next free worker takes it | owner, or the manager per `gates.md` |
-| `status/in-progress` | A worker is on it (its box is tagged `issue=N`) | manager |
+| `status/in-progress` | A box of ours is working on it: launched, tagged `issue=N`, and named on the issue ("**In progress:** … discobox:///<id>") | manager, only through `scripts/launch` |
 | `status/in-review` | Its PR is green, waiting for the owner. On a PR: ready for the owner's review now (`github`, Filing and editing) | manager |
 | `status/blocked` | Waiting on something specific that isn't done: another issue or PR (linked), an owner action, an outside fix. A comment says what | manager or worker |
 | `status/paused` | Parked on purpose: nothing wrong, just not now (its milestone isn't being worked, the owner deferred it). A comment says why and what resumes it | manager |
+
+**In progress means a box, always** (owner, 2026-11-16: "when we out assign
+the 'in-progress' that we only do that if a box was actually launched and we
+should put the associated box"). `scripts/launch` sets it, and only after
+the box exists, with a comment naming the box. Never set it by hand: not when
+a decision unblocks an issue, not when you reopen one, not while you mean to
+start a worker soon. That's `status/ready` until the box is up. When the box
+is retired or archived without the issue done, the label goes back to what
+the issue now is (`ready`, `blocked`, `paused`, `in-review` if its PR is
+green), in the same step. A worker that takes over a box (`submit`,
+adoption, a platform worker's job) gets the same comment naming where the
+work is happening. `scripts/stale-in-progress` lists any in-progress issue
+with no live box of ours; run it on every heartbeat (`watch`).
 
 **A blocked or paused label never stands alone** (owner, 2026-11-09): when you
 set either one, post a comment in the same step that says what it waits on,

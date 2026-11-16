@@ -66,8 +66,9 @@ Monitor(
   and check `CronList` on each heartbeat that it still exists.
   Each expiry is the heartbeat: check disk, and say nothing unless something
   changed.
-  Also on each heartbeat, **run `scripts/stuck-drafts --wake` and
-  `scripts/finished-boxes --retire`**. The second archives every worker box
+  Also on each heartbeat, **run `scripts/stuck-drafts --wake`,
+  `scripts/finished-boxes --retire` and `scripts/stale-in-progress`** (fix
+  each issue it lists: `docs/labels.md`, In progress means a box). The second archives every worker box
   whose PR has merged or closed, or whose issue closed with no PR (owner,
   2026-11-15: ten finished boxes had lingered, one a day). For the first: every
   cron "watch:" turn, every Monitor expiry, and every `scripts/table sync`.

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# List issues labelled status/in-progress in the watched repositories that no
+# live box of ours holds (no box tagged repo=<repo> issue=<N> that isn't
+# archived). Prints "<repo>#<N> <title>" per issue; nothing when all are held.
+# Read-only: the manager decides each one's real status (docs/labels.md, In
+# progress means a box). Platform workers' jobs (macos-worker, win-worker) hold
+# no box: check their table rows before relabelling those.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+eval "$(discobox-access env)"
+held=$(discobox ls -o json | jq -r '.sandboxes[]
+  | select((.runtime.runtimeState // "") != "")
+  | select(.meta.tags.repo != null and .meta.tags.issue != null)
+  | "\(.meta.tags.repo)#\(.meta.tags.issue)"' | sort -u)
+for repo in $(awk '/^  - name: /{print $3}' manager.yaml); do
+  gh api "repos/$repo/issues?labels=status/in-progress&state=open&per_page=100" \
+    --jq '.[] | select(.pull_request == null) | "\(.number)\t\(.title)"' 2>/dev/null |
+  while IFS=$'\t' read -r n title; do
+    grep -qx "$repo#$n" <<<"$held" || printf '%s#%s %s\n' "$repo" "$n" "$title"
+  done
+done
