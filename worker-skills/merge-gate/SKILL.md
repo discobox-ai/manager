@@ -45,6 +45,7 @@ args=""
 for repo in discobox-ai/discobox discobox-ai/vm discobox-ai/release-validation; do
   args="$args -route PUT api.github.com/repos/$repo/pulls/*/merge"
   args="$args -route POST api.github.com/repos/$repo/issues/*/labels"
+  args="$args -route DELETE api.github.com/repos/$repo/issues/*/labels/auto-merged"
   args="$args -route POST api.github.com/repos/$repo/issues/*/comments"
   args="$args -route POST api.github.com/repos/$repo/labels"
   args="$args -route GET api.github.com/repos/$repo/**"
