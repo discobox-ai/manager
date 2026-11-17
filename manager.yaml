@@ -54,7 +54,10 @@ release:
   # v0.20 is the release being worked toward (owner, 2026-11-16: "lets skip
   # the 0.19.7 release and just start working on 0.20"). v0.19.6 stays
   # tagged and unreleased; no further v0.19.x is planned.
-  milestone: v0.20 Release
+  # Empty: all work ranks equally across repos (owner, 2026-11-17, "equally
+  # prioritize all work across all repos"). v0.20 is still the release being
+  # cut (v0.20.0-rc.1); milestones stay on issues, but don't rank them first.
+  milestone: ""
   # Its parts in other repositories, which a discobox milestone can't hold
   # (from v0.20 a release is a GitHub Project across repositories; owner,
   # 2026-11-05; discobox#693). Add them here as they're filed.
@@ -71,30 +74,10 @@ release:
 # here, or when it carries `stream=<name>` (`scripts/table set KEY
 # stream=boxd`). Every issue filed for a stream is added here or tagged so.
 # Only the owner adds or removes a stream.
-focus:
-  # archil (owner, 2026-11-16: "now that boxd is working can we get archil
-  # done"): PR 949's archil plan (A0-A10), which Q7 had put after v0.20.
-  - stream: archil
-    items:
-      - discobox-ai/vm#86
-      - discobox-ai/discobox#1053
-      - discobox-ai/discobox#1054
-      - discobox-ai/discobox#1055
-      - discobox-ai/discobox#1056
-      - discobox-ai/discobox#1057
-      - discobox-ai/discobox#1058
-      - discobox-ai/discobox#1059
-      - discobox-ai/discobox#1060
-      - discobox-ai/discobox#1061
-  - stream: macOS
-    items:
-      - discobox-ai/discobox#42
-      - discobox-ai/discobox#59
-      - discobox-ai/discobox#63
-      - discobox-ai/vm#75
-      - discobox-ai/discobox#696
-      # The owner's attached-drive direction (2026-11-13), replacing vm#83.
-      - discobox-ai/vm#110
+# No focus streams (owner, 2026-11-17: "can we unpause or equally prioritize
+# all work across all repos ... RELEASE THE KRAKEN!"). archil and macOS were
+# the last two; their issues now rank with everything else.
+focus: []
 
 workers:
   # The harness every new worker box runs (`discobox run -H`; owner, 2026-11-04;
@@ -118,14 +101,16 @@ workers:
   # while its power state is running or starting. Suspended (paused), stopped,
   # asleep and archived boxes don't count (owner, 2026-11-05). The owner set ten for this host (2026-11-05); lower it when
   # disk is tight.
-  max: 10
+  # 12 for the backlog push (owner, 2026-11-17, "RELEASE THE KRAKEN!"); lower
+  # it if the load average stays far above the 64 CPUs or disk gets tight.
+  max: 12
   # A worker waiting on the owner (needs-input or blocked) whose screen has
   # been still this long is stopped; the owner opening it starts it again.
   pauseAfter: 5m
   # Of those, triage workers up at once, so a backlog of new issues doesn't
   # take every slot. New issues are triaged highest priority/* first, then
   # newest first.
-  triageMax: 2
+  triageMax: 4
   # Where workers get their skills.
   skills: discobox-ai/manager//worker-skills
 
