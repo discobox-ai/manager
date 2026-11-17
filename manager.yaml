@@ -157,16 +157,9 @@ autoMerge:
 # fast-forward of the branch ref, `workers` § Feature tracks); the owner merges
 # only the branch into main, once. Track work runs alongside the release, after
 # its milestone's work, and is suspended while release validation measures.
-tracks:
-  - name: desktop-console
-    repo: discobox-ai/discobox
-    branch: feature/desktop-console
-    epic: 786
-    merge: manager
-    # The manager answers its workers' questions with the worker's recommended
-    # option (owner, 2026-11-10: "always go with the agents recommended
-    # solution, we want this to run without intervention").
-    decide: recommended
+# No feature tracks. desktop-console was dropped (owner, 2026-11-17: "We are
+# not going to go forward with that"): PR 922 and its issues are closed.
+tracks: []
 
 # Provider credentials the owner delegated for real-API work (owner,
 # 2026-11-10: "i can give creds ... just request for the API domains"). Bind
