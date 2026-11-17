@@ -136,7 +136,9 @@ is SKIP, "host overloaded: peak <L> on <N> CPUs"), and a timeout in it is
 still reported, but as found under overload, with the load in the evidence.
 Discobox should be slow under load, never fail: a step that fails on a fixed
 deadline while the host is busy is a bug, and is filed as one, but say the
-load.
+load. **Never wait for a quiet host** (owner, 2026-11-13: "if timing is off
+that's fine, just note the load average"): take each run when you reach it,
+log the load, and let the SKIP above say why a latency wasn't compared.
 
 Run it **three times**: the first cold (nothing downloaded: no server, no
 images, no harness bundle), then twice warm (`discobox rm` the box between
