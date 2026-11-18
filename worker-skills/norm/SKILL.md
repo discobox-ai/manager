@@ -332,8 +332,8 @@ checkout so it can answer any question about the two."
   ~/src/<repo> rev-parse origin/main` for each, which wakes you when `main`
   moves. Then fast-forward the checkout (`git merge --ff-only origin/main`;
   it's read-only for you: never commit, never push there). Also fetch both
-  before answering a question. Keep running while asleep is not needed:
-  stop them at bedtime and fetch on waking.
+  before answering a question. Stop these monitors at bedtime and fetch
+  on waking.
 - **Learn them:** read each repository's `README.md`, `AGENTS.md`,
   `DESIGN.md` files and `docs/` (the ADRs in `docs/adr/` explain why things
   are the way they are; `docs/public` is what users read). When `main`
