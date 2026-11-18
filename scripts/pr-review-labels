@@ -7,8 +7,12 @@
 # design.
 # (github skill, Filing and editing; docs/labels.md): a PR that is out of
 # draft, with every check on its head completed green (success, skipped,
-# neutral) and the manager's "**Process check** at `<head sha>`" comment for
-# that head, has the label; any other open PR doesn't. Prints each change.
+# neutral), no merge conflict, and the pr-check box's (or the manager's)
+# "**Process check** at `<head sha>`" comment for that head, has the label;
+# any other open PR doesn't. An ADR PR (every file it changes is under an
+# adr/ directory) needs no Process check: green and no conflict is enough
+# (owner, 2026-11-18: "I want to be able to just look for the in-review
+# label so know I should look"). Prints each change.
 #   scripts/pr-review-labels           # list what would change
 #   scripts/pr-review-labels --apply   # change the labels
 set -euo pipefail
@@ -28,10 +32,18 @@ for repo in $(awk '/^  - name: /{print $3}' manager.yaml); do
         continue   # a run in progress (often a label's own re-run): leave the label as it is
       fi
       if [ "$total" -gt 0 ] && [ "$failed" -eq 0 ]; then
-        short=${sha:0:7}
-        if gh api "repos/$repo/issues/$n/comments?per_page=100" \
-             --jq '.[].body' | grep -q "Process check\*\* at \`$short"; then
-          want=true
+        mstate=$(gh api "repos/$repo/pulls/$n" --jq '.mergeable_state')
+        if [ "$mstate" = unknown ]; then continue; fi   # GitHub still computing: leave it
+        if [ "$mstate" != dirty ]; then
+          adr=$(gh api "repos/$repo/pulls/$n/files?per_page=100" \
+            --jq '(length > 0) and all(.[]; .filename | test("(^|/)adr/"))')
+          short=${sha:0:7}
+          if [ "$adr" = true ]; then
+            want=true
+          elif gh api "repos/$repo/issues/$n/comments?per_page=100" \
+               --jq '.[].body' | grep -q "Process check\*\* at \`$short"; then
+            want=true
+          fi
         fi
       fi
     fi

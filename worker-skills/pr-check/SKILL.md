@@ -38,7 +38,8 @@ A PR is **ready to check** when, at its current head `<sha>`:
 
 - `user.login` is `ibuildthecloud-bot`, and it isn't a draft;
 - it isn't an ADR PR (`type/adr` on its issue, or it only adds or edits
-  `docs/adr/**`). The owner reads those themselves; merging one accepts it;
+  `docs/adr/**`). The owner reads those themselves, and the manager labels
+  them `status/in-review` without a Process check; merging one accepts it;
 - every check run on `<sha>` has completed with `success`, `skipped` or
   `neutral`, there is at least one, and every commit status is `success`.
   Running checks: wait, don't check yet;

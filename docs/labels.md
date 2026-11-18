@@ -13,7 +13,7 @@ none, which means new). The other groups describe it.
 | `status/needs-input` | Its worker is waiting on the owner in the box (a question on its screen) | manager, from the box's `needs-input` tag or its screen |
 | `status/ready` | Go: the next free worker takes it | owner, or the manager per `gates.md` |
 | `status/in-progress` | A box of ours is working on it: launched, tagged `issue=N`, and named on the issue ("**In progress:** … discobox:///<id>") | manager, only through `scripts/launch` |
-| `status/in-review` | Its PR is green, waiting for the owner. On a PR: ready for the owner's review now (`github`, Filing and editing) | manager |
+| `status/in-review` | Its PR is green, waiting for the owner. On a PR: ready for the owner's review now, the one label the owner looks for: out of draft, every check green, no merge conflict, and a Process check for its head, or, for an ADR PR, no Process check needed (owner, 2026-11-18). Kept by `scripts/pr-review-labels --apply` | manager |
 | `status/blocked` | Waiting on something specific that isn't done: another issue or PR (linked), an owner action, an outside fix. A comment says what | manager or worker |
 | `status/paused` | Parked on purpose: nothing wrong, just not now (its milestone isn't being worked, the owner deferred it). A comment says why and what resumes it | manager |
 
