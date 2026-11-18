@@ -2,31 +2,45 @@
 # List worker PRs that are drafts with every check finished and whose box is
 # not running: the worker slept and its wake never fired (watch skill,
 # heartbeat). Prints "<repo> <pr> <box id> <box state>" per stuck PR; prints
-# nothing when none are stuck. Read-only.
+# nothing when none are stuck.
+#
+# Also lists, never wakes, a draft whose box is tagged `blocked` or
+# `needs-input`, whose checks have all finished, and whose PR hasn't moved for
+# 2 hours: "<repo> <pr> <box id> <box state> held:<tag> since <updated>".
+# Those wait on something (an owner action, a tag, another PR); read the box's
+# screen, and if what it waited on has happened, remove the tag and wake it
+# (2026-11-18: PR 1352 sat 10 hours tagged `blocked` after vm/v9, its blocker,
+# had published).
+#
+# One GraphQL query per PR, no REST: the bot's REST allowance is shared.
 #
 #   scripts/stuck-drafts            # list
-#   scripts/stuck-drafts --wake     # also start each box and type the nudge
+#   scripts/stuck-drafts --wake     # also start each unheld box and type the nudge
 set -euo pipefail
 cd "$(dirname "$0")/.."
 eval "$(discobox-access env)"
 wake=0; [ "${1:-}" = --wake ] && wake=1
 
-boxes=$(discobox ls -o json)
-repos=$(yq -r '.repos[].name' manager.yaml 2>/dev/null || awk '/^  - name: /{print $3}' manager.yaml)
+Q='query($owner:String!,$name:String!,$n:Int!){repository(owner:$owner,name:$name){pullRequest(number:$n){
+  state isDraft updatedAt commits(last:1){nodes{commit{statusCheckRollup{state}}}}}}}'
+stale_before=$(date -u -d '2 hours ago' +%Y-%m-%dT%H:%M:%SZ)
 
-echo "$boxes" | jq -r '.sandboxes[] | select(.meta.tags.pr != null and .meta.tags.repo != null)
-  | select(.meta.tags.blocked == null and .meta.tags["needs-input"] == null)
-  | [.meta.tags.repo, .meta.tags.pr, .id, (.runtime.runtimeState // "")] | @tsv' |
-while IFS=$'\t' read -r repo pr id state; do
-  case "$state" in running|starting) continue ;; esac
-  pj=$(gh api "repos/$repo/pulls/$pr" 2>/dev/null) || continue
-  [ "$(jq -r .state <<<"$pj")" = open ] || continue
-  [ "$(jq -r .draft <<<"$pj")" = true ] || continue
-  sha=$(jq -r .head.sha <<<"$pj")
-  pending=$(gh api "repos/$repo/commits/$sha/check-runs?per_page=100" \
-    --jq '[.check_runs[] | select(.status != "completed")] | length')
-  total=$(gh api "repos/$repo/commits/$sha/check-runs?per_page=100" --jq '.check_runs | length')
-  [ "$total" -gt 0 ] && [ "$pending" -eq 0 ] || continue
+discobox ls -o json | jq -r '.sandboxes[] | select(.meta.tags.pr != null and .meta.tags.repo != null)
+  | select((.runtime.runtimeState // "") != "archived")
+  | [.meta.tags.repo, .meta.tags.pr, .id, (.runtime.runtimeState // ""),
+     (if .meta.tags.blocked != null then "blocked" elif .meta.tags["needs-input"] != null then "needs-input" else "" end)] | @tsv' |
+while IFS=$'\t' read -r repo pr id state held; do
+  if [ -z "$held" ]; then case "$state" in running|starting) continue ;; esac; fi
+  row=$(gh api graphql -f query="$Q" -F owner="${repo%%/*}" -F name="${repo#*/}" -F n="$pr" \
+    --jq '.data.repository.pullRequest | [.state, .isDraft, (.commits.nodes[0].commit.statusCheckRollup.state // "NONE"), .updatedAt] | @tsv' 2>/dev/null) || continue
+  IFS=$'\t' read -r pstate draft ci updated <<<"$row"
+  [ "$pstate" = OPEN ] && [ "$draft" = true ] || continue
+  case "$ci" in SUCCESS|FAILURE|ERROR) ;; *) continue ;; esac   # PENDING, EXPECTED or no checks: not done
+  if [ -n "$held" ]; then
+    [[ "$updated" < "$stale_before" ]] || continue
+    printf '%s %s %s %s held:%s since %s\n' "$repo" "$pr" "$id" "$state" "$held" "$updated"
+    continue
+  fi
   printf '%s %s %s %s\n' "$repo" "$pr" "$id" "$state"
   if [ $wake = 1 ]; then
     discobox start "$id" >/dev/null 2>&1 || true

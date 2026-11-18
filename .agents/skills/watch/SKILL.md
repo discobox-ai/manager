@@ -90,6 +90,15 @@ Monitor(
   doesn't fire if the server restarts while it's pending (discobox#1192;
   seen 2026-11-03 and 2026-11-15, when four green drafts sat for 90 minutes).
   It's a rule you run, not a judgement you make: run the script.
+  It also lists, without waking, drafts whose box is tagged `blocked` or
+  `needs-input` with checks done and no movement for 2 hours (`held:`). For
+  each, read the box's screen: if what it waited on has happened (the owner
+  tagged, merged or answered; a run published), remove the tag and wake it
+  with what changed. Otherwise leave it, and make sure the table says what
+  it waits on. And whenever you see a blocker clear yourself (a tag, a
+  merge, a publish a worker waits on), un-tag and wake that box then, not
+  at the next sweep (2026-11-18: PR 1352 sat 10 hours `blocked` after
+  vm/v9 had published).
 - While a box waiting on the owner is due to be paused (`workers`, Power),
   check it when it's due rather than waiting for an event.
 
