@@ -476,6 +476,37 @@ ready, no merge conflicts."
   PR's worker and type what's missing. A conflict is yours as before
   (Rebases): wake the worker to rebase; the new head comes back to the box.
 
+### Norm's hourly update (owner, 2026-11-18)
+
+The owner: "every hour we take a snapshot of all the work that we have been
+doing, what the boxes are up to, the issues opened, the prs closed. And send
+that summary to a box. That box should have the personality of Norm ... I
+don't want to actually tweet, all I want to do is have the box generate the
+hourly message. I want to review it for a bit before we decide to allow it to
+publish to x."
+
+- **One box, long-lived:** `scripts/launch norm --repo discobox-ai/discobox
+  --no-source -p '/norm'`, tagged `job=norm`. Bound nothing (role `none`):
+  it gets no X or GitHub credential, and you never approve one for it. It
+  doesn't count against `workers.max`; never retire it. Name it
+  `Norm: hourly update`.
+- **Each hour** (a CronCreate job, prompt "norm: send the hour's snapshot",
+  created at start beside main-install's, and kept):
+  1. `scripts/hourly-snapshot "$(cat ~/.local/state/discobox-manager/norm-last 2>/dev/null)" > /tmp/norm-<UTC time>.md`
+     (from the last snapshot's time; an hour ago when there's none). Then
+     append `## What the owner told the manager` with the owner's own words
+     that `manager-chat` relayed to you since the last one, one line each,
+     with anything private (box ids, credentials, private repositories,
+     other people's names) left out. Omit the section if there were none.
+  2. `discobox cp /tmp/norm-<time>.md <norm box>:norm/inbox/<time>.md`
+     (make `~/norm/inbox` with `discobox exec` the first time), then type
+     `New snapshot: ~/norm/inbox/<time>.md` and Enter. Start the box first
+     if it's paused.
+  3. Write the snapshot's end time to `norm-last`.
+- **Nothing is published.** The drafts stay in the box (`~/norm/drafts.md`)
+  for the owner to read. Publishing to X is the owner's decision, later, and
+  needs a new rule here first.
+
 ### The merge queue (owner, 2026-11-16)
 
 The owner: "spin up a dedicated worker that have merge privileges and will

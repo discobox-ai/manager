@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# The hour in the factory, for the Norm box (workers skill, Norm's hourly
+# update; owner, 2026-11-18). Prints Markdown: what the owner (ibuildthecloud)
+# did by hand, what the factory did on its own, and what the boxes are doing.
+# Public repositories only, and no box addresses, secrets or other people's
+# names: the output is joke material that may one day be public.
+#
+#   scripts/hourly-snapshot [SINCE]   # SINCE: ISO time, default an hour ago
+#
+# Cost: GraphQL search (its own allowance), one `discobox ls`. No REST.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+eval "$(discobox-access env)"
+since=${1:-$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ)}
+now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+OWNER=ibuildthecloud
+
+Q='query($q:String!,$after:String){search(query:$q,type:ISSUE,first:100,after:$after){pageInfo{hasNextPage endCursor} nodes{
+  __typename
+  ... on Issue{number title url state createdAt closedAt author{login} repository{nameWithOwner isPrivate}
+    labels(first:20){nodes{name}} comments(last:20){nodes{author{login} createdAt}}}
+  ... on PullRequest{number title url state createdAt closedAt mergedAt isDraft author{login} mergedBy{login}
+    repository{nameWithOwner isPrivate} labels(first:20){nodes{name}}
+    reviews(last:10){nodes{author{login} state submittedAt}} comments(last:20){nodes{author{login} createdAt}}}
+}}}'
+
+items='[]'; after=""
+while :; do
+  page=$(gh api graphql -f query="$Q" -F q="org:discobox-ai updated:>=$since" ${after:+-F after="$after"})
+  items=$(jq -c --argjson acc "$items" '$acc + .data.search.nodes' <<<"$page")
+  [ "$(jq -r .data.search.pageInfo.hasNextPage <<<"$page")" = true ] || break
+  after=$(jq -r .data.search.pageInfo.endCursor <<<"$page")
+done
+
+boxes=$(discobox ls -o json | jq -c '[.sandboxes[] | select((.runtime.runtimeState // "") != "archived")
+  | {job: (.meta.tags.job // "adhoc"), repo: ((.meta.tags.repo // "") | split("/") | last), issue: (.meta.tags.issue // ""),
+     state: (.runtime.runtimeState // ""), status: ([.meta.tags | to_entries[] | select(.key | IN("ready","blocked","needs-input","working")) | .key] | join(",")),
+     name: (.meta.name // "")}]')
+
+jq -r --arg since "$since" --arg now "$now" --arg owner "$OWNER" --argjson boxes "$boxes" '
+  def ref: "\(.repository.nameWithOwner | split("/") | last)#\(.number)";
+  def inwin(t): t != null and t >= $since;
+  def line: "- \(ref) \(.title)";
+  [ .[] | select(.repository.isPrivate | not) ] as $all |
+  "# The factory, \($since) to \($now)\n",
+  "## What the owner (ibuildthecloud) did by hand\n",
+  ( [ $all[] | select(.__typename == "PullRequest" and inwin(.mergedAt) and .mergedBy.login == $owner
+        and ([.labels.nodes[].name] | index("auto-merged") | not) and ([.labels.nodes[].name] | index("queue-merged") | not)) | line ]
+    | if length > 0 then "Merged by hand:", .[] else empty end ),
+  ( [ $all[] | select(.__typename == "PullRequest" and any(.reviews.nodes[]; .author.login == $owner and .state == "APPROVED" and inwin(.submittedAt))) | line ]
+    | if length > 0 then "Approved (the merge queue then merges them):", .[] else empty end ),
+  ( [ $all[] | select(.author.login == $owner and inwin(.createdAt)) | line ]
+    | if length > 0 then "Opened:", .[] else empty end ),
+  ( [ $all[] | select(any(.comments.nodes[]; .author.login == $owner and inwin(.createdAt))) | line ]
+    | if length > 0 then "Commented on:", .[] else empty end ),
+  "",
+  "## What the factory (the bot and its boxes) did on its own\n",
+  ( [ $all[] | select(.__typename == "PullRequest" and inwin(.mergedAt) and ([.labels.nodes[].name] | index("auto-merged"))) | line ]
+    | if length > 0 then "Auto-merged by the merge gate:", .[] else empty end ),
+  ( [ $all[] | select(.__typename == "PullRequest" and inwin(.mergedAt) and ([.labels.nodes[].name] | index("queue-merged"))) | line ]
+    | if length > 0 then "Merged by the merge queue (after the owner approved):", .[] else empty end ),
+  ( [ $all[] | select(.__typename == "PullRequest" and .author.login != $owner and inwin(.createdAt)) | line ]
+    | if length > 0 then "PRs opened:", .[] else empty end ),
+  ( [ $all[] | select(.__typename == "Issue" and .author.login != $owner and inwin(.createdAt)) | line ]
+    | if length > 0 then "Issues filed:", .[] else empty end ),
+  ( [ $all[] | select(.__typename == "Issue" and inwin(.closedAt)) | line ]
+    | if length > 0 then "Issues closed:", .[] else empty end ),
+  ( [ $all[] | select(.__typename == "PullRequest" and .state == "OPEN" and ([.labels.nodes[].name] | index("status/in-review"))) | line ]
+    | if length > 0 then "Waiting on the owner to review and merge (status/in-review):", .[] else empty end ),
+  "",
+  "## The boxes right now\n",
+  ( $boxes | "\(length) boxes, \([.[] | select(.state == "running")] | length) running.",
+    ( group_by(.job) | map("- \(.[0].job): \(length) (\([.[] | select(.state == "running")] | length) running)") | .[] ) ),
+  ( [ $boxes[] | select(.status | test("needs-input|blocked")) | "- \(.job) \(.repo)\(if .issue != "" then "#" + .issue else "" end): \(.status)" ]
+    | if length > 0 then "\nStuck waiting on someone:", .[] else empty end )
+' <<<"$items"
