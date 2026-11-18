@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # List worker PRs that are drafts with every check finished and whose box is
-# not running: the worker slept and its wake never fired (watch skill,
+# not running, or running with its agent not working ("idle"): the worker slept and its wake never fired (watch skill,
 # heartbeat). Prints "<repo> <pr> <box id> <box state>" per stuck PR; prints
 # nothing when none are stuck.
 #
@@ -27,7 +27,13 @@ stale_before=$(date -u -d '2 hours ago' +%Y-%m-%dT%H:%M:%SZ)
 
 discobox ls -o json | jq -r '.sandboxes[] | select(.meta.tags.pr != null and .meta.tags.repo != null)
   | select((.runtime.runtimeState // "") != "archived")
-  | [.meta.tags.repo, .meta.tags.pr, .id, (.runtime.runtimeState // ""),
+  | [.meta.tags.repo, .meta.tags.pr, .id,
+     # A running box whose agent is not working (done, idle at its prompt) is as
+     # stuck as a stopped one (2026-11-18: discobox#1360 and #1372 sat green
+     # for hours in powered-on boxes idle at the prompt).
+     (if (.runtime.runtimeState // "") == "running"
+        and ((.runtime.agentStatus.sessions // [] | map(select(.primary)) | .[0].programStatus.state // "none") != "working")
+      then "idle" else (.runtime.runtimeState // "") end),
      (if .meta.tags.blocked != null then "blocked" elif .meta.tags["needs-input"] != null then "needs-input" else "" end)] | @tsv' |
 while IFS=$'\t' read -r repo pr id state held; do
   if [ -z "$held" ]; then case "$state" in running|starting) continue ;; esac; fi
