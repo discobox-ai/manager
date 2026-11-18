@@ -243,5 +243,5 @@
   },
   "justification": "Manage issues and labels in the repositories manager.yaml watches (discobox, vm, manager, review, release-validation, site, hooks, tour, repostd, vz, x) and push my own repository discobox-ai/manager; delegate the worker roles (github-deliver, github-triage) so I can bind each worker its job's role at launch. 30 days: it is the factory's standing access.",
   "wait": true,
-  "ttl": "720h"
+  "grantTTLSeconds": 2592000
 }
