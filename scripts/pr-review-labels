@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Keep status/in-review true on every open PR in the watched repositories
+# (github skill, Filing and editing; docs/labels.md): a PR that is out of
+# draft, with every check on its head completed green (success, skipped,
+# neutral) and the manager's "**Process check** at `<head sha>`" comment for
+# that head, has the label; any other open PR doesn't. Prints each change.
+#   scripts/pr-review-labels           # list what would change
+#   scripts/pr-review-labels --apply   # change the labels
+set -euo pipefail
+cd "$(dirname "$0")/.."
+eval "$(discobox-access env)"
+apply=0; [ "${1:-}" = --apply ] && apply=1
+for repo in $(awk '/^  - name: /{print $3}' manager.yaml); do
+  gh api "repos/$repo/pulls?state=open&per_page=100" \
+    --jq '.[] | [.number, .draft, .head.sha, (any(.labels[]; .name == "status/in-review"))] | @tsv' 2>/dev/null |
+  while IFS=$'\t' read -r n draft sha has; do
+    want=false
+    if [ "$draft" = false ]; then
+      runs=$(gh api "repos/$repo/commits/$sha/check-runs?per_page=100" \
+        --jq '([.check_runs[] | select(.status != "completed" or (.conclusion | IN("success","skipped","neutral") | not))] | length), (.check_runs | length)' | paste -sd' ')
+      bad=${runs% *}; total=${runs#* }
+      if [ "$total" -gt 0 ] && [ "$bad" -eq 0 ]; then
+        short=${sha:0:7}
+        if gh api "repos/$repo/issues/$n/comments?per_page=100" \
+             --jq '.[].body' | grep -q "Process check\*\* at \`$short"; then
+          want=true
+        fi
+      fi
+    fi
+    if [ "$want" = true ] && [ "$has" = false ]; then
+      echo "$repo#$n + status/in-review"
+      if [ $apply = 1 ]; then gh api -X POST "repos/$repo/issues/$n/labels" -f 'labels[]=status/in-review' --silent; fi
+    elif [ "$want" = false ] && [ "$has" = true ]; then
+      echo "$repo#$n - status/in-review"
+      if [ $apply = 1 ]; then gh api -X DELETE "repos/$repo/issues/$n/labels/status%2Fin-review" --silent; fi
+    fi
+  done
+done
