@@ -33,6 +33,9 @@ repos:
   - name: discobox-ai/hooks
     defaultBranch: main
   # Added by the owner 2026-11-05: the hello-world tour (discobox#633). Public.
+  # Watched only: no worker roles delegated for it since 2026-11-18 (the
+  # access request's 32-policy limit, to make room for x). Re-add them to
+  # roles/manager-request.json before starting a worker here.
   - name: discobox-ai/tour
     defaultBranch: main
   # Added by the owner 2026-11-13: the repository standard (go tool repocheck
@@ -44,6 +47,11 @@ repos:
   # Virtualization.framework (#1114's handle crash). defaultBranch assumed;
   # check once the bot can read it.
   - name: discobox-ai/vz
+    defaultBranch: main
+  # Added by the owner 2026-11-18 ("can you watch discobox-ai/x?"): shared Go
+  # primitives (x#2, the diff review#23 needs). Public. Its labels aren't
+  # migrated (GitHub's defaults only).
+  - name: discobox-ai/x
     defaultBranch: main
 
 # The release being worked toward (owner, 2026-11-04). Its milestone's issues

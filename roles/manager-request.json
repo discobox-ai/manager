@@ -78,6 +78,13 @@
         "owner": "discobox-ai",
         "repo": "vz"
       }
+    },
+    {
+      "file": "roles/github-manager.json",
+      "args": {
+        "owner": "discobox-ai",
+        "repo": "x"
+      }
     }
   ],
   "delegate": {
@@ -143,13 +150,6 @@
         }
       },
       {
-        "file": "roles/github-labels.json",
-        "args": {
-          "owner": "discobox-ai",
-          "repo": "manager"
-        }
-      },
-      {
         "file": "roles/github-deliver.json",
         "args": {
           "owner": "discobox-ai",
@@ -198,21 +198,6 @@
         "file": "roles/github-deliver.json",
         "args": {
           "owner": "discobox-ai",
-          "repo": "tour",
-          "forkOwner": "ibuildthecloud-bot"
-        }
-      },
-      {
-        "file": "roles/github-triage.json",
-        "args": {
-          "owner": "discobox-ai",
-          "repo": "tour"
-        }
-      },
-      {
-        "file": "roles/github-deliver.json",
-        "args": {
-          "owner": "discobox-ai",
           "repo": "repostd",
           "forkOwner": "ibuildthecloud-bot"
         }
@@ -237,6 +222,21 @@
         "args": {
           "owner": "discobox-ai",
           "repo": "vz"
+        }
+      },
+      {
+        "file": "roles/github-deliver.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "x",
+          "forkOwner": "ibuildthecloud-bot"
+        }
+      },
+      {
+        "file": "roles/github-triage.json",
+        "args": {
+          "owner": "discobox-ai",
+          "repo": "x"
         }
       }
     ]
