@@ -166,6 +166,16 @@ job needs; don't ask for it.
   waits.
 - What a route can't narrow is yours to keep: push only your own branch,
   edit only your own PR, comment only on your issue and PR.
+- **The bot's REST allowance is shared.** Every box acts as the same bot,
+  with 5000 REST calls an hour among all of them, and it ran out twice on
+  2026-11-18, stalling every box. So: a `discobox-monitor` `github-repo`
+  instance always gets `-o interval=2m` or longer (`10m` for a repository
+  that's quiet), never the 1-minute default. Watch only your own PR or run
+  (`pr=`, `run=`), never a whole repository the manager already watches.
+  No `gh pr checks --watch`, `gh run watch` or sleep loops around `gh`:
+  use the monitor. Reading many PRs or issues at once is one GraphQL query
+  (its allowance is separate), not a REST call each. A 403 or 429 saying
+  "rate limit": wait for the reset it names, don't retry in a loop.
 
 ## New work you find: file it
 

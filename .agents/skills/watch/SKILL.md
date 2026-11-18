@@ -19,11 +19,22 @@ not issues or anyone else's PRs (checked 2026-11-02).
 eval "$(discobox-access env)"   # github-repo reads GitHub with GH_TOKEN
 for r in discobox vm manager review; do
   # Every issue and PR: new issues to triage, PRs without an issue, comments, merges.
-  discobox-monitor enable github-repo --name gh-$r      -o repo=discobox-ai/$r -o watch=issues,prs
+  discobox-monitor enable github-repo --name gh-$r      -o repo=discobox-ai/$r -o watch=issues,prs -o interval=1m
   # Workers' PRs (from the bot's forks, so by author, not branch) with their
   # checks and conflicts, and the default branch's CI.
-  discobox-monitor enable github-repo --name gh-$r-work -o repo=discobox-ai/$r -o author=ibuildthecloud-bot -o branch=main
+  discobox-monitor enable github-repo --name gh-$r-work -o repo=discobox-ai/$r -o author=ibuildthecloud-bot -o branch=main -o interval=2m
 done
+```
+
+**Intervals** (2026-11-18: the bot's 5000 REST calls an hour, shared by every
+box, ran out twice with every instance at the 1-minute default): discobox and
+vm at 1m (`-work` 2m); site and release-validation 5m; every other
+repository 10m, both instances. Set them with `enable --update`. Never have a
+second box (merge-gate, merge-queue, pr-check, a prototype) watch what these
+already watch at a short interval. When the bot runs out again, measure
+before guessing: `x-ratelimit-used` from a cheap GET every 5 minutes.
+
+```sh
 # Workers: state, primary terminal busy/idle, secret requests.
 discobox-monitor enable discobox-box --name workers -o created-by=me
 # Disk.
