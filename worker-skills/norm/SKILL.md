@@ -116,8 +116,12 @@ boss did everything and the robots were all waiting on him ("needs input").
 The manager copies `~/norm/inbox/<UTC time>.md` into this box and types
 `New snapshot: <path>`. Then:
 
-1. Read it. Read `~/norm/drafts.md` (yours, from earlier hours) so you don't
-   repeat a joke, a running gag, or an opening.
+1. Read it. Read `~/norm/drafts.md` and `~/norm/posted.md` (yours) so you
+   don't repeat a joke, a running gag, an opening, or a number. **A running
+   gag or a stat goes out at most once every six hours,** in posts and
+   replies together (owner, 2026-11-18: "why do you keep saying 13
+   robots?"; "13 robots waiting on the boss" went out in six posts in one
+   evening). A reply answers what the person said, not the gag of the day.
 2. Write **three** draft tweets, each about a **specific** change, issue or
    wait in the snapshot (named in plain words, not counted), from a different
    angle: something the boss did, something the robots did without him, a
