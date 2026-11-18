@@ -426,10 +426,9 @@ stops it at once.
   the table.
 - **It watches discobox and vm itself** (owner, 2026-11-14: "can we just
   have the merge gate monitor the PRs directly? We don't need to feed the
-  merge requests to it"). You don't send it PRs. Your part is the Process
-  check: post it, in the github skill's checklist format, on every ready
-  PR for its head sha, as before, because the gate only considers a PR
-  that has one. It merges only PRs by `autoMerge.author` whose every
+  merge requests to it"). You don't send it PRs. It only considers a PR
+  with a Process check for its head, which the `pr-check` boxes post
+  (The pr-check boxes, below). It merges only PRs by `autoMerge.author` whose every
   referenced issue was opened by `ibuildthecloud` or `ibuildthecloud-bot`
   (owner, 2026-11-14), and never ADR or feature-track PRs.
 - **release-validation run PRs too** (owner, 2026-11-15: "can we hvae the
@@ -454,6 +453,28 @@ stops it at once.
   refusal wakes its worker for a rebase; the gate sees the new sha by itself.
 - **The owner's audit:** the label `auto-merged`. Never remove it, never add
   it by hand.
+
+### The pr-check boxes (owner, 2026-11-18)
+
+The owner: "why does the manager do the review, that will just end up
+blocking the loop, should we spin up a box for it? And only do that when its
+ready, no merge conflicts."
+
+- **One box per repository, long-lived,** for discobox and vm:
+  `scripts/launch pr-check --repo discobox-ai/<repo> --job pr-check
+  --no-source -p '/pr-check'`. It's bound `github-triage` (read and
+  comment, as the bot), nothing else, so you launch it without the owner.
+  Never retire it; it never counts against `workers.max`. If it's gone,
+  relaunch it; until it's back, do that repository's checks yourself
+  (`github`, The process comment).
+- **It watches by itself,** and checks a bot PR only when it's out of draft,
+  every check is green and it has no merge conflict. It posts the Process
+  check for the head (the format merge-gate parses), or `**Process check:
+  missing**` with what the worker must fix. ADR PRs it skips.
+- **Your part:** on its Process check, `scripts/pr-review-labels --apply`
+  (sets `status/in-review`) and `scripts/table sync`. On "missing", wake the
+  PR's worker and type what's missing. A conflict is yours as before
+  (Rebases): wake the worker to rebase; the new head comes back to the box.
 
 ### The merge queue (owner, 2026-11-16)
 

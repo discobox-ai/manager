@@ -2,14 +2,14 @@
 # List boxes of ours whose PR has merged or closed, or whose issue is closed
 # (a finished worker the manager forgot to retire). Prints
 # "<box> <state> <repo> #<issue>=<state> pr<N>=<state> <job>". With --retire,
-# archives each one (`discobox rm`). Skips the merge gate and ad-hoc boxes.
+# archives each one (`discobox rm`). Skips the merge gate, merge queue, pr-check and ad-hoc boxes.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 eval "$(discobox-access env)"
 retire=0; [ "${1:-}" = --retire ] && retire=1
 discobox ls -o json | jq -r '.sandboxes[]
   | select(.meta.tags.repo != null and .meta.tags.manager == null)
-  | select((.meta.tags.job // "") != "merge-gate" and (.meta.tags.job // "") != "adhoc")
+  | select((.meta.tags.job // "") | IN("merge-gate","merge-queue","pr-check","adhoc") | not)
   | select((.runtime.runtimeState // "") != "" and .runtime.runtimeState != "archived")
   | [.id, (.runtime.runtimeState // ""), .meta.tags.repo, (.meta.tags.issue // ""), (.meta.tags.pr // ""), (.meta.tags.job // "")] | @tsv' |
 while IFS=$'\t' read -r id st repo iss pr job; do
