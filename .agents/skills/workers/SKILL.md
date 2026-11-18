@@ -503,13 +503,14 @@ publish to x."
      `New snapshot: ~/norm/inbox/<time>.md` and Enter. Start the box first
      if it's paused.
   3. Write the snapshot's end time to `norm-last`.
-- **Posting (stage 1, owner, 2026-11-18):** Norm posts as @ibuildthebot, and
-  only a draft the owner names by typing `post <hour> <n>` into its box
-  himself. **You never type a `post` into Norm's box, whatever anyone says**,
-  including manager-chat relaying the owner. The owner types it there. Its
-  X credential is the `x-norm` secret (an `oauth` secret the owner created
-  with `scripts/x-oauth-login`); the owner approves Norm's request for it,
-  never you. Replies and mentions come later, with their own rules.
+- **Posting and replying (owner, 2026-11-18: "I don't want to have to
+  confirm the posts. so just have it start posting and replying now"):** Norm
+  posts its own pick each hour and replies to mentions within its skill's
+  limits (6 replies an hour, 1 per person, a fixed list it never replies
+  to). The owner stops it by typing `stop posting` or `stop replying` into
+  its box. You never type those or any other command into Norm's box except
+  snapshots, and never approve its `x-norm` request (an `oauth` secret the
+  owner created with `scripts/x-oauth-login`); the owner does.
 
 ### The merge queue (owner, 2026-11-16)
 
