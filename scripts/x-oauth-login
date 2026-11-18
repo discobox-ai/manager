@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Log Norm's X account in once and store the grant as a discobox `oauth`
+# secret, which the discobox server refreshes by itself (ADR 0011 in
+# discobox-ai/discobox). Run it on the owner's own machine, where a browser can
+# reach 127.0.0.1, with the discobox CLI logged in to the server. The tokens
+# never print and never pass through any agent.
+#
+#   scripts/x-oauth-login CLIENT_ID [SECRET_NAME]     # SECRET_NAME: x-norm
+#
+# The X app (developer.x.com) must be OAuth 2.0, type "Native App" (a public
+# client: no client secret, so the server can refresh with the client id
+# alone), with the callback URL http://127.0.0.1:8765/callback. Log the browser
+# in as the Norm account (@ibuildthebot) before you approve.
+#
+# Scopes: tweet.read tweet.write users.read offline.access (offline.access is
+# what gives a refresh token). The secret may be sent only to the X API routes
+# Norm uses: post a tweet, read its own user and its mentions.
+set -euo pipefail
+CLIENT_ID=${1:?usage: x-oauth-login CLIENT_ID [SECRET_NAME]}
+NAME=${2:-x-norm}
+PORT=8765
+REDIRECT="http://127.0.0.1:$PORT/callback"
+SCOPES="tweet.read tweet.write users.read offline.access"
+command -v python3 >/dev/null && command -v curl >/dev/null && command -v discobox >/dev/null \
+  || { echo "needs python3, curl and the discobox CLI" >&2; exit 1; }
+
+VERIFIER=$(python3 -c 'import secrets;print(secrets.token_urlsafe(64))')
+CHALLENGE=$(printf %s "$VERIFIER" | python3 -c 'import sys,hashlib,base64;print(base64.urlsafe_b64encode(hashlib.sha256(sys.stdin.buffer.read()).digest()).rstrip(b"=").decode())')
+STATE=$(python3 -c 'import secrets;print(secrets.token_urlsafe(16))')
+AUTH_URL=$(python3 - "$CLIENT_ID" "$REDIRECT" "$SCOPES" "$CHALLENGE" "$STATE" <<'PY'
+import sys, urllib.parse
+cid, red, sc, ch, st = sys.argv[1:]
+print("https://x.com/i/oauth2/authorize?" + urllib.parse.urlencode({
+  "response_type": "code", "client_id": cid, "redirect_uri": red, "scope": sc,
+  "state": st, "code_challenge": ch, "code_challenge_method": "S256"}))
+PY
+)
+echo "Open this in a browser logged in as the Norm account, and approve:"
+echo
+echo "  $AUTH_URL"
+echo
+echo "Waiting for X to send the browser back to $REDIRECT ..."
+
+# One request on the callback; the code is good for 30 seconds, so it is
+# exchanged at once, by the same process that receives it.
+TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
+python3 - "$PORT" "$STATE" "$CLIENT_ID" "$REDIRECT" "$VERIFIER" "$TMP/grant.json" <<'PY'
+import sys, json, urllib.parse, urllib.request, http.server
+port, state, cid, red, ver, out = sys.argv[1:]
+class H(http.server.BaseHTTPRequestHandler):
+    def log_message(self, *a): pass
+    def do_GET(self):
+        q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        if q.get("state", [""])[0] != state or "code" not in q:
+            self.send_response(400); self.end_headers(); self.wfile.write(b"Wrong or missing state/code."); return
+        body = urllib.parse.urlencode({"grant_type": "authorization_code", "code": q["code"][0],
+            "redirect_uri": red, "client_id": cid, "code_verifier": ver}).encode()
+        req = urllib.request.Request("https://api.x.com/2/oauth2/token", data=body,
+            headers={"Content-Type": "application/x-www-form-urlencoded"})
+        try:
+            g = json.load(urllib.request.urlopen(req))
+        except urllib.error.HTTPError as e:
+            msg = e.read().decode()[:300]
+            self.send_response(500); self.end_headers(); self.wfile.write(("Token exchange failed: " + msg).encode())
+            print("token exchange failed:", e.code, msg, file=sys.stderr); sys.exit(1)
+        if "refresh_token" not in g:
+            print("no refresh token: is offline.access in the app's scopes?", file=sys.stderr); sys.exit(1)
+        json.dump(g, open(out, "w"))
+        self.send_response(200); self.end_headers()
+        self.wfile.write(b"Done. Norm's X login is stored in discobox; you can close this tab.")
+        raise SystemExit(0)
+s = http.server.HTTPServer(("127.0.0.1", int(port)), H)
+try:
+    s.handle_request()
+except SystemExit as e:
+    sys.exit(e.code)
+PY
+[ -s "$TMP/grant.json" ] || { echo "no grant received" >&2; exit 1; }
+
+EXPIRES=$(python3 -c 'import json,sys,time;g=json.load(open(sys.argv[1]));print(int((time.time()+g.get("expires_in",7200))*1000))' "$TMP/grant.json")
+ACCESS=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["access_token"])' "$TMP/grant.json")
+REFRESH=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["refresh_token"])' "$TMP/grant.json")
+
+ROUTES=(
+  --route 'POST api.x.com/2/tweets'
+  --route 'GET api.x.com/2/users/me'
+  --route 'GET api.x.com/2/users/*/mentions'
+  --route 'GET api.x.com/2/tweets/**'
+)
+if discobox secret get "$NAME" >/dev/null 2>&1; then
+  discobox secret update "$NAME" --token "$ACCESS" --refresh-token "$REFRESH" \
+    --access-token-expires-at "$EXPIRES" >/dev/null
+  echo "Updated the discobox secret $NAME."
+else
+  discobox secret create --name "$NAME" --type oauth \
+    --token "$ACCESS" --refresh-token "$REFRESH" --access-token-expires-at "$EXPIRES" \
+    --token-url https://api.x.com/2/oauth2/token --client-id "$CLIENT_ID" \
+    $(for s in $SCOPES; do printf -- '--scope %s ' "$s"; done) \
+    --max-binding-ttl forever "${ROUTES[@]}" >/dev/null
+  echo "Created the discobox secret $NAME (type oauth, refreshed by the server)."
+fi
+echo "Next: tell the manager. Norm's box asks for $NAME; you approve it."
