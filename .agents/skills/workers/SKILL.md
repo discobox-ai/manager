@@ -506,7 +506,7 @@ publish to x."
 - **Posting and replying (owner, 2026-11-18: "I don't want to have to
   confirm the posts. so just have it start posting and replying now"):** Norm
   posts its own pick each hour and replies to mentions within its skill's
-  limits (50 replies an hour, 1 per person, a fixed list it never replies
+  limits (50 replies an hour, its only cap, and a fixed list it never replies
   to). The owner stops it by typing `stop posting` or `stop replying` into
   its box. You never type those or any other command into Norm's box except
   snapshots, and never approve its `x-norm` request (an `oauth` secret the
