@@ -28,9 +28,22 @@ once your comment is up.
 ## 1. Watch
 
 Watch `REPO` with the `discobox-monitor` skill's GitHub repository monitor
-(`watch=prs`, `author=ibuildthecloud-bot`, which reports checks, pushes and
-conflicts), and on top of it rescan every 15 minutes in case an event was
-missed: list the open PRs (`GET /repos/$REPO/pulls?state=open`, all pages).
+(`watch=prs`, `author=ibuildthecloud-bot`, `interval=5m`, which reports
+checks, pushes and conflicts), and on top of it rescan every 30 minutes in
+case an event was missed.
+
+**Spend the bot's REST allowance sparingly.** Every worker shares the bot's
+5000 REST calls an hour, and on 2026-11-18 they ran out. So:
+
+- Rescan with **one GraphQL query** for the whole repository, never a REST
+  call per PR: open PRs with `number isDraft headRefOid mergeable`,
+  `commits(last:1){nodes{commit{statusCheckRollup{state}}}}` and
+  `comments(last:30){nodes{body}}`. That tells you which are ready (§2):
+  rollup `SUCCESS`, `mergeable` `MERGEABLE`, not a draft, no comment of
+  yours for the head.
+- Make REST calls only for a PR that's ready and unchecked (§3's reads).
+- A 403 or 429 that says rate limit: stop until the reset time it gives
+  (`x-ratelimit-reset`), then carry on. Don't retry in a loop.
 
 ## 2. Which PRs, and when
 

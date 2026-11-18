@@ -1,52 +1,52 @@
 #!/usr/bin/env bash
-# Keep status/in-review true on every open PR in the watched repositories.
+# Keep status/in-review true on every open PR in the watched repositories
+# (github skill, Filing and editing; docs/labels.md). A PR has the label when it
+# is out of draft, its head's checks are all green (the commit's check rollup is
+# SUCCESS), it has no merge conflict, and it has the pr-check box's (or the
+# manager's) "**Process check** at `<head sha>`" comment for that head. An ADR
+# PR (every file under an adr/ directory) needs no Process check (owner,
+# 2026-11-18: "I want to be able to just look for the in-review label so know I
+# should look"). Any other open PR doesn't have it.
+#
 # Label changes re-run CI (the workflows trigger on labeled/unlabeled), so this
-# never removes the label because checks are merely pending: only a draft, a
-# failed check, or a head without a Process check takes it off, and it adds
-# the label only once every check has completed green. Changes are rare by
-# design.
-# (github skill, Filing and editing; docs/labels.md): a PR that is out of
-# draft, with every check on its head completed green (success, skipped,
-# neutral), no merge conflict, and the pr-check box's (or the manager's)
-# "**Process check** at `<head sha>`" comment for that head, has the label;
-# any other open PR doesn't. An ADR PR (every file it changes is under an
-# adr/ directory) needs no Process check: green and no conflict is enough
-# (owner, 2026-11-18: "I want to be able to just look for the in-review
-# label so know I should look"). Prints each change.
+# never changes a PR whose checks are pending or whose mergeability GitHub is
+# still computing: only a draft, a failed check, a conflict, or a head without
+# a Process check takes the label off.
+#
+# Cost: ONE GraphQL query per repository per pass, no REST calls except the
+# label changes themselves. The bot's REST allowance is shared by every worker
+# (2026-11-18: the per-PR REST version used up 5000/h).
 #   scripts/pr-review-labels           # list what would change
 #   scripts/pr-review-labels --apply   # change the labels
 set -euo pipefail
 cd "$(dirname "$0")/.."
 eval "$(discobox-access env)"
 apply=0; [ "${1:-}" = --apply ] && apply=1
+
+Q='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){pullRequests(states:OPEN,first:100){nodes{
+  number isDraft headRefOid mergeable changedFiles
+  labels(first:30){nodes{name}}
+  files(first:30){nodes{path}}
+  comments(last:30){nodes{body}}
+  commits(last:1){nodes{commit{statusCheckRollup{state}}}}
+}}}}'
+
 for repo in $(awk '/^  - name: /{print $3}' manager.yaml); do
-  gh api "repos/$repo/pulls?state=open&per_page=100" \
-    --jq '.[] | [.number, .draft, .head.sha, (any(.labels[]; .name == "status/in-review"))] | @tsv' 2>/dev/null |
-  while IFS=$'\t' read -r n draft sha has; do
-    want=false
-    if [ "$draft" = false ]; then
-      runs=$(gh api "repos/$repo/commits/$sha/check-runs?per_page=100" \
-        --jq '([.check_runs[] | select(.status == "completed" and (.conclusion | IN("success","skipped","neutral") | not))] | length), ([.check_runs[] | select(.status != "completed")] | length), (.check_runs | length)' | paste -sd' ')
-      read -r failed pending total <<<"$runs"
-      if [ "$pending" -gt 0 ] && [ "$failed" -eq 0 ]; then
-        continue   # a run in progress (often a label's own re-run): leave the label as it is
-      fi
-      if [ "$total" -gt 0 ] && [ "$failed" -eq 0 ]; then
-        mstate=$(gh api "repos/$repo/pulls/$n" --jq '.mergeable_state')
-        if [ "$mstate" = unknown ]; then continue; fi   # GitHub still computing: leave it
-        if [ "$mstate" != dirty ]; then
-          adr=$(gh api "repos/$repo/pulls/$n/files?per_page=100" \
-            --jq '(length > 0) and all(.[]; .filename | test("(^|/)adr/"))')
-          short=${sha:0:7}
-          if [ "$adr" = true ]; then
-            want=true
-          elif gh api "repos/$repo/issues/$n/comments?per_page=100" \
-               --jq '.[].body' | grep -q "Process check\*\* at \`$short"; then
-            want=true
-          fi
-        fi
-      fi
-    fi
+  out=$(gh api graphql -f query="$Q" -F owner="${repo%%/*}" -F name="${repo#*/}" --jq '
+    .data.repository.pullRequests.nodes[] |
+    (.headRefOid[0:7]) as $short |
+    (.commits.nodes[0].commit.statusCheckRollup.state // "NONE") as $ci |
+    (any(.labels.nodes[]; .name == "status/in-review")) as $has |
+    ((.changedFiles > 0) and (.changedFiles <= 30) and all(.files.nodes[]; .path | test("(^|/)adr/"))) as $adr |
+    (any(.comments.nodes[]; .body | startswith("**Process check** at `" + $short))) as $checked |
+    (if .isDraft then "false"
+     elif $ci == "PENDING" or $ci == "EXPECTED" or .mergeable == "UNKNOWN" then "skip"
+     elif $ci != "SUCCESS" or .mergeable == "CONFLICTING" then "false"
+     elif $adr or $checked then "true"
+     else "false" end) as $want |
+    [.number, $want, $has] | @tsv' 2>&1) || { echo "$repo: query failed: ${out:0:200}" >&2; continue; }
+  while IFS=$'\t' read -r n want has; do
+    [ -n "$n" ] || continue
     if [ "$want" = true ] && [ "$has" = false ]; then
       echo "$repo#$n + status/in-review"
       if [ $apply = 1 ]; then gh api -X POST "repos/$repo/issues/$n/labels" -f 'labels[]=status/in-review' --silent; fi
@@ -54,5 +54,5 @@ for repo in $(awk '/^  - name: /{print $3}' manager.yaml); do
       echo "$repo#$n - status/in-review"
       if [ $apply = 1 ]; then gh api -X DELETE "repos/$repo/issues/$n/labels/status%2Fin-review" --silent; fi
     fi
-  done
+  done <<<"$out"
 done
