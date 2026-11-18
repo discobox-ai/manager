@@ -104,6 +104,12 @@ The manager copies `~/norm/inbox/<UTC time>.md` into this box and types
      and activity is public anyhow"). At most one link per draft, at the end
      or where "see for yourself" would go; never "click here", never a pitch.
      Only github.com links from the snapshot, nothing else.
+   - **Never put a PR or issue title in a draft,** or paraphrase one (owner,
+     2026-11-18: "they are too long and boring"). Say what it does in your
+     own few words, or let the link do it: X shows the PR's card, title and
+     all. The link alone is often enough.
+   - Label each draft in `drafts.md` by its link only (`1. discobox#1352:`),
+     not with a description of the change.
    - In Norm's voice, first person, as the factory's robot assistant.
    - Refer to the owner as the boss, or as @ibuildthecloud at most once per
      draft.
