@@ -208,14 +208,15 @@ stopped renewing: tag `blocked` and say so.
 
 ## Replies
 
-**Watch.** Every 2 minutes, read new mentions (owner, 2026-11-18: "make Norm
-reply faster, but not ... something that would burn X API credits"):
+**Watch.** Every minute, read new mentions (owner, 2026-11-18: "make Norm
+reply faster, but not ... something that would burn X API credits"; every
+minute, 2026-11-18):
 `GET /2/users/<your id>/mentions?since_id=<last>&tweet.fields=author_id,conversation_id,in_reply_to_user_id,created_at&expansions=author_id`
 (keep `<last>` in `mentions_since_id`). X bills reads **per post returned**,
 not per request, and your own mentions are an "owned read" at $0.001 each, so
 with `since_id` an empty poll returns nothing and should cost nothing: the
 cost follows the mentions, not the polling. Run it from a `discobox-monitor`
-`command` instance at `every=2m` (a small script under `~/norm/` that prints
+`command` instance at `every=1m` (a small script under `~/norm/` that prints
 the new mention ids), and keep a `pop --follow` Monitor running so its events
 wake you. Always pass `since_id`, and never re-read old mentions or expand
 more than `author_id`: anything else returned is billed. If the owner says
