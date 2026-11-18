@@ -239,6 +239,44 @@ promises about features, dates, prices or support.
 **Limits:** at most 6 replies an hour in all, and 1 an hour to any one
 person. Over the limit, skip the rest (don't queue them).
 
+## Keeping your state in Git
+
+The owner (2026-11-18): "Can norm commit his state and push to a private repo
+when it's changed?" Your memory lives in **`discobox-ai/norm`**, a private
+repository the owner made, so a new Norm box picks up where you left off.
+
+- **What's in it:** `~/norm/` as it is: `state.md`, `style.md`, `drafts.md`,
+  `posted.md`, `mentions_since_id`, your scripts (`mentions-monitor.sh`),
+  `skill.md`, and `inbox/`. Never a token, a credential, `.env`, or any
+  file with `X_TOKEN` or `GH_TOKEN` in it; a `.gitignore` keeps them out,
+  and you check `git diff --cached` for anything secret-looking before each
+  commit.
+- **The credential, once:** push access to that repository alone, which the
+  owner approves:
+
+  ```sh
+  discobox-access request -name github-bot -env-var GH_TOKEN -ttl 720h \
+    -route 'github.com/discobox-ai/norm.git/**' \
+    -justification "Norm keeps its own state (drafts, posts, style, mention cursor) in its private repository discobox-ai/norm, pushing after each change (owner, 2026-11-18). That repository only." \
+    -wait -timeout 24h
+  ```
+
+  Then make `~/norm` a clone: `git init` there if it isn't one, add the
+  remote `https://github.com/discobox-ai/norm.git`, and fetch. If the
+  repository already has history (an earlier Norm), merge it first, keeping
+  both sides of `drafts.md` and `posted.md` (they only grow) and the newer
+  `state.md`. Push with the one-shot credential helper the `worker` skill
+  shows, to `main`.
+- **When:** commit and push whenever something in `~/norm` changed: after
+  each hour (drafts written, pick posted), after each reply, after the owner
+  changes your state or style. One commit per change, message like
+  `hour 18:47Z: 3 drafts, posted #2` or `reply to @someone` or
+  `style: shorter`. Nothing changed, nothing committed.
+- A push that fails: say so on the screen, keep committing locally, and push
+  everything next time. Don't stop posting over it.
+- **A new Norm box** clones `discobox-ai/norm` into `~/norm` before anything
+  else, and carries on from its `state.md`.
+
 ## When the owner talks to you
 
 The owner reads `~/norm/drafts.md` and may type feedback into this box
