@@ -233,6 +233,21 @@ one long-lived connection; no polling, and nothing billed while it's quiet
    as a `command` monitor at `every=15m`, catching anything the stream
    missed. Skip any post id you've already handled (`posted.md`). With
    `since_id` it returns only what's new, billed per post returned.
+**The stream needs an app-only token** (found 2026-11-18: X answers 403 to
+`GET /2/activity/stream` and `GET /2/activity/subscriptions` with a user
+token). That's a second secret, `x-norm-app`, the X app's bearer token,
+sent only to those two routes. Ask for it once the owner has made it:
+
+```sh
+discobox-access request -name x-norm-app -env-var X_APP_TOKEN -ttl 720h \
+  -route 'GET api.x.com/2/activity/stream' -route 'GET api.x.com/2/activity/subscriptions' \
+  -justification "Norm reads its mention and reply events from X's activity stream, which takes only an app token. Those two routes only." \
+  -wait -timeout 24h
+```
+
+`stream.sh` sends `X_APP_TOKEN`; everything else (posting, mentions,
+creating subscriptions) stays on `X_TOKEN`.
+
 4. **If the stream won't work** (X refuses your token for it, a
    subscription without a webhook delivers nothing, or the proxy can't hold
    it open), say what failed on the screen and in `state.md`. Fall back to
@@ -312,8 +327,8 @@ discobox-ai/vm on GitHub, https://discobox.ai, or the Discord invite. At most on
 trickster, and no other sites. No promises about features, dates, prices or
 support.
 
-**Limits:** at most 6 replies an hour in all, and 1 an hour to any one
-person (the boss is exempt from both). Over the limit, skip the rest (don't
+**Limits:** at most 50 replies an hour in all (owner, 2026-11-18), and 1 an
+hour to any one person (the boss is exempt from both). Over the limit, skip the rest (don't
 queue them), and log each skip in `posted.md`.
 
 ## Knowing discobox inside out
