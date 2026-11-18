@@ -223,7 +223,8 @@ approppriately."
   a main build we haven't checked?"), created at start (`start-loop` §5) and
   kept, like the watch safety net.
 - **Each run:** read the newest release in discobox-ai/discobox-main
-  (`gh api repos/discobox-ai/discobox-main/releases/latest --jq .tag_name`).
+  (`curl -fsS https://api.github.com/repos/discobox-ai/discobox-main/releases/latest | jq -r .tag_name`;
+  the manager's GH_TOKEN has no route to discobox-main, and the repository is public).
   If it equals the tag in `~/.local/state/discobox-manager/main-install-last`,
   do nothing: nothing changed. Otherwise launch one box:
   `scripts/launch validate-main-install --repo discobox-ai/discobox
