@@ -17,9 +17,9 @@ OWNER=ibuildthecloud
 
 Q='query($q:String!,$after:String){search(query:$q,type:ISSUE,first:100,after:$after){pageInfo{hasNextPage endCursor} nodes{
   __typename
-  ... on Issue{number title url state createdAt closedAt author{login} repository{nameWithOwner isPrivate}
+  ... on Issue{number title body url state createdAt closedAt author{login} repository{nameWithOwner isPrivate}
     labels(first:20){nodes{name}} comments(last:20){nodes{author{login} createdAt}}}
-  ... on PullRequest{number title url state createdAt closedAt mergedAt isDraft author{login} mergedBy{login}
+  ... on PullRequest{number title body url state createdAt closedAt mergedAt isDraft author{login} mergedBy{login}
     repository{nameWithOwner isPrivate} labels(first:20){nodes{name}}
     reviews(last:10){nodes{author{login} state submittedAt}} comments(last:20){nodes{author{login} createdAt}}}
 }}}'
@@ -40,7 +40,14 @@ boxes=$(discobox ls -o json | jq -c '[.sandboxes[] | select((.runtime.runtimeSta
 jq -r --arg since "$since" --arg now "$now" --arg owner "$OWNER" --argjson boxes "$boxes" '
   def ref: "\(.repository.nameWithOwner | split("/") | last)#\(.number)";
   def inwin(t): t != null and t >= $since;
-  def line: "- \(ref) \(.title)";
+  def kind: ([.labels.nodes[].name | select(startswith("type/")) | ltrimstr("type/")] | if length > 0 then " [" + join(",") + "]" else "" end);
+  # What it is about: the body'"'"'s first prose, without links, box addresses,
+  # code, checklists or the Evidence section, cut to ~400 characters.
+  def gist: ((.body // "") | split("\n## Evidence")[0] | split("\n```")[0]
+    | gsub("<sub>.*?</sub>"; "") | gsub("discobox:[^ )`]*"; "") | gsub("https?://[^ )`]*"; "")
+    | gsub("sbx_[a-z0-9]+"; "") | gsub("\\s+"; " ") | ltrimstr(" ")) as $g
+    | if ($g | length) > 0 then "\n  > " + ($g[0:400]) + (if ($g | length) > 400 then "…" else "" end) else "" end;
+  def line: "- \(ref)\(kind) \(.title)\(gist)";
   [ .[] | select(.repository.isPrivate | not) ] as $all |
   "# The factory, \($since) to \($now)\n",
   "## What the owner (ibuildthecloud) did by hand\n",
