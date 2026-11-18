@@ -3,7 +3,8 @@
 # update; owner, 2026-11-18). Prints Markdown: what the owner (ibuildthecloud)
 # did by hand, what the factory did on its own, and what the boxes are doing.
 # Public repositories only, and no box addresses, secrets or other people's
-# names: the output is joke material that may one day be public.
+# names: the output is joke material that may one day be public. Each item
+# carries its GitHub URL: the project is open source, and a tweet may link it.
 #
 #   scripts/hourly-snapshot [SINCE]   # SINCE: ISO time, default an hour ago
 #
@@ -47,7 +48,7 @@ jq -r --arg since "$since" --arg now "$now" --arg owner "$OWNER" --argjson boxes
     | gsub("<sub>.*?</sub>"; "") | gsub("discobox:[^ )`]*"; "") | gsub("https?://[^ )`]*"; "")
     | gsub("sbx_[a-z0-9]+"; "") | gsub("\\s+"; " ") | ltrimstr(" ")) as $g
     | if ($g | length) > 0 then "\n  > " + ($g[0:400]) + (if ($g | length) > 400 then "…" else "" end) else "" end;
-  def line: "- \(ref)\(kind) \(.title)\(gist)";
+  def line: "- \(ref)\(kind) \(.title) <\(.url)>\(gist)";
   [ .[] | select(.repository.isPrivate | not) ] as $all |
   "# The factory, \($since) to \($now)\n",
   "## What the owner (ibuildthecloud) did by hand\n",
