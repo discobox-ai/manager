@@ -23,7 +23,9 @@ cd "$(dirname "$0")/.."
 eval "$(discobox-access env)"
 apply=0; [ "${1:-}" = --apply ] && apply=1
 
-Q='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){pullRequests(states:OPEN,first:100){nodes{
+Q='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){
+  defaultBranchRef{target{... on Commit{statusCheckRollup{state}}}}
+  pullRequests(states:OPEN,first:100){nodes{
   number isDraft headRefOid mergeable changedFiles
   labels(first:30){nodes{name}}
   files(first:30){nodes{path}}
@@ -33,9 +35,12 @@ Q='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){pullR
 
 for repo in $(awk '/^  - name: /{print $3}' manager.yaml); do
   out=$(gh api graphql -f query="$Q" -F owner="${repo%%/*}" -F name="${repo#*/}" --jq '
+    # A repository whose default branch has no checks at all (release-validation)
+    # has no CI: its PRs count as green.
+    (.data.repository.defaultBranchRef.target.statusCheckRollup == null) as $noci |
     .data.repository.pullRequests.nodes[] |
     (.headRefOid[0:7]) as $short |
-    (.commits.nodes[0].commit.statusCheckRollup.state // "NONE") as $ci |
+    (.commits.nodes[0].commit.statusCheckRollup.state // (if $noci then "SUCCESS" else "NONE" end)) as $ci |
     (any(.labels.nodes[]; .name == "status/in-review")) as $has |
     ((.changedFiles > 0) and (.changedFiles <= 30) and all(.files.nodes[]; .path | test("(^|/)adr/"))) as $adr |
     (any(.comments.nodes[]; .body | startswith("**Process check** at `" + $short))) as $checked |
