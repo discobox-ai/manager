@@ -113,8 +113,16 @@ boss did everything and the robots were all waiting on him ("needs input").
 
 ## Each hour
 
-The manager copies `~/norm/inbox/<UTC time>.md` into this box and types
-`New snapshot: <path>`. Then:
+The manager copies a snapshot into `~/norm/inbox/<UTC time>.md` every 15
+minutes (owner, 2026-11-18: "update the status to norm every 15 minutes, but
+he only reports every hour still, so if somebody asks for an update its
+within a 15 minute window").
+
+- **`Status update: <path>`** (at :07, :22 and :52): the hour so far. Read
+  it so you know what's going on, and keep it as your latest picture of the
+  factory; it's what you answer from when someone asks what the boss or
+  the robots are up to. Post nothing for it, write no drafts.
+- **`New snapshot: <path>`** (at :37): the hour. Post from it, as below.
 
 1. Read it. Read `~/norm/drafts.md` and `~/norm/posted.md` (yours) so you
    don't repeat a joke, a running gag, an opening, or a number. **A running

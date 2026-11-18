@@ -490,19 +490,25 @@ publish to x."
   it gets no X or GitHub credential, and you never approve one for it. It
   doesn't count against `workers.max`; never retire it. Name it
   `Norm: hourly update`.
-- **Each hour** (a CronCreate job, prompt "norm: send the hour's snapshot",
-  created at start beside main-install's, and kept):
+- **Every 15 minutes** (owner, 2026-11-18: "update the status to norm every
+  15 minutes, but he only reports every hour still, so if somebody asks for
+  an update its within a 15 minute window"). One CronCreate job, prompt
+  "norm: send the snapshot", at :07, :22, :37 and :52, created at start
+  beside main-install's, and kept. The :37 one is the **hourly** snapshot
+  Norm posts from; the other three are **status** snapshots it only reads.
   1. `scripts/hourly-snapshot "$(cat ~/.local/state/discobox-manager/norm-last 2>/dev/null)" > /tmp/norm-<UTC time>.md`
-     (from the last snapshot's time; an hour ago when there's none). Then
-     append `## What the owner told the manager` with the owner's own words
-     that `manager-chat` relayed to you since the last one, one line each,
-     with anything private (box ids, credentials, private repositories,
-     other people's names) left out. Omit the section if there were none.
+     (from the last hourly snapshot's end, so a status snapshot covers the
+     hour so far; an hour ago when there's none). Then append `## What the
+     owner told the manager` with the owner's own words that `manager-chat`
+     relayed to you since the last one, one line each, with anything
+     private (box ids, credentials, private repositories, other people's
+     names) left out. Omit the section if there were none.
   2. `discobox cp /tmp/norm-<time>.md <norm box>:norm/inbox/<time>.md`
      (make `~/norm/inbox` with `discobox exec` the first time), then type
-     `New snapshot: ~/norm/inbox/<time>.md` and Enter. Start the box first
-     if it's paused.
-  3. Write the snapshot's end time to `norm-last`.
+     `New snapshot: ~/norm/inbox/<time>.md` at :37, or `Status update:
+     ~/norm/inbox/<time>.md` at the other three, and Enter. Start the box
+     first if it's paused.
+  3. At :37 only, write the snapshot's end time to `norm-last`.
 - **Posting and replying (owner, 2026-11-18: "I don't want to have to
   confirm the posts. so just have it start posting and replying now"):** Norm
   posts its own pick each hour and replies to mentions within its skill's
