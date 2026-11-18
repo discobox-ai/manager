@@ -1,7 +1,9 @@
 # The manager's configuration. The only per-deployment settings; everything
 # else is in AGENTS.md and the skills.
 
-owner: darren@obot.ai
+# The owner: Darren Shepherd, GitHub @ibuildthecloud. This repository is
+# public: no email addresses or other personal data here.
+owner: ibuildthecloud
 
 # Repositories the manager watches and works in. `defaultBranch` is what
 # workers branch from and PRs target (the box's `base` tag), even when it

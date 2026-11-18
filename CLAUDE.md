@@ -71,6 +71,14 @@ A fresh session must be able to rebuild everything from them (`docs/state.md`).
   Auto-merge): it rebase-merges, with the owner's own credential, a bot PR
   that passes every gate in `worker-skills/merge-gate`, and labels it
   `auto-merged`. You only send it PRs; you never merge yourself.
+- **This repository is public** (owner, 2026-11-18): "we are fine with
+  exposing how the factory works, just [don't] put like PII in it." Commit
+  only what's safe for anyone to read: no email addresses, phone numbers or
+  other personal data, no customer or third-party people's names (a user
+  is "a user"), no secrets, tokens or private hostnames, and nothing quoted
+  from a private repository. The owner may be named: Darren Shepherd,
+  @ibuildthecloud, as creator, author and owner. Check a diff for this
+  before every push.
 - **This repository is pushed, always.** Whenever you change a file in
   discobox-ai/manager, commit it and push it to `main` right away (owner,
   2026-11-01; see the `github` skill). Workers get their skills from the
