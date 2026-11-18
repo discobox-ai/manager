@@ -213,6 +213,33 @@ only through site's `main`. Two steps, each an issue in discobox-ai/site
 Both go in the release status issue's Next (`table`), and that issue closes
 only after step 2 is merged and checked.
 
+### Main builds install, checked hourly (owner, 2026-11-18)
+
+The owner: "we should test the install of main release hourly if anything has
+changed. just that they install. make that a procedure and schedule it
+approppriately."
+
+- **Schedule:** a CronCreate job every hour (prompt: "main-install: is there
+  a main build we haven't checked?"), created at start (`start-loop` §5) and
+  kept, like the watch safety net.
+- **Each run:** read the newest release in discobox-ai/discobox-main
+  (`gh api repos/discobox-ai/discobox-main/releases/latest --jq .tag_name`).
+  If it equals the tag in `~/.local/state/discobox-manager/main-install-last`,
+  do nothing: nothing changed. Otherwise launch one box:
+  `scripts/launch validate-main-install --repo discobox-ai/discobox
+  --no-source -p '/validate-main-install <tag>'`, tagged
+  `job=main-install`. It's small and short: it takes a slot ahead of
+  delivery work, and it still runs during a load or disk pause unless disk
+  is below `disk.minFreeGiB`. Never run two at once. If one is still
+  running, wait for the next hour.
+- **When it's done:** a `main install OK` line on its screen means it
+  passed. Write the tag to `main-install-last`, put "main install: <tag>
+  OK" in the table's links/status line, and archive the box. A failure is
+  the issue it filed: triage it like any bug (priority high when main can't
+  install at all), write the tag to `main-install-last` so the same build
+  isn't re-checked, and tell manager-chat in one line. A box that ends with
+  neither a pass nor an issue gets checked by hand before the next run.
+
 ### Release validation boxes
 
 To validate a release (owner, 2026-11-03), open a tracking issue in
