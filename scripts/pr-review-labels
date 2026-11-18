@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-# Keep status/in-review true on every open PR in the watched repositories
+# Keep status/in-review true on every open PR in the watched repositories.
+# Label changes re-run CI (the workflows trigger on labeled/unlabeled), so this
+# never removes the label because checks are merely pending: only a draft, a
+# failed check, or a head without a Process check takes it off, and it adds
+# the label only once every check has completed green. Changes are rare by
+# design.
 # (github skill, Filing and editing; docs/labels.md): a PR that is out of
 # draft, with every check on its head completed green (success, skipped,
 # neutral) and the manager's "**Process check** at `<head sha>`" comment for
@@ -17,9 +22,12 @@ for repo in $(awk '/^  - name: /{print $3}' manager.yaml); do
     want=false
     if [ "$draft" = false ]; then
       runs=$(gh api "repos/$repo/commits/$sha/check-runs?per_page=100" \
-        --jq '([.check_runs[] | select(.status != "completed" or (.conclusion | IN("success","skipped","neutral") | not))] | length), (.check_runs | length)' | paste -sd' ')
-      bad=${runs% *}; total=${runs#* }
-      if [ "$total" -gt 0 ] && [ "$bad" -eq 0 ]; then
+        --jq '([.check_runs[] | select(.status == "completed" and (.conclusion | IN("success","skipped","neutral") | not))] | length), ([.check_runs[] | select(.status != "completed")] | length), (.check_runs | length)' | paste -sd' ')
+      read -r failed pending total <<<"$runs"
+      if [ "$pending" -gt 0 ] && [ "$failed" -eq 0 ]; then
+        continue   # a run in progress (often a label's own re-run): leave the label as it is
+      fi
+      if [ "$total" -gt 0 ] && [ "$failed" -eq 0 ]; then
         short=${sha:0:7}
         if gh api "repos/$repo/issues/$n/comments?per_page=100" \
              --jq '.[].body' | grep -q "Process check\*\* at \`$short"; then
