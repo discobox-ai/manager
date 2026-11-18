@@ -18,9 +18,8 @@ repos:
   # Added by the owner 2026-11-01. defaultBranch assumed; check when gh is authenticated.
   - name: discobox-ai/review
     defaultBranch: main
-    # Was codex for all its work (owner, 2026-11-11); back to claude-code with
-    # everything else (owner, 2026-11-13: "lets switch the harness to claude").
-    harness: claude-code
+    # Was codex (owner, 2026-11-11), then claude-code with everything else
+    # (2026-11-13); follows workers.harness since 2026-11-18.
   # Added by the owner 2026-11-04: the docs site, blog and home page.
   # defaultBranch main checked 2026-11-04.
   - name: discobox-ai/site
@@ -89,14 +88,15 @@ focus: []
 
 workers:
   # The harness every new worker box runs (`discobox run -H`; owner, 2026-11-04;
-  # switched from codex back to claude-code by the owner, 2026-11-07).
+  # switched from codex back to claude-code by the owner, 2026-11-07; to codex
+  # again, 2026-11-18: "Can you switch to codex as the default harness").
   # Boxes already running keep theirs.
-  harness: claude-code
+  harness: codex
   # Bug fixes run this harness instead: deliver-issue on an issue labelled
   # type/bug or type/flake, and fix-ci. Was codex (owner, 2026-11-10); every
   # worker runs claude-code again (owner, 2026-11-13: "lets switch the harness
-  # to claude").
-  bugHarness: claude-code
+  # to claude"); codex with the default, 2026-11-18.
+  bugHarness: codex
   # Intake pause (owner): true starts no new triage or delivery boxes but
   # those in pausedExcept; work in progress carries on. Resumed 2026-11-03.
   paused: false
