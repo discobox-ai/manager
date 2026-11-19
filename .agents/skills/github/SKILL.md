@@ -40,6 +40,15 @@ tour or manager text that means a discobox issue is wrong (owner,
   decide or build; open questions marked open) / `## Done when`. A worker
   must be able to start from the issue alone.
 - `gh issue create --body-file F`, and `gh issue edit N --body-file F`.
+- **Never file pasted material as is** (owner, 2026-11-19: "when I copy and
+  paste and tell you to file issues ... I don't want private conversations
+  or information to go into public issues. so anonymize everything").
+  Chats, tester or evaluator reports, emails, documents: rewrite them as
+  facts. No names, handles, companies or employer tags, contracts or pay,
+  where the conversation happened, timestamps, or quoted chat lines. A
+  reporter is "a tester", "a user", "an evaluator". The owner's own
+  technical intent can be paraphrased or quoted as his decision. Reread the
+  body for anything identifying before you post it.
 - **An issue a worker filed** (`worker` skill; owner, 2026-11-04): a worker
   files what it finds in its own repository directly, and comments `Filed #M`
   on its issue. It arrives as a new issue: triage it (`triage-intake`). One
