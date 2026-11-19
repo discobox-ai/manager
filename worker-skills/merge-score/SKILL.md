@@ -60,9 +60,11 @@ Score a PR when, at its current head `<sha>`:
 - it's **in review**: labelled `status/in-review`, or it has a Process check
   for `<sha>` (a bot comment starting `**Process check** at` with `<sha>`'s
   first 7 characters);
-- the merge gate **refused** it at this head: a bot comment starting
+- the merge gate **refused** it at this head: a comment starting
   `**Merge gate** at` naming `<sha>`'s first 7 characters, with **not
-  auto-merged** in its first line. A PR the gate hasn't judged yet:
+  auto-merged** in its first line. The gate posts with the owner's own
+  credential, so its comments are by `ibuildthecloud`, not the bot; accept
+  either, and nobody else. A PR the gate hasn't judged yet:
   wait. A PR it merged is gone;
 - you haven't scored this head yet: no comment starting `**Merge score** at`
   naming `<sha>`'s first 7 characters.
