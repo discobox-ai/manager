@@ -156,7 +156,7 @@ def slots():
         state = (b.get("runtime") or {}).get("runtimeState")
         if not tags.get("job") or state not in ("running", "starting"):
             continue
-        if tags["job"] in ("merge-gate", "merge-queue", "pr-check", "norm"):
+        if tags["job"] in ("merge-gate", "merge-queue", "pr-check", "merge-score", "norm"):
             continue  # long-lived service boxes never count against workers.max
         if me and b.get("createdBySandboxId") not in (None, me):
             continue

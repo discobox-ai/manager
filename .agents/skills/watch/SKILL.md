@@ -30,7 +30,7 @@ done
 box, ran out twice with every instance at the 1-minute default): discobox and
 vm at 1m (`-work` 2m); site and release-validation 5m; every other
 repository 10m, both instances. Set them with `enable --update`. Never have a
-second box (merge-gate, merge-queue, pr-check, a prototype) watch what these
+second box (merge-gate, merge-queue, pr-check, merge-score, a prototype) watch what these
 already watch at a short interval. When the bot runs out again, measure
 before guessing: `x-ratelimit-used` from a cheap GET every 5 minutes.
 

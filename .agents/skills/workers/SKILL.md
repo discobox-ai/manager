@@ -476,6 +476,32 @@ ready, no merge conflicts."
   PR's worker and type what's missing. A conflict is yours as before
   (Rebases): wake the worker to rebase; the new head comes back to the box.
 
+### The merge-score boxes (owner, 2026-11-19)
+
+The owner: "have a box watch and scan PRs that go to in-review and are
+rejected for auto-merge and then ... give a confidence score to the PR for if
+it should be merged as is. Or if it shouldn't be, with a justification."
+
+- **One box per repository, long-lived,** for discobox and vm (where the
+  merge gate refuses PRs): `scripts/launch merge-score --repo
+  discobox-ai/<repo> --job merge-score --no-source -p '/merge-score'`. Name
+  it `Merge score: <repo>`. It's bound `github-triage` (read and comment, as
+  the bot), nothing else, so you launch it without the owner. Never retire
+  it; it never counts against `workers.max`. If it's gone, relaunch it: it
+  backfills what it missed by itself.
+- **It watches by itself.** It scores a bot PR that's in review and that
+  the merge gate refused at its current head, once per head. On start it
+  scores every such PR already open (the backfill). Two fresh subagents
+  read the change (impact and complexity, risk), and it posts a `**Merge
+  score** at <sha>: **<n>/100 · <verdict>** (concern: …)` comment with the
+  justification. It merges, labels and decides nothing.
+- **Your part:** on its comment, put the score in the PR's table row: the
+  row's `doing` gets `score <n>/100 <verdict>, <concern>: <its first
+  sentence>`, after the gate's refusal reason (`scripts/table set KEY
+  doing=…`). The rank and "Your move" don't change: the score helps the
+  owner choose what to read first; it isn't a gate. The owner can ask you
+  to have a PR rescored: type `Rescore #<P>` into its repository's box.
+
 ### Norm's hourly update (owner, 2026-11-18)
 
 The owner: "every hour we take a snapshot of all the work that we have been
