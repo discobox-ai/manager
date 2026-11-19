@@ -174,6 +174,24 @@ gh pr checks $P --repo $REPO --json name,bucket
 
   A fix is new code: review it, verify it if it changes behaviour, commit on
   top, push, get CI green again.
+- **A "Don't merge as is" Merge score** (a bot comment `**Merge score** at
+  <head>: **<n>/100 · Don't merge as is**`, the merge-score box's verdict
+  below 30; owner, 2026-11-19): answer its concerns as you would a
+  review's. Read its "Look at" lines and "To make it mergeable". For each:
+  - right: fix it (review, verify, commit on top, push). The new head is
+    judged and scored afresh;
+  - wrong, or out of the issue's scope: say why, briefly, with the file and
+    line that shows it;
+  - a judgement for the owner: ask (`worker`, Asking the owner).
+
+  Then post one comment, whether or not you pushed:
+  ```markdown
+  **Response to merge score** at `<the sha it scored>`
+
+  - <its concern, in a few words>: fixed in `<commit>` | answered: <why> | asked the owner
+  ```
+  One line per concern, nothing else. The merge-score box reads it and
+  amends its score if anything changed.
 - **A failing check on the head commit**: fix it as `open-pr` §4 says.
 Whatever you did, end each waking by setting your state tag again and
 sleeping: with a wake if you pushed and CI is running, without one if the PR

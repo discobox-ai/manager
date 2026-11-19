@@ -501,6 +501,12 @@ it should be merged as is. Or if it shouldn't be, with a justification."
   doing=…`). The rank and "Your move" don't change: the score helps the
   owner choose what to read first; it isn't a gate. The owner can ask you
   to have a PR rescored: type `Rescore #<P>` into its repository's box.
+- **Don't merge as is (below 30):** wake the PR's worker with one line,
+  "merge-score says don't merge as is; answer it (deliver-issue §6)", like
+  any comment on a sleeping worker's PR. That's all: the worker answers on
+  the PR, and the merge-score box amends its own score (its §5b). An
+  amended score goes in the table row like a new one (owner, 2026-11-19:
+  keep this off the loop).
 
 ### Norm's hourly update (owner, 2026-11-18)
 
