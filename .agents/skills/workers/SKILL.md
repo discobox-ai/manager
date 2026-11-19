@@ -535,12 +535,19 @@ publish to x."
      relayed to you since the last one, one line each, with anything
      private (box ids, credentials, private repositories, other people's
      names) left out. Omit the section if there were none.
-  2. `discobox cp /tmp/norm-<time>.md <norm box>:norm/inbox/<time>.md`
+  2. **A status snapshot (:07, :22, :52) goes only if something changed**
+     (owner, 2026-11-19: "make sure we only post a 15 minute interval if
+     something changed"): compare it, without its first line (the time
+     window), against the last snapshot you sent, kept as
+     `~/.local/state/discobox-manager/norm-sent.md`. Same: send nothing,
+     type nothing. The :37 hourly one always goes. Whenever you send one,
+     save it there.
+  3. `discobox cp /tmp/norm-<time>.md <norm box>:norm/inbox/<time>.md`
      (make `~/norm/inbox` with `discobox exec` the first time), then type
      `New snapshot: ~/norm/inbox/<time>.md` at :37, or `Status update:
      ~/norm/inbox/<time>.md` at the other three, and Enter. Start the box
      first if it's paused.
-  3. At :37 only, write the snapshot's end time to `norm-last`.
+  4. At :37 only, write the snapshot's end time to `norm-last`.
 - **Posting and replying (owner, 2026-11-18: "I don't want to have to
   confirm the posts. so just have it start posting and replying now"):** Norm
   posts its own pick each hour and replies to mentions within its skill's
