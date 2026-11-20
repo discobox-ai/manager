@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# After a host restart or a crash: what is down that should be up? (skill
+# `recover`.) Prints a plan; changes nothing unless told.
+#   scripts/recover            # list
+#   scripts/recover --start    # start the long-lived infra boxes, one at a time
+set -euo pipefail
+cd "$(dirname "$0")/.."
+eval "$(discobox-access env)"
+start=0; [ "${1:-}" = --start ] && start=1
+INFRA='merge-gate|merge-queue|pr-check|merge-score|norm'
+
+echo "== host"
+echo "load: $(cut -d' ' -f1-3 /proc/loadavg) ($(nproc) CPUs, limit $(sed -n 's/^  maxLoad: *//p' manager.yaml))  disk free: $(df -BG --output=avail / | tail -1 | tr -d ' ') (floor $(sed -n 's/^  minFreeGiB: *//p' manager.yaml)G)"
+echo "paused: $(sed -n 's/^  paused: *//p' manager.yaml | head -1)  except: $(sed -n 's/^  pausedExcept: *//p' manager.yaml | head -1)  stopped: $(sed -n 's/^  stopped: *//p' manager.yaml | head -1)"
+
+echo "== sessions"
+claude agents --json 2>/dev/null | jq -r '.[] | select(.name=="manager-loop" or .name=="manager-chat") | "\(.name) \(.status)"' || true
+claude agents --json 2>/dev/null | jq -e '[.[]|select(.name=="manager-loop")]|length>0' >/dev/null || echo "manager-loop: NOT RUNNING: relaunch it (start §4)"
+
+echo "== infra boxes (should be running)"
+discobox ls -o json | jq -r --arg re "^($INFRA)$" '.sandboxes[] | select((.meta.tags.job//"")|test($re)) | select((.runtime.runtimeState//"")!="archived") | [.id,(.meta.tags.job),(.meta.tags.repo//""|split("/")|last),(.runtime.runtimeState//"")] | @tsv' |
+while IFS=$'\t' read -r id job repo st; do
+  case "$st" in running|starting) echo "ok     $id $job $repo $st" ;;
+    *) echo "DOWN   $id $job $repo $st"
+       if [ $start = 1 ]; then discobox start "$id" >/dev/null 2>&1 && echo "       started $id"; sleep 5; fi ;;
+  esac
+done
+
+echo "== workers that were working (stopped or suspended, no ready/needs-input/blocked tag)"
+discobox ls -o json | jq -r --arg re "^($INFRA)$" '.sandboxes[] | select((.runtime.runtimeState//"") | IN("stopped","suspended")) | select(.meta.tags.job != null and (.meta.tags.job|test($re)|not) and .meta.tags.job != "adhoc" and .meta.tags.job != "prototype") | select(.meta.tags.ready==null and .meta.tags["needs-input"]==null and .meta.tags.blocked==null) | "\(.id) \(.meta.tags.job) \(.meta.tags.repo//""|split("/")|last)#\(.meta.tags.issue//"") pr=\(.meta.tags.pr//"-") \(.runtime.runtimeState)"'
+
+echo "== parked on purpose"
+[ -f ~/.local/state/discobox-manager/stopped-for-archil.json ] && echo "stopped-for-archil.json: $(jq 'length' ~/.local/state/discobox-manager/stopped-for-archil.json 2>/dev/null || echo '?') boxes (start only when the owner says)"
+echo "open to-do entries: $(scripts/queue list 2>/dev/null | grep -c '^#' || true)"
+
+echo "== credentials"
+discobox-access list 2>&1 | grep -E "github-bot|archil|boxd|expires" | head -6
