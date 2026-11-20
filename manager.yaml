@@ -187,6 +187,9 @@ platformWorkers:
 disk:
   # Below this, stop starting workers and have idle ones free build caches.
   minFreeGiB: 60
+  # Above this 1-minute load average, start no new boxes (owner, 2026-11-20: "if the
+  # load avg is above 100 we shouldn't launch more"). The host has 64 CPUs.
+  maxLoad: 100
 
 # GitHub: the bot account the manager and its workers act as (owner,
 # 2026-11-03). It has Triage on the product repositories and Write on this one;

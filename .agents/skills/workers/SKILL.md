@@ -906,6 +906,18 @@ purged. A 404 means it's already gone.
 Don't archive a box the owner is working in (its screen shows their
 session, or they opened it): leave it and say so.
 
+## Load (owner, 2026-11-20)
+
+"If the load avg is above 100 we shouldn't launch more." `scripts/launch`
+refuses to start a box while `/proc/loadavg`'s 1-minute figure is above
+`disk.maxLoad` in `manager.yaml` (100; the host has 64 CPUs), and says so.
+Hold the queue like a disk pause: start nothing, report it once on the
+table ("load <n>, launches held"), and start the queue as soon as it drops.
+`--ignore-load` is only for a box the owner asked for by name. Running work
+carries on; if the load stays far above 100 for an hour, tell the owner and
+suggest stopping idle boxes (`max` workers too high, or builds piling up).
+Merge, pr-check and Norm boxes already running are never stopped for load.
+
 ## Disk
 
 **Trim caches first: they are usually the biggest use of disk** (owner,
