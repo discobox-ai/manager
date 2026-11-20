@@ -79,16 +79,25 @@ Closes #<N>
 - **Verify:** PASS | FAIL | BLOCKED | SKIP: <what was observed at the
   product's surface, or why there was nothing to run>; not run here:
   <paths, or none>
-- **Screenshots:** <for a visible change: the frame that matters embedded,
+- **E2E screenshot:** <the change exercised end to end through the
+  product's own surface, the CLI, the TUI or a GUI, with at least one
+  screenshot embedded, showing the changed behaviour:
   `![what](https://raw.githubusercontent.com/ibuildthecloud-bot/<repo>/assets/<repo>/<N>/<file>.png)`,
-  from the fork's `assets` branch (`verify`, Capture); or "nothing visible">
+  from the fork's `assets` branch (`verify`, Capture). Before and after when
+  the change alters something already visible. Or, only for a change no
+  person can reach (CI, docs, an ADR, a pure refactor with no behaviour
+  change): "no e2e surface: <why>", and the test run that covers it>
 - **Tests:** <what ran and its result; pre-existing failures named>
 - **Done when:** <each item of the issue's Done when, and how it's met>
 
 <sub>From `<$DISCOBOX_ADDRESS>`</sub>
 ```
 
-Fill in every line of **Evidence**, and say plainly when a step wasn't done
+Fill in every line of **Evidence**, and say plainly when a step wasn't done.
+**The E2E screenshot is required** (owner, 2026-11-20: "make sure that when
+agents puts PRs that they post evidence of e2e test, specifically
+screenshot of CLI, TUI, or GUI"). A PR without one, or without a credible
+"no e2e surface" reason, goes back to its worker
 (`Verify: not run, because …`): the manager reads it before the PR reaches
 the owner, and sends back a PR whose Evidence is missing or doesn't match.
 

@@ -208,9 +208,25 @@ repository** (owner, 2026-11-07: PR 778 carried 150 screenshot files for
 Only a test fixture the code reads is committed.
 
 **Screenshots go in the PR and the issue, from the fork's `assets`
-branch** (owner, 2026-11-10). Anything a person sees changed (the desktop
-app, the TUI, the site, a dialog, an error) gets screenshots in its PR's
-Evidence, and an issue about something visible gets one of the problem.
+branch** (owner, 2026-11-10). **Every PR with a reachable surface gets an
+end-to-end screenshot** (owner, 2026-11-20: "post evidence of e2e test,
+specifically screenshot of CLI, TUI, or GUI"): run the change the way a
+person would, through the CLI, the TUI or a GUI (the desktop app, the
+console, the site), and screenshot the moment that shows it working, or
+failing before and working after. An issue about something visible gets one
+of the problem.
+
+- **CLI or TUI:** run it in a terminal you can image: the box desktop's
+  terminal, screenshotted (`import -window root` or the browser feature's
+  screenshot), or a tmux pane rendered to PNG (`tmux capture-pane -e -p`
+  piped through an ANSI-to-image tool such as `freeze` or `termshot` if
+  the box has one, or to HTML and screenshotted in the headless browser).
+  A text pane dump alone isn't a screenshot; put it in a collapsed block
+  beside the image if it helps.
+- **GUI:** drive it (Playwright, xvfb) and screenshot the window or page.
+- **No reachable surface** (CI, docs, an ADR, a refactor with no behaviour
+  change): say so in the Evidence ("no e2e surface: <why>"), with the test
+  run that covers it.
 Upload them to the orphan branch `assets` of the bot's fork
 (`ibuildthecloud-bot/<repo>`), never to the product repository or your PR's
 branch, and link them by raw URL:

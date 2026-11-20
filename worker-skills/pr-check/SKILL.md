@@ -78,6 +78,13 @@ as `owner/repo#N`), and the PR's commits and files.
 - **Review:** discobox-review was driven to sign-off.
 - **Verify:** a verdict, and PASS or a SKIP with a reason; anything not run
   is named.
+- **E2E screenshot:** the Evidence embeds at least one screenshot (an
+  image from the fork's `assets` branch) of the change run end to end
+  through the CLI, the TUI or a GUI, and it plausibly shows the changed
+  behaviour. Or it says "no e2e surface" with a reason that holds for this
+  diff (CI, docs, ADR, no behaviour change). A change a person can run
+  with no screenshot, or a reason that doesn't hold, is **missing** (owner,
+  2026-11-20). A text dump alone isn't a screenshot.
 - **Tests and CI:** every check on `<sha>` is green (you checked in §2).
 - **Done when:** every item in the issue's Done when is answered, and the
   diff plausibly does what the Evidence says. You aren't the code
@@ -95,6 +102,7 @@ change nothing but the fields):
 
 - [x] discobox-review: <rounds>, signed off (worker's report)
 - [x] verify: <verdict> — <one line> (worker's report)
+- [x] e2e: screenshot of <CLI | TUI | GUI: what it shows> | no e2e surface: <why>
 - [x] CI: all <n> checks green
 - [x] Done when: <n>/<n> covered
 - [x] ADR <id>: Accepted | not needed
