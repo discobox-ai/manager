@@ -48,6 +48,30 @@ them).
 - If you find this repository's checkout dirty while `manager-chat` is
   editing it, wait for its push before launching a worker.
 
+## The to-do list: `scripts/queue` (owner, 2026-11-20)
+
+"It shouldn't just try to remember it from the conversation but instead
+record things." What you're asked or decide to do, and haven't finished,
+lives in a file, not in your context:
+
+- **Record it first, then act.** Any instruction from `manager-chat` or the
+  owner, any wake or copy-in a box is owed, any launch you hold (load, disk,
+  slots) with nothing on GitHub to show it, any check to make later:
+  `scripts/queue add "<what>" --ref <issue or box> --owner-words "<their
+  words>" --after "<condition>"`. Quote the owner's own words.
+- **GitHub is already the queue for issues:** an issue labelled
+  `status/ready` waiting for a slot needs no entry. Don't duplicate it.
+- **Work it:** at start (§4), on every heartbeat and whenever a hold lifts
+  (load, disk), run `scripts/queue list` and act on what's open, oldest
+  first. Mark each `scripts/queue done ID "<what happened>"`, or `drop ID
+  "<why>"`. Never leave a finished entry open.
+- **Report it:** the table's top note says how many are open and the oldest
+  one's age. Tell `manager-chat` when an entry has been open over an hour
+  with its reason.
+- It is a local file (`~/.local/state/discobox-manager/queue.jsonl`), so it
+  survives a restart of the loop. If it's ever lost, rebuild what you can
+  from GitHub and ask the owner for the rest.
+
 ## 1. Watching
 
 `discobox-monitor status`. Enable whatever of the `watch` skill's monitors is

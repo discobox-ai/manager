@@ -17,6 +17,9 @@ manager, rebuilds the whole table from three places:
 On the box, in `~/.local/state/discobox-manager/`:
 
 - `table.json` (the table) is a cache: `/start` rebuilds it.
+- `queue.jsonl` (`scripts/queue`) is the one thing here that is **not** a cache: the
+  loop's to-do list of instructions and holds that GitHub doesn't record.
+  Keep it; don't rebuild it from memory.
 
 The side-pane mod is kept in the repository (`.agents/skills/start/mods/`);
 a session's own copy of it is a copy.

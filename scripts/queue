@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# The manager loop's durable to-do list: what it was asked or decided to do and
+# hasn't finished. A conversation is not a record (owner, 2026-11-20: "it
+# shouldn't just try to remember it from the conversation but instead record
+# things"). One JSON line per entry in ~/.local/state/discobox-manager/queue.jsonl.
+#
+#   scripts/queue add "<what to do>" [--ref discobox#1400] [--owner-words "<quote>"] [--after "load<100"]
+#   scripts/queue list [--all]        # open entries, oldest first
+#   scripts/queue done ID [note]      # finished
+#   scripts/queue drop ID [why]       # no longer wanted
+# An entry for something GitHub already records (an issue labelled status/ready
+# waiting for a slot) isn't needed: the label is the queue. Use this for the rest:
+# an instruction from the owner, a wake or copy-in a box is owed, a launch held
+# for load or disk with no label to show it, a check to make later.
+set -euo pipefail
+F=${QUEUE_FILE:-$HOME/.local/state/discobox-manager/queue.jsonl}
+mkdir -p "$(dirname "$F")"; touch "$F"
+cmd=${1:-list}; shift || true
+now=$(date -u +%Y-%m-%dT%H:%MZ)
+case $cmd in
+  add)
+    text=${1:?usage: queue add TEXT [--ref R] [--owner-words W] [--after COND]}; shift
+    ref="" words="" after=""
+    while [ $# -gt 0 ]; do case $1 in
+      --ref) ref=$2; shift 2 ;; --owner-words) words=$2; shift 2 ;; --after) after=$2; shift 2 ;;
+      *) echo "unknown: $1" >&2; exit 2 ;; esac; done
+    id=$(( $(jq -s 'map(.id)|max // 0' "$F") + 1 ))
+    jq -cn --argjson id "$id" --arg at "$now" --arg text "$text" --arg ref "$ref" --arg words "$words" --arg after "$after" \
+      '{id:$id,at:$at,text:$text,ref:$ref,ownerWords:$words,after:$after,status:"open"}' >> "$F"
+    echo "queued #$id: $text" ;;
+  list)
+    jq -rs --arg all "${1:-}" '[.[]|select($all=="--all" or .status=="open")] | .[] |
+      "#\(.id) \(.at) [\(.status)] \(.text)\(if .ref!="" then " ("+.ref+")" else "" end)\(if .after!="" then " after: "+.after else "" end)\(if .ownerWords!="" then "\n     owner: \(.ownerWords)" else "" end)\(if .note then "\n     note: \(.note)" else "" end)"' "$F" ;;
+  done|drop)
+    id=${1:?usage: queue $cmd ID [note]}; note=${2:-}
+    st=$([ "$cmd" = done ] && echo done || echo dropped)
+    tmp=$(mktemp); jq -c --argjson id "$id" --arg st "$st" --arg note "$note" --arg at "$now" \
+      'if .id==$id then .status=$st|.closedAt=$at|(if $note!="" then .note=$note else . end) else . end' "$F" > "$tmp" && mv "$tmp" "$F"
+    echo "#$id $st" ;;
+  *) echo "usage: scripts/queue add|list|done|drop" >&2; exit 2 ;;
+esac
