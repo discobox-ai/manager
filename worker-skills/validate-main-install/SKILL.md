@@ -18,6 +18,23 @@ changed. just that they install."
 skill for tags and power. This job has no PR; it reports on GitHub only when
 something is wrong.
 
+## 0. Wait for a quiet host
+
+The owner (2026-11-20): "add a rule to the main test that it will wait until
+it sees a loadavg that less than the number of cpus/threads? And then run the
+test again." An install on a busy host measures the host, not the build
+(discobox#1513: a 99 MiB download reached 29 MiB while load was 85).
+
+- Read `/proc/loadavg`'s 1-minute figure and `nproc`. **Start only when the
+  1-minute load is below `nproc`**, and stays below it for two readings a
+  minute apart. Otherwise sleep a minute (`worker`, Power: a short sleep
+  with a wake, or `sleep 60` here, since this box is idle) and look again.
+- Give up after **3 hours**: file nothing, write `main install SKIPPED:
+  <TAG>, host never below <nproc> (load <L>)` on the screen, tag `ready`,
+  and stop. The manager records it and tries the next build.
+- Log each reading (time, load, `nproc`) in `~/waits.log`; the report
+  quotes the first and last.
+
 ## 1. Install the way a user does
 
 Use a fresh local user with an empty `HOME`, no discobox on `PATH`, and no
@@ -60,8 +77,15 @@ validations' job.
   role can file), titled `main build <TAG> doesn't install: <what failed>`,
   labelled `type/bug`, with the failing check, the full installer output (or
   the relevant part), the server log tail, the load, and how to reproduce.
-  Don't re-run hoping it passes. One failure is a finding. Then tag the box
-  `ready` and stop.
+  Then tag the box `ready` and stop.
+- **A FAIL at a busy moment is run again, once** (owner, 2026-11-20): sample
+  `/proc/loadavg` every 10 seconds during the install and server start. If
+  any sample was at or above `nproc`, the failure may be the host: clean up,
+  go back to §0 to wait for a quiet host, then run §1–§2 again from scratch
+  (a new empty user). **Pass the second time:** report PASS, and mention
+  the first run's slowness and load on the screen only. **Fail the second
+  time** (or the first failure happened at a quiet load): file the issue,
+  with both runs' times, loads and output. Never run a third time.
 
 Clean up whatever you installed (`discobox admin uninstall`, or remove the
 user) before you stop.

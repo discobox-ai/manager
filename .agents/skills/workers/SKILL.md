@@ -230,10 +230,13 @@ approppriately."
   `scripts/launch validate-main-install --repo discobox-ai/discobox
   --no-source -p '/validate-main-install <tag>'`, tagged
   `job=main-install`. It's small and short: it takes a slot ahead of
-  delivery work, and it still runs during a load or disk pause unless disk
-  is below `disk.minFreeGiB`. Never run two at once. If one is still
+  delivery work. It still launches during a load or disk pause unless disk
+  is below `disk.minFreeGiB`: pass `--ignore-load`, since the box itself
+  waits idle until the host's 1-minute load is below its CPU count (owner,
+  2026-11-20; `validate-main-install` §0) and reruns a failure seen under
+  load once, on a quiet host. It adds no load while it waits. Never run two at once. If one is still
   running, wait for the next hour.
-- **When it's done:** a `main install OK` line on its screen means it
+- **When it's done:** a `main install SKIPPED` line means the host never quieted in 3 hours: write nothing to `main-install-last`, so the next hour tries again. A `main install OK` line on its screen means it
   passed. Write the tag to `main-install-last`, put "main install: <tag>
   OK" in the table's links/status line, and archive the box. A failure is
   the issue it filed: triage it like any bug (priority high when main can't
