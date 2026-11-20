@@ -20,7 +20,7 @@ sets direction, trust or what ships goes to the owner, as a row on the table.
 | A watched repository isn't migrated (lacks the `status/*` and `type/*` labels, `labels.md`) | Starts no triage in it. Starts a `migrate-labels` worker for it | The plan, approved in the worker's box |
 | New issue, no `status/*` label, in a migrated repository | Starts a triage worker (`triage-issue`), at most `workers.triageMax` at once: a reported flake (a test that fails intermittently) first, then issues in the release milestone, then highest `priority/*`, then newest. An issue the manager files for a flake it saw in CI, or a worker files titled `Flaky: `, skips triage: `type/flake`, `priority/high`, `status/ready` | – |
 | An issue is `status/in-progress` but no box of yours holds it | Starts no worker for it: someone else's worker has it. A row "worker not mine" | Only if it stays that way with nothing moving |
-| Triage verdict | Applies the labels the verdict proposes. A `type/flake` is always at least `priority/high` and goes straight to `status/ready`, never to the owner (owner, 2026-11-03: flakes break CI for everyone). Anything else at `priority/medium` or below goes straight to `status/ready` (owner, 2026-11-01); a non-obvious design still gets an ADR first, when a worker picks it up | A choice of product direction (whether to do it at all, or which way), and anything at `priority/high` or `priority/critical`, become `status/needs-decision` |
+| Triage verdict | Applies the labels the verdict proposes, and sends it to `status/ready` **whatever its priority** when the fix is clear (owner, 2026-11-20: high and critical had been gated, so the most urgent work waited longest; #1400). A `type/flake` is always at least `priority/high`. A non-obvious design still gets an ADR first, when a worker picks it up. **High or critical: a heads-up, not a gate** (below) | Only a real decision becomes `status/needs-decision`: whether to do it at all, which of competing approaches, product direction, or a security advisory. The issue says what to decide |
 | The owner says to cut a release | Starts a `cut-release` box for the tag on the default branch's green head (`workers`, Cutting a release); retires it when it's `ready`. When the prerelease is published, starts the two `validate-release` boxes | Approves the tag box's credential request (never the manager) |
 | An issue found by release validation (`validate-release`) | Files it `priority/high`, `status/ready` (owner, 2026-11-04: release-validation findings always come first); no owner gate | – |
 | `status/ready` and a free slot | Takes the next up (`docs/labels.md`, Next up): blockers first (`type/flake`, release-validation findings, anything that breaks CI or blocks a milestone issue), then issues in the release milestone, then the rest, each by `priority/*`. Starts a worker: `propose-adr` if the design is non-obvious and no accepted ADR covers it, else `deliver-issue`. Sets `status/in-progress` | – |
@@ -44,3 +44,19 @@ sets direction, trust or what ships goes to the owner, as a row on the table.
 Rank table rows by how much each unblocks downstream (critical path first), then
 by how hard the decision is to reverse (trust roots and stored credentials rank
 high).
+
+
+## Heads-up on a high or critical triage (owner, 2026-11-20)
+
+High and critical issues go straight to `ready` and start first. The owner
+still sees the rating, so a triage box can't quietly push its own issue to
+the front:
+
+- **The table:** a row for 24 hours, Doing `triaged <priority>, started`,
+  Your move `Check the rating (optional)`. Clear it after 24 hours or once
+  the owner says anything about it. It never blocks the worker.
+- **Critical only:** `manager-chat` also says it in chat, in one line, with
+  the title, why it's critical, and that work has started.
+- **The owner disagrees:** set the priority they say, and the issue drops to
+  its new place in the queue. If its worker hasn't pushed yet and it's now
+  medium or below, leave the worker on it.

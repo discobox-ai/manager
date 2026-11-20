@@ -32,6 +32,9 @@ the table. Each row has:
     owner anything about an issue (a milestone, a choice), read its comments:
     the owner often answered there already (#876, 2026-11-09).
   - An ADR PR that's green is "Review and merge": merging it accepts it.
+  - "Check the rating (optional)" for 24 hours on an issue triaged high or
+    critical, which has already started (`docs/gates.md`, Heads-up). It
+    never blocks anything.
 - **The merge queue** is the rows at "Review and merge", in rank order.
   Every PR in it is kept rebased: after every merge or close, recheck them
   all and rebase at once any that conflicts, even with every slot full (the
