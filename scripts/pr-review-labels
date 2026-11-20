@@ -46,8 +46,10 @@ for repo in $(awk '/^  - name: /{print $3}' manager.yaml); do
     (any(.comments.nodes[]; .body | startswith("**Process check** at `" + $short))) as $checked |
     (if .isDraft then "false"
      elif $ci == "PENDING" or $ci == "EXPECTED" or .mergeable == "UNKNOWN" then "skip"
-     elif $ci != "SUCCESS" or .mergeable == "CONFLICTING" then "false"
-     elif $adr or $checked then "true"
+     elif $ci != "SUCCESS" then "false"
+     elif $adr then "true"   # an ADR PR is in review even with a conflict: it is not rebased until approved (owner, 2026-11-20)
+     elif .mergeable == "CONFLICTING" then "false"
+     elif $checked then "true"
      else "false" end) as $want |
     [.number, $want, $has] | @tsv' 2>&1) || { echo "$repo: query failed: ${out:0:200}" >&2; continue; }
   while IFS=$'\t' read -r n want has; do

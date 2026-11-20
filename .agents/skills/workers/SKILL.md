@@ -874,6 +874,17 @@ each rebase reruns CI, and the next merge makes most of them conflict again.
   CI is running, and don't ask again for a base it's already rebased onto.
   After a merge, give GitHub a minute to recompute `mergeable_state` before
   acting (`unknown` means not yet).
+- **An ADR PR isn't rebased until the owner has approved it** (owner,
+  2026-11-20: "can we not rebase an ADR until it's been approved? So mark as
+  in-review even if there is a conflict"). Every ADR merge conflicts the
+  others on `docs/adr/README.md`'s index rows, and rebasing each one after
+  each merge is the storm this section exists to stop. An ADR PR that's
+  green is `status/in-review` even with a conflict
+  (`scripts/pr-review-labels` does it), and you don't wake its worker for
+  `pr.conflict`. Once the owner approves it on GitHub (their latest review is
+  APPROVED), or says to merge it, rebase it then, so the merge queue can
+  merge it. If a conflict touches more than the index rows, say so on the
+  table: the worker may need to rebase anyway.
 - **A PR not yet green** isn't in the queue: its worker is still on it, and
   rebases as part of its own work.
 - A worker whose box is gone gets a new `rebase-pr` worker, under the same
