@@ -26,7 +26,7 @@ and the credentials. Read it before starting anything.
 
 ## 2. Host first
 
-Load below `disk.maxLoad`, disk above `disk.minFreeGiB`. If not, start only
+Load at or below `disk.maxLoad`, disk **at or above** `disk.minFreeGiB` (60G free exactly is fine; only under it holds launches). If not, start only
 the infra boxes (step 4), not workers, and say why. A server that isn't
 answering (`discobox ls` fails) is a different problem: tell the owner.
 
@@ -56,8 +56,14 @@ one line into each after it's up:
 - **Norm:** its stream script, mentions monitor and snapshot clock are gone
   too; it re-arms them from its skill, and checks whether it should be asleep
   (§ Sleep, 01:00 to 16:00 UTC).
-- **Check each one answered**, not just started: a box tagged running that
-  prints nothing is stuck.
+- **Check each one is processing, not just started.** A box can be running
+  and idle at its prompt (the merge gate, queue, pr-check and merge-score
+  boxes were). The proof is a scrollback capture (`discobox capture`) showing
+  a tool call or thinking after your line. Send the one-line message to
+  **every** long-lived box, not just the gate and queue.
+- **A banner "Remote Control failed / Claude.ai login rejected"** on a
+  restarted box is harmless: it only concerns the claude.ai link, not the
+  agent. Don't chase it.
 
 ## 5. Workers that were mid-job
 
@@ -66,7 +72,11 @@ one line into each after it's up:
 time within `workers.max`, newest PR first, and type: `The host restarted
 mid-job; read your PR/issue state and carry on.` Skip the ones the owner's
 pause covers (`stopped-for-archil.json`, a pause with `pausedExcept`): record
-them in `scripts/queue` instead. Boxes tagged `ready`, `needs-input` or
+them in `scripts/queue` instead. **A restart can start parked boxes by
+themselves** (2026-11-20: about ten came back from suspended at once and the
+load hit 114): compare `stopped-for-archil.json` with `discobox ls`
+(`scripts/recover` prints "parked boxes that are RUNNING") and `discobox stop`
+each one that's up. Boxes tagged `ready`, `needs-input` or
 `blocked` were waiting anyway: leave them, and don't wake them.
 
 ## 6. The manager's own side
@@ -76,7 +86,14 @@ them in `scripts/queue` instead. Boxes tagged `ready`, `needs-input` or
   safety-net cron (`CronList`).
 - The other crons: the 15-minute Norm snapshot, the hourly main-install.
 - `scripts/pr-review-labels --apply`, `scripts/stuck-drafts`,
-  `scripts/stale-in-progress`, `scripts/table sync`.
+  `scripts/stale-in-progress`, `scripts/table sync`. **While a pause is on, run
+  `scripts/stuck-drafts` without `--wake`** for PRs outside `pausedExcept`
+  (`--wake` restarted a paused box on 2026-11-20): read its list, wake only
+  the Archil ones.
+- **Boxes with no tags:** a `scripts/launch` killed half way (a timeout, a
+  restart) leaves a started box with no job or issue tag, invisible to the
+  table and queue. `scripts/recover` lists them: tag each from its screen
+  (`discobox tag`), or archive it if it did nothing.
 - `scripts/queue list`: act on what's open.
 
 ## 7. Say so

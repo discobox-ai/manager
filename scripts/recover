@@ -26,8 +26,16 @@ while IFS=$'\t' read -r id job repo st; do
   esac
 done
 
-echo "== workers that were working (stopped or suspended, no ready/needs-input/blocked tag)"
-discobox ls -o json | jq -r --arg re "^($INFRA)$" '.sandboxes[] | select((.runtime.runtimeState//"") | IN("stopped","suspended")) | select(.meta.tags.job != null and (.meta.tags.job|test($re)|not) and .meta.tags.job != "adhoc" and .meta.tags.job != "prototype") | select(.meta.tags.ready==null and .meta.tags["needs-input"]==null and .meta.tags.blocked==null) | "\(.id) \(.meta.tags.job) \(.meta.tags.repo//""|split("/")|last)#\(.meta.tags.issue//"") pr=\(.meta.tags.pr//"-") \(.runtime.runtimeState)"'
+PARKED=$(jq -r '.[]? | (.id // .)' ~/.local/state/discobox-manager/stopped-for-archil.json 2>/dev/null | tr '\n' ' ')
+echo "== workers that were working (stopped or suspended, no ready/needs-input/blocked tag, not parked)"
+discobox ls -o json | jq -r --arg re "^($INFRA)$" --arg parked "$PARKED" '.sandboxes[] | select((.runtime.runtimeState//"") | IN("stopped","suspended")) | select(.meta.tags.job != null and (.meta.tags.job|test($re)|not) and .meta.tags.job != "adhoc" and .meta.tags.job != "prototype") | select(.meta.tags.ready==null and .meta.tags["needs-input"]==null and .meta.tags.blocked==null) | select(.id as $i | ($parked|split(" ")|index($i))|not) | "\(.id) \(.meta.tags.job) \(.meta.tags.repo//""|split("/")|last)#\(.meta.tags.issue//"") pr=\(.meta.tags.pr//"-") \(.runtime.runtimeState)"'
+
+echo "== parked boxes that are RUNNING (a pause is on; stop them: discobox stop <id>)"
+if [ -n "$PARKED" ]; then discobox ls -o json | jq -r --arg parked "$PARKED" '.sandboxes[] | select((.runtime.runtimeState//"") | IN("running","starting")) | select(.id as $i | ($parked|split(" ")|index($i))) | "RUNNING \(.id) \(.meta.tags.job//"-") #\(.meta.tags.issue//"")"'; fi
+
+echo "== boxes of ours with no tags (a launch died half way): tag or archive"
+ME=$(jq -r '.id // empty' ~/.discobox/meta.json 2>/dev/null)
+discobox ls -o json | jq -r --arg me "$ME" '.sandboxes[] | select((.runtime.runtimeState//"")!="archived") | select(.createdBySandboxId==$me) | select((.meta.tags // {}) | length == 0) | "\(.id) \(.runtime.runtimeState) created \(.createdAt[0:16]) \(.meta.name // "")"'
 
 echo "== parked on purpose"
 [ -f ~/.local/state/discobox-manager/stopped-for-archil.json ] && echo "stopped-for-archil.json: $(jq 'length' ~/.local/state/discobox-manager/stopped-for-archil.json 2>/dev/null || echo '?') boxes (start only when the owner says)"
