@@ -574,7 +574,7 @@ condition?"
   and you never approve it. It has no git push. Never retire it; it never
   counts against `workers.max`.
 - **It does one thing:** when the owner's latest approval on a PR matches its
-  current commit (or a same-patch rebase of it), it turns on GitHub's
+  current commit or a rebase of it (a rebase keeps an approval; new content doesn't: owner, 2026-11-21), it turns on GitHub's
   auto-merge (rebase) for the PR, so GitHub's merge queue tests it with the
   PRs ahead and merges it. In a repository with no queue (vm, for now) it
   merges the PR itself once it's green. It doesn't order merges, poll CI or

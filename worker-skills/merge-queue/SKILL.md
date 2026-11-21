@@ -70,12 +70,18 @@ these hold:
 - the **latest review by the GitHub user `ibuildthecloud`** is `APPROVED`
   (`GET /repos/<repo>/pulls/<P>/reviews`, all pages, the newest review by
   that login decides). A later `CHANGES_REQUESTED` or a dismissal ends it;
-- the approval is for the PR as it is: the approved review's `commit_id` is
-  the current head, **or** the current head is its worker's rebase of that
-  commit with the same patch. Check that with `git range-diff <old
-  base>..<approved> <new base>..<head>`: no change beyond the rebase. Any
-  other push after the approval needs the owner's approval again; say so on
-  the PR, once.
+- the approval still holds for the PR: the approved review's `commit_id` is
+  the current head, **or the current head is a rebase of the approved
+  commits** (owner, 2026-11-21: "once I approve the assumption is that a
+  rebase would maintain the approved functionality"). A rebase is `git
+  range-diff <old base>..<approved> <new base>..<head>` pairing every
+  approved commit with one in the new series, none added and none dropped.
+  Small differences inside a paired commit don't void it: conflict
+  resolution, a regenerated ADR index, a re-stamped "Today, at `<sha>`"
+  line. **New content does:** an added or dropped commit, or a paired
+  commit whose change is substantively different (more than resolving the
+  rebase), needs the owner's approval again; say so on the PR, once, naming
+  what changed.
 
 A qualifying PR isn't touched again once it's handed over (§3); GitHub
 carries it.
