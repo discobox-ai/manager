@@ -109,7 +109,7 @@ workers:
   # and in scripts/queue; start them again when the owner says. 193 and 194 are
   # discobox-ai/vm issues (Archil driver systemd; Archil base image) for #1055.
   paused: true
-  pausedExcept: [1055, 1056, 1057, 1059, 1060, 1061, 1274, 1286, 1437, 1047, 193, 194, 196, 1516, 852, 201, 1523, 203, 1532, 207, 1527, 1534, 1552]
+  pausedExcept: [1055, 1056, 1057, 1059, 1060, 1061, 1274, 1286, 1437, 1047, 193, 194, 196, 1516, 852, 201, 1523, 203, 1532, 207, 1527, 1534, 1552, 209]
   # Factory stop (owner, 2026-11-10; `stop` and `resume` skills): true means
   # every agent is idle on purpose: the loop isn't running, the manager's
   # boxes are stopped, and nothing starts. Only /resume clears it.
