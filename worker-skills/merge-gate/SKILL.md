@@ -50,6 +50,7 @@ for repo in discobox-ai/discobox discobox-ai/vm discobox-ai/release-validation; 
   args="$args -route POST api.github.com/repos/$repo/labels"
   args="$args -route GET api.github.com/repos/$repo/**"
 done
+args="$args -route \"POST api.github.com/graphql graphql=mutation:enqueuePullRequest\""   # when main has a merge queue (### Merge)
 discobox-access request -name github-merge -env-var GH_TOKEN -ttl 720h $args \
   -justification "Auto-merge (rebase) PRs authored by ibuildthecloud-bot in discobox and vm that pass the merge gate (owner, 2026-11-14), and its validate: run PRs in release-validation (owner, 2026-11-15); label them auto-merged and comment the verdict. No push, no ref writes, no settings." \
   -wait -timeout 24h
@@ -203,6 +204,46 @@ the issue asks pass. If you are not sure, block. Return
 
 Both must return `pass` with no finding marked as a security problem. One
 `block`, or a reply that isn't that JSON: refuse.
+
+### If main has a merge queue (owner, 2026-11-21, discobox#1443)
+
+`discobox-ai/discobox`'s `main` requires GitHub's merge queue (a ruleset).
+GitHub then **refuses a direct `PUT …/merge`**, so you **enqueue** instead, and
+GitHub tests each PR combined with everything ahead of it, then rebase-merges
+it. Check which applies, per repository, before merging:
+
+```sh
+gh api repos/<repo>/rules/branches/main --jq '[.[]|select(.type=="merge_queue")]|length'   # 1 = enqueue
+```
+
+Enqueue with the PR's node id (`gh api repos/<repo>/pulls/<P> --jq .node_id`):
+
+```sh
+gh api graphql -f query='mutation($id:ID!){enqueuePullRequest(input:{pullRequestId:$id}){mergeQueueEntry{position state}}}' -f id=<node_id>
+```
+
+What changes from the direct merge in this section:
+- **Every gate, label and rule stays the same**: the label (`auto-merged` or
+  `queue-merged`) goes on **before** you enqueue, rebase-only is the ruleset's
+  own method, and nothing here widens what you may merge.
+- **Don't wait for each merge.** Enqueue every PR that passes, in order;
+  GitHub merges them in that order, in groups. Being behind `main` no longer
+  matters (GitHub tests the combination). A text conflict still refuses the
+  enqueue: that's the rebase hand-off, as before.
+- **After enqueue** the PR is `enqueued` until GitHub merges it. Comment once
+  that it's queued (not "merged"); comment "Merged" only when
+  `state=MERGED`. Check back on the next scan.
+- **Ejected from the queue** (a combined check failed, or it timed out; the PR
+  is open and no longer queued): remove the merged-label you added, comment
+  which check failed on the queue's temporary branch
+  (`gh-readonly-queue/main/pr-<P>-…`), label it `status/blocked`, and the
+  manager wakes its worker. Enqueue it again after a fix.
+- A 4xx from `enqueuePullRequest` is a refusal: say what GitHub said.
+
+**Credential:** this needs the GraphQL mutation on the route list:
+`-route "POST api.github.com/graphql graphql=mutation:enqueuePullRequest"`.
+Ask the owner again with it added (§1); until it's granted you can't merge in
+`discobox-ai/discobox`, and say so on the screen.
 
 ### Merge
 
