@@ -82,7 +82,7 @@ Label it `merge-queue` when it enters, and remove the label when it leaves.
 Keep the queue in `~/queue.json` (repository, PR, approval time, approved
 sha), and rebuild it from GitHub whenever you're unsure.
 
-#When main has a merge queue (owner, 2026-11-21, discobox#1443)
+### When main has a merge queue (owner, 2026-11-21, discobox#1443)
 
 `discobox-ai/discobox`'s `main` requires GitHub's merge queue (a ruleset).
 GitHub then **refuses a direct `PUT …/merge`**, so you **enqueue** instead, and
