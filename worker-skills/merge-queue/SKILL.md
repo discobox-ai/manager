@@ -83,6 +83,12 @@ these hold:
   rebase), needs the owner's approval again; say so on the PR, once, naming
   what changed.
 
+**Never hold an approved PR silently.** If you don't hand over a PR the
+owner approved (the approval is for an older commit than the head, the
+manager asked you to hold it, anything else), comment on it once, in plain
+words: the commit he approved, the current head, and what's needed ("reload
+and approve `<sha>`"). Edit that comment when the reason changes.
+
 A qualifying PR isn't touched again once it's handed over (§3); GitHub
 carries it.
 

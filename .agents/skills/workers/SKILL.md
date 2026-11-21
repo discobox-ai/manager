@@ -579,6 +579,15 @@ condition?"
   PRs ahead and merges it. In a repository with no queue (vm, for now) it
   merges the PR itself once it's green. It doesn't order merges, poll CI or
   wait for each merge.
+- **An approved PR that isn't going in always says why on the PR** (owner,
+  2026-11-21: "I don't get why it wasn't being merged": vm PR 202 sat held
+  with the reason only in a chat between sessions). Whenever the queue box
+  or you hold, skip or delay a PR the owner approved (the approval is at an
+  older commit than the head, a design contradiction, an ordering rule, a
+  CI wait), post one comment on that PR, plainly: what you're waiting for,
+  the commit approved versus the head if that's it, and what the owner (or
+  which box) has to do. Update it if the reason changes; never hold an
+  approved PR silently.
 - **It reports two things, and the rebase hand-off is yours:** a PR labelled
   `needs-rebase` (it conflicts with main): wake that PR's worker at once to
   rebase it (`rebase-pr`, comment first), even with every slot full; the
