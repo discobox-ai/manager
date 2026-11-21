@@ -79,7 +79,7 @@ Monitor(
   changed.
   Also on each heartbeat, **run `scripts/stuck-drafts --wake`,
   `scripts/finished-boxes --retire`, `scripts/stale-in-progress` and
-  `scripts/pr-review-labels --apply`** (fix
+  `scripts/pr-review-labels --apply`** (also run every 5 minutes by the `pr-labels` command monitor, so it no longer depends on this turn; fix
   each issue it lists: `docs/labels.md`, In progress means a box). The second archives every worker box
   whose PR has merged or closed, or whose issue closed with no PR (owner,
   2026-11-15: ten finished boxes had lingered, one a day). For the first: every
