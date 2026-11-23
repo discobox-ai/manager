@@ -8,8 +8,14 @@
 # Where it runs (owner, 2026-11-23): the local default pool while the host has
 # room (1-minute load at or below disk.maxLoad, free disk at or above
 # disk.minFreeGiB); past either, workers.overflowPool (the archil pool), and
-# with no overflow pool it launches nothing. --pool POOL picks the pool
-# outright; --ignore-load keeps a box on the local pool whatever the load.
+# with no overflow pool it launches nothing. Only worker jobs overflow
+# (owner, 2026-11-23: "ensure that all long running boxes, like norm, prcoess
+# checks, live runs, run on local also. Only want "worker" boxes to go to
+# archil"): deliver-issue, triage-issue, propose-adr, fix-ci, rebase-pr,
+# prototype. Every other skill, an issue whose Done when is verified
+# **live**, and --local stay here, and on a busy host wait as before.
+# --pool POOL picks the pool outright; --ignore-load keeps a box on the local
+# pool whatever the load.
 #
 # The harness is workers.harness, except for bug fixes: deliver-issue on an issue
 # labelled type/bug or type/flake, and fix-ci, run workers.bugHarness (owner,
@@ -40,7 +46,7 @@ cd "$(dirname "$0")/.."
 
 die() { echo "launch: $*" >&2; exit 1; }
 
-SKILL="" REPO="" ISSUE="" JOB="" PROMPT="" ROLE="" NOSRC="" NOLABEL="" IGNORELOAD="" IGNOREPAUSE="" DRY="" POOLARG="" BASEARG="" HARNESSARG="" INCLUDES=() EXTRABINDS=()
+SKILL="" REPO="" ISSUE="" JOB="" PROMPT="" ROLE="" NOSRC="" NOLABEL="" IGNORELOAD="" IGNOREPAUSE="" DRY="" POOLARG="" LOCAL="" BASEARG="" HARNESSARG="" INCLUDES=() EXTRABINDS=()
 [ $# -gt 0 ] || die "usage: scripts/launch SKILL --repo OWNER/NAME [--issue N] [--job JOB] [-p PROMPT] [--role ROLE] [--base BRANCH] [--bind SECRET:VAR@HOSTS]... [--no-source] [--no-label] [--dry-run]"
 SKILL=$1; shift
 while [ $# -gt 0 ]; do
@@ -57,6 +63,7 @@ while [ $# -gt 0 ]; do
     --no-source) NOSRC=1; shift ;;
     --no-label) NOLABEL=1; shift ;;
     --pool) POOLARG=$2; shift 2 ;;
+    --local) LOCAL=1; shift ;;
     --ignore-load) IGNORELOAD=1; shift ;;
     --ignore-pause) IGNOREPAUSE=1; shift ;;
     --dry-run) DRY=1; shift ;;
@@ -121,7 +128,11 @@ POOL=$POOLARG WHY=""
 if [ -z "$POOL" ] && [ -z "$IGNORELOAD" ]; then
   if [ "${LOAD1%.*}" -gt "$MAXLOAD" ]; then WHY="load average $LOAD1 is above $MAXLOAD (disk.maxLoad)"
   elif [ "$FREE" -lt "$MINFREE" ]; then WHY="free disk ${FREE}G is under ${MINFREE}G (disk.minFreeGiB)"; fi
+  # Long-lived and live-run boxes never overflow: only worker jobs do.
+  case $SKILL in deliver-issue|triage-issue|propose-adr|fix-ci|rebase-pr|prototype) ;; *) LOCAL=1 ;; esac
+  if [ -z "$LOCAL" ] && [ -n "$ISSUE" ] && gh api "repos/$REPO/issues/$ISSUE" --jq .body 2>/dev/null | grep -q '\*\*live\*\*'; then LOCAL=1; fi
   if [ -n "$WHY" ]; then
+    [ -z "$LOCAL" ] || die "$WHY, and a $SKILL box${ISSUE:+ for a live run or #$ISSUE} stays on this host: no launch until it recovers (or --ignore-load)"
     [ -n "$OVERFLOW" ] || die "$WHY, and workers.overflowPool is unset: no new boxes until it recovers"
     POOL=$OVERFLOW
     echo "launch: $WHY: launching on the $POOL pool" >&2

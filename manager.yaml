@@ -106,6 +106,8 @@ workers:
   # local load average is higher than 100 ... we launch new boxes on archil. We
   # prefer local default pool as long as there is enough disk space and load is
   # low enough"). scripts/launch picks it; unset, a busy host launches nothing.
+  # Only worker jobs go there; long-lived boxes (Norm, process checks, merge
+  # boxes, validation) and live runs stay local (owner, 2026-11-23).
   overflowPool: archil
   # Intake pause (owner): true starts no new triage or delivery boxes but
   # those in pausedExcept; work in progress carries on. Resumed 2026-11-03.
@@ -127,7 +129,7 @@ workers:
   # disk is tight.
   # 12 for the backlog push (owner, 2026-11-17, "RELEASE THE KRAKEN!"); lower
   # it if the load average stays far above the 64 CPUs or disk gets tight.
-  max: 12
+  max: 50  # owner, 2026-11-23: "lets put the limit to 50 now" (was 12)
   # A worker waiting on the owner (needs-input or blocked) whose screen has
   # been still this long is stopped; the owner opening it starts it again.
   pauseAfter: 5m

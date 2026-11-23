@@ -931,7 +931,14 @@ room: `/proc/loadavg`'s 1-minute figure at or below `disk.maxLoad` (100; the
 host has 64 CPUs) and free disk on `/` at or above `disk.minFreeGiB`. Past
 either, it launches on `workers.overflowPool` (`archil`), says why on
 stderr, and tags the box `pool=archil`. Only with no overflow pool set does
-it refuse; then hold the queue as before, report it once on the table
+it refuse. **Only worker jobs overflow** (owner, 2026-11-23: "ensure that
+all long running boxes, like norm, prcoess checks, live runs, run on local
+also. Only want "worker" boxes to go to archil"): deliver-issue,
+triage-issue, propose-adr, fix-ci, rebase-pr and prototype. Norm, pr-check,
+merge-score, merge-gate, merge-queue, validation and release boxes, a live
+run (an issue whose Done when says **live**), and anything launched with
+`--local` stay on this host, and a busy host refuses them. Then hold the
+queue as before, report it once on the table
 ("load <n>, launches held"), and start it as soon as the host recovers.
 `workers.max` counts boxes on every pool.
 
