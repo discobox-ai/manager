@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# Sync check between GitHub issue state and the boxes working on it (owner,
+# 2026-11-23: "Do we have any way to sync up issues state with running boxes?"
+# ... "yes, write a reconcile script too"). Reads only; prints what doesn't
+# line up, one line each, for the loop to act on (workers skill, Reconcile):
+#
+#   untriaged       open issue with no status/* label and no live box
+#   ready-idle      status/ready, no live box: start its worker
+#   orphan          status/in-progress, no box at all (not even stopped):
+#                   relaunch, or put it back to status/ready
+#   closed-box      a box (not archived) whose issue is closed: retire it
+#   asleep          a worker box stopped or suspended mid-job: its issue is
+#                   open, it has no open PR (its pr tag), and it isn't tagged
+#                   ready, blocked or needs-input: wake it on where it was
+#
+# A live box is one not archived: running, suspended or stopped. Only the
+# repositories in manager.yaml's repos are read, and only boxes tagged with
+# a repo, an issue and a job count.
+#
+# Cost: one GraphQL query per 100 open issues per repository (open PRs ride
+# along on the first), plus one
+# `discobox ls`; no REST.
+#   scripts/reconcile            # the report
+#   scripts/reconcile --json     # the same, as JSON lines
+#   scripts/reconcile --summary  # counts only
+set -euo pipefail
+cd "$(dirname "$0")/.."
+eval "$(discobox-access env)" >/dev/null 2>&1
+mode=${1:-text}
+
+work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
+discobox ls -o json > "$work/boxes.json"
+
+REPOS=$(awk '/^repos:/ {r=1; next} r && /^[^ #]/ {r=0} r && $1=="-" && $2=="name:" {print $3}' manager.yaml)
+Q='query($owner:String!,$name:String!,$after:String){repository(owner:$owner,name:$name){
+  pullRequests(states:OPEN,first:100){nodes{number}}
+  issues(states:OPEN,first:100,after:$after){pageInfo{hasNextPage endCursor}
+    nodes{number title labels(first:30){nodes{name}}}}}}'
+: > "$work/issues.jsonl"
+for repo in $REPOS; do
+  after=""
+  while :; do
+    out=$(gh api graphql -f query="$Q" -F owner="${repo%%/*}" -F name="${repo#*/}" ${after:+-F after="$after"} 2>/dev/null) || break
+    [ -n "$after" ] || echo "$out" | jq -c --arg r "$repo" '{repo:$r, openPRs:[.data.repository.pullRequests.nodes[].number]}' >> "$work/prs.jsonl"
+    echo "$out" | jq -c --arg r "$repo" '.data.repository.issues.nodes[] | {repo:$r, number, title, labels:[.labels.nodes[].name]}' >> "$work/issues.jsonl"
+    [ "$(echo "$out" | jq -r .data.repository.issues.pageInfo.hasNextPage)" = true ] || break
+    after=$(echo "$out" | jq -r .data.repository.issues.pageInfo.endCursor)
+  done
+done
+
+touch "$work/prs.jsonl"
+python3 -I - "$work/boxes.json" "$work/issues.jsonl" "$mode" "$REPOS" "$work/prs.jsonl" <<'PY'
+import json, sys
+boxes_path, issues_path, mode, repos = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4].split()
+open_prs = {}
+for line in open(sys.argv[5]):
+    r = json.loads(line)
+    open_prs[r["repo"]] = set(str(n) for n in r["openPRs"])
+data = json.load(open(boxes_path))
+boxes = data.get("sandboxes", data) if isinstance(data, dict) else data
+issues = {}
+for line in open(issues_path):
+    i = json.loads(line)
+    issues[(i["repo"], str(i["number"]))] = i
+
+WORKER_JOBS = {"deliver", "triage", "adr", "fix-ci", "rebase", "prototype", "submit"}
+by_issue = {}
+for b in boxes:
+    t = (b.get("meta") or {}).get("tags") or {}
+    repo, num, job = t.get("repo"), t.get("issue"), t.get("job")
+    if not (repo and num and job) or repo not in repos:
+        continue
+    rt = b.get("runtime") or {}
+    state = rt.get("runtimeState") or rt.get("displayState") or "archived"
+    by_issue.setdefault((repo, str(num)), []).append(
+        {"id": b["id"], "job": job, "state": state, "tags": t})
+
+def live(bs):
+    return [b for b in bs if b["state"] != "archived"]
+
+def short(repo):
+    return repo.split("/")[-1]
+
+found = []
+def add(kind, repo, num, title="", box=None, note=""):
+    found.append({"kind": kind, "issue": f"{short(repo)}#{num}", "title": title[:70],
+                  "box": box and f"discobox:///{box['id']}", "job": box and box["job"],
+                  "state": box and box["state"], "note": note})
+
+for key, i in sorted(issues.items(), key=lambda kv: (kv[0][0], -int(kv[0][1]))):
+    repo, num = key
+    status = [l for l in i["labels"] if l.startswith("status/")]
+    bs = by_issue.get(key, [])
+    lv = live(bs)
+    if not status and not lv:
+        add("untriaged", repo, num, i["title"])
+    elif "status/ready" in status and not lv:
+        add("ready-idle", repo, num, i["title"])
+    elif "status/in-progress" in status and not lv and not ({"status/blocked", "status/needs-decision", "status/needs-input"} & set(status)):
+        add("orphan", repo, num, i["title"], note="archived box only" if bs else "never had a box")
+
+for key, bs in by_issue.items():
+    repo, num = key
+    i = issues.get(key)
+    for b in live(bs):
+        if i is None:
+            add("closed-box", repo, num, box=b)
+            continue
+        t = b["tags"]
+        # A box whose PR is open has handed its work over (review, the owner,
+        # or stuck-drafts for a draft): asleep is right for it.
+        waiting = t.get("pr", "") in open_prs.get(repo, set())
+        if (b["state"] in ("stopped", "suspended") and b["job"] in WORKER_JOBS and not waiting
+                and not any(k in t for k in ("ready", "blocked", "needs-input"))):
+            add("asleep", repo, num, i["title"], box=b)
+
+order = ["closed-box", "orphan", "asleep", "ready-idle", "untriaged"]
+found.sort(key=lambda f: order.index(f["kind"]))
+if mode == "--json":
+    for f in found:
+        print(json.dumps(f))
+elif mode == "--summary":
+    from collections import Counter
+    c = Counter(f["kind"] for f in found)
+    print(" ".join(f"{k}={c.get(k,0)}" for k in order))
+else:
+    for f in found:
+        bits = [f["kind"].ljust(10), f["issue"].ljust(16)]
+        if f["box"]:
+            bits.append(f"{f['box']} {f['job']} {f['state']}")
+        if f["title"]:
+            bits.append(f["title"])
+        if f["note"]:
+            bits.append(f"({f['note']})")
+        print("  ".join(bits))
+PY
