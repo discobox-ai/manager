@@ -101,6 +101,12 @@ workers:
   # to claude"); codex with the default, 2026-11-18; claude-code again with the
   # default, 2026-11-20.
   bugHarness: claude-code
+  # Where a box goes when this host has no room: 1-minute load above
+  # disk.maxLoad or free disk under disk.minFreeGiB (owner, 2026-11-23: "if the
+  # local load average is higher than 100 ... we launch new boxes on archil. We
+  # prefer local default pool as long as there is enough disk space and load is
+  # low enough"). scripts/launch picks it; unset, a busy host launches nothing.
+  overflowPool: archil
   # Intake pause (owner): true starts no new triage or delivery boxes but
   # those in pausedExcept; work in progress carries on. Resumed 2026-11-03.
   # Paused 2026-11-20 (owner: "stop all boxes for work and focus only on archil
@@ -194,8 +200,9 @@ platformWorkers:
 disk:
   # Below this, stop starting workers and have idle ones free build caches.
   minFreeGiB: 60
-  # Above this 1-minute load average, start no new boxes (owner, 2026-11-20: "if the
-  # load avg is above 100 we shouldn't launch more"). The host has 64 CPUs.
+  # Above this 1-minute load average, start no new boxes here (owner, 2026-11-20: "if the
+  # load avg is above 100 we shouldn't launch more"); they go to
+  # workers.overflowPool instead (owner, 2026-11-23). The host has 64 CPUs.
   maxLoad: 100
 
 # GitHub: the bot account the manager and its workers act as (owner,

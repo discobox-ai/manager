@@ -27,7 +27,7 @@ and the credentials. Read it before starting anything.
 ## 2. Host first
 
 Load at or below `disk.maxLoad`, disk **at or above** `disk.minFreeGiB` (60G free exactly is fine; only under it holds launches). If not, start only
-the infra boxes (step 4), not workers, and say why. A server that isn't
+the infra boxes (step 4) here, and new workers go to `workers.overflowPool` (`scripts/launch` does that); say why. A server that isn't
 answering (`discobox ls` fails) is a different problem: tell the owner.
 
 **The manager box's CLI older than the server** (2026-11-23: a redeploy left

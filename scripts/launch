@@ -3,7 +3,13 @@
 #
 #   scripts/launch SKILL --repo OWNER/NAME [--issue N] [--job JOB] [-p PROMPT]
 #                  [--role ROLE] [--base BRANCH] [--harness H] [--no-source] [-i SOURCE]...
-#                  [--no-label] [--dry-run]
+#                  [--pool POOL] [--no-label] [--dry-run]
+#
+# Where it runs (owner, 2026-11-23): the local default pool while the host has
+# room (1-minute load at or below disk.maxLoad, free disk at or above
+# disk.minFreeGiB); past either, workers.overflowPool (the archil pool), and
+# with no overflow pool it launches nothing. --pool POOL picks the pool
+# outright; --ignore-load keeps a box on the local pool whatever the load.
 #
 # The harness is workers.harness, except for bug fixes: deliver-issue on an issue
 # labelled type/bug or type/flake, and fix-ci, run workers.bugHarness (owner,
@@ -34,7 +40,7 @@ cd "$(dirname "$0")/.."
 
 die() { echo "launch: $*" >&2; exit 1; }
 
-SKILL="" REPO="" ISSUE="" JOB="" PROMPT="" ROLE="" NOSRC="" NOLABEL="" IGNORELOAD="" IGNOREPAUSE="" DRY="" BASEARG="" HARNESSARG="" INCLUDES=() EXTRABINDS=()
+SKILL="" REPO="" ISSUE="" JOB="" PROMPT="" ROLE="" NOSRC="" NOLABEL="" IGNORELOAD="" IGNOREPAUSE="" DRY="" POOLARG="" BASEARG="" HARNESSARG="" INCLUDES=() EXTRABINDS=()
 [ $# -gt 0 ] || die "usage: scripts/launch SKILL --repo OWNER/NAME [--issue N] [--job JOB] [-p PROMPT] [--role ROLE] [--base BRANCH] [--bind SECRET:VAR@HOSTS]... [--no-source] [--no-label] [--dry-run]"
 SKILL=$1; shift
 while [ $# -gt 0 ]; do
@@ -50,6 +56,7 @@ while [ $# -gt 0 ]; do
     --bind) EXTRABINDS+=("$2"); shift 2 ;;
     --no-source) NOSRC=1; shift ;;
     --no-label) NOLABEL=1; shift ;;
+    --pool) POOLARG=$2; shift 2 ;;
     --ignore-load) IGNORELOAD=1; shift ;;
     --ignore-pause) IGNOREPAUSE=1; shift ;;
     --dry-run) DRY=1; shift ;;
@@ -99,12 +106,27 @@ if [ -n "$REPOHARNESS" ]; then HARNESS=$REPOHARNESS; KIND=""; fi
 [ -z "$HARNESSARG" ] || HARNESS=$HARNESSARG
 STOPPED=$(sed -n 's/^  stopped: *\([a-z]*\).*/\1/p' manager.yaml | head -1)
 if [ "$STOPPED" = true ]; then die "workers.stopped is true in manager.yaml: the factory is stopped (/stop); only /resume starts boxes again"; fi
-# Load: no new boxes while the 1-minute load average is above disk.maxLoad
-# (owner, 2026-11-20: "if the load avg is above 100 we shouldn't launch
-# more"). --ignore-load is for a box the owner asked for by name.
+# Pool: local while the host has room, else the overflow pool (owner,
+# 2026-11-23: "if the local load average is higher than 100 ... we launch new
+# boxes on archil. We prefer local default pool as long as there is enough disk
+# space and load is low enough"). Before that, a busy host launched nothing
+# (owner, 2026-11-20). --ignore-load is for a box the owner asked for by name
+# on this host; --pool picks the pool outright.
 MAXLOAD=$(sed -n 's/^  maxLoad: *//p' manager.yaml | head -1); MAXLOAD=${MAXLOAD:-100}
+MINFREE=$(sed -n 's/^  minFreeGiB: *//p' manager.yaml | head -1); MINFREE=${MINFREE:-60}
+OVERFLOW=$(sed -n 's/^  overflowPool: *//p' manager.yaml | head -1)
 LOAD1=$(cut -d' ' -f1 /proc/loadavg)
-if [ -z "$IGNORELOAD" ] && [ "${LOAD1%.*}" -gt "$MAXLOAD" ]; then die "load average is $LOAD1, above $MAXLOAD (manager.yaml disk.maxLoad): no new boxes until it drops"; fi
+FREE=$(df -BG --output=avail / | tail -1 | tr -dc 0-9)
+POOL=$POOLARG WHY=""
+if [ -z "$POOL" ] && [ -z "$IGNORELOAD" ]; then
+  if [ "${LOAD1%.*}" -gt "$MAXLOAD" ]; then WHY="load average $LOAD1 is above $MAXLOAD (disk.maxLoad)"
+  elif [ "$FREE" -lt "$MINFREE" ]; then WHY="free disk ${FREE}G is under ${MINFREE}G (disk.minFreeGiB)"; fi
+  if [ -n "$WHY" ]; then
+    [ -n "$OVERFLOW" ] || die "$WHY, and workers.overflowPool is unset: no new boxes until it recovers"
+    POOL=$OVERFLOW
+    echo "launch: $WHY: launching on the $POOL pool" >&2
+  fi
+fi
 if [ "$PAUSED" = true ]; then
   EXC=$(sed -n 's/^  pausedExcept: *\[\(.*\)\]/\1/p' manager.yaml | head -1 | tr -d ' ')
   case ",$EXC," in *",${ISSUE:-none},"*) ;; *) [ -n "$IGNOREPAUSE" ] || die "workers.paused is true in manager.yaml: no new boxes except issues in pausedExcept ($EXC)" ;; esac
@@ -171,6 +193,7 @@ SRC="https://github.com/$REPO@$BRANCH"
 # the private repository itself, and from inside a box the CLI never lends it Git
 # credentials: the box waits for its source forever (2026-11-05).
 ARGS=(run -d -H "$HARNESS" --skills "$PWD/worker-skills")
+[ -z "$POOL" ] || ARGS+=(--pool "$POOL")
 [ "$ROLE" = none ] || ARGS+=(--bind "$BIND")
 # Provider credentials (manager.yaml providers), always narrowed to their hosts.
 for b in "${EXTRABINDS[@]}"; do
@@ -183,7 +206,7 @@ done
 ARGS+=(-p "$PROMPT")
 
 if [ -n "$DRY" ]; then
-  echo "harness=$HARNESS${KIND:+ (bug fix)} job=$JOB role=$ROLE fork=${PUSHES:+$FORK} base=$BRANCH${TRACK:+ track=#$TRACK}"
+  echo "pool=${POOL:-default}${WHY:+ ($WHY)} harness=$HARNESS${KIND:+ (bug fix)} job=$JOB role=$ROLE fork=${PUSHES:+$FORK} base=$BRANCH${TRACK:+ track=#$TRACK}"
   echo "discobox ${ARGS[*]}"
   exit 0
 fi
@@ -199,6 +222,7 @@ TAGS=(repo="$REPO" job="$JOB")
 [ -z "$ISSUE" ] || TAGS+=(issue="$ISSUE")
 [ -z "$PUSHES" ] || TAGS+=(fork="$FORK")
 TAGS+=(base="$BRANCH")
+[ -z "$POOL" ] || TAGS+=(pool="$POOL")
 DESC=""
 if [ -n "$ISSUE" ]; then
   TITLE=$(gh api "repos/$REPO/issues/$ISSUE" --jq .title 2>/dev/null || true)

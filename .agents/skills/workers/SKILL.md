@@ -919,17 +919,33 @@ purged. A 404 means it's already gone.
 Don't archive a box the owner is working in (its screen shows their
 session, or they opened it): leave it and say so.
 
-## Load (owner, 2026-11-20)
+## Load and disk: where a box goes (owner, 2026-11-20, 2026-11-23)
 
-"If the load avg is above 100 we shouldn't launch more." `scripts/launch`
-refuses to start a box while `/proc/loadavg`'s 1-minute figure is above
-`disk.maxLoad` in `manager.yaml` (100; the host has 64 CPUs), and says so.
-Hold the queue like a disk pause: start nothing, report it once on the
-table ("load <n>, launches held"), and start the queue as soon as it drops.
-`--ignore-load` is only for a box the owner asked for by name. Running work
-carries on; if the load stays far above 100 for an hour, tell the owner and
-suggest stopping idle boxes (`max` workers too high, or builds piling up).
-Merge, pr-check and Norm boxes already running are never stopped for load.
+"If the load avg is above 100 we shouldn't launch more" (2026-11-20), and
+then (2026-11-23): "if the local load average is higher than 100 ... we
+launch new boxes on archil. We prefer local default pool as long as there is
+enough disk space and load is low enough."
+
+`scripts/launch` puts a box on the local default pool while the host has
+room: `/proc/loadavg`'s 1-minute figure at or below `disk.maxLoad` (100; the
+host has 64 CPUs) and free disk on `/` at or above `disk.minFreeGiB`. Past
+either, it launches on `workers.overflowPool` (`archil`), says why on
+stderr, and tags the box `pool=archil`. Only with no overflow pool set does
+it refuse; then hold the queue as before, report it once on the table
+("load <n>, launches held"), and start it as soon as the host recovers.
+`workers.max` counts boxes on every pool.
+
+`--pool POOL` picks a pool outright. `--ignore-load` keeps a box on this host
+whatever the load (a box the owner asked for here by name, or
+validate-main-install, which must test this host). Running work carries on;
+if the load stays far above 100 for an hour, tell the owner and suggest
+stopping idle boxes. Merge, pr-check and Norm boxes already running are
+never stopped for load.
+
+An archil box is small (Archil's default, 1 vCPU and 2 GiB, until
+discobox#1601) and reaches GitHub through its pool's proxy. A worker there
+that can't build or test in that size: note it on the table, and relaunch it
+locally when the host has room.
 
 ## Disk
 
