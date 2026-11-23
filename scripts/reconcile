@@ -11,7 +11,8 @@
 #   closed-box      a box (not archived) whose issue is closed: retire it
 #   asleep          a worker box stopped or suspended mid-job: its issue is
 #                   open, it has no open PR (its pr tag), and it isn't tagged
-#                   ready, blocked or needs-input: wake it on where it was
+#                   ready, blocked, needs-input or held (stopped for room on
+#                   this host; started again when there is): wake it
 #
 # A live box is one not archived: running, suspended or stopped. Only the
 # repositories in manager.yaml's repos are read, and only boxes tagged with
@@ -111,7 +112,7 @@ for key, bs in by_issue.items():
         # or stuck-drafts for a draft): asleep is right for it.
         waiting = t.get("pr", "") in open_prs.get(repo, set())
         if (b["state"] in ("stopped", "suspended") and b["job"] in WORKER_JOBS and not waiting
-                and not any(k in t for k in ("ready", "blocked", "needs-input"))):
+                and not any(k in t for k in ("ready", "blocked", "needs-input", "held"))):
             add("asleep", repo, num, i["title"], box=b)
 
 order = ["closed-box", "orphan", "asleep", "ready-idle", "untriaged"]

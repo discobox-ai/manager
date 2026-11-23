@@ -126,7 +126,13 @@ LOAD1=$(cut -d' ' -f1 /proc/loadavg)
 FREE=$(df -BG --output=avail / | tail -1 | tr -dc 0-9)
 POOL=$POOLARG WHY=""
 if [ -z "$POOL" ] && [ -z "$IGNORELOAD" ]; then
-  if [ "${LOAD1%.*}" -gt "$MAXLOAD" ]; then WHY="load average $LOAD1 is above $MAXLOAD (disk.maxLoad)"
+  # At most workers.localMax worker boxes run here at once (owner, 2026-11-23:
+  # "can we just limit running workers to 12 on local?"); past that, they
+  # overflow too.
+  LOCALMAX=$(sed -n 's/^  localMax: *\([0-9]*\).*/\1/p' manager.yaml | head -1)
+  LOCALRUN=$(discobox ls -o json 2>/dev/null | jq '[.sandboxes[] | select(.runtime.runtimeState=="running" or .runtime.runtimeState=="starting") | .meta.tags // {} | select((.job // "") | test("^(deliver|triage|adr|fix-ci|rebase|prototype)$")) | select((.pool // "") == "")] | length' 2>/dev/null || echo 0)
+  if [ -n "$LOCALMAX" ] && [ "$LOCALRUN" -ge "$LOCALMAX" ]; then WHY="$LOCALRUN worker boxes run here, workers.localMax is $LOCALMAX"
+  elif [ "${LOAD1%.*}" -gt "$MAXLOAD" ]; then WHY="load average $LOAD1 is above $MAXLOAD (disk.maxLoad)"
   elif [ "$FREE" -lt "$MINFREE" ]; then WHY="free disk ${FREE}G is under ${MINFREE}G (disk.minFreeGiB)"; fi
   # Long-lived and live-run boxes never overflow: only worker jobs do.
   case $SKILL in deliver-issue|triage-issue|propose-adr|fix-ci|rebase-pr|prototype) ;; *) LOCAL=1 ;; esac

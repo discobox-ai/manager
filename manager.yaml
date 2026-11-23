@@ -109,6 +109,11 @@ workers:
   # Only worker jobs go there; long-lived boxes (Norm, process checks, merge
   # boxes, validation) and live runs stay local (owner, 2026-11-23).
   overflowPool: archil
+  # Worker boxes (deliver, triage, adr, fix-ci, rebase, prototype) running on
+  # this host at once; more go to overflowPool (owner, 2026-11-23: "can we just
+  # limit running workers to 12 on local? tell the loop to stop some to reduce
+  # load and then start them later when it's more idle").
+  localMax: 12
   # Intake pause (owner): true starts no new triage or delivery boxes but
   # those in pausedExcept; work in progress carries on. Resumed 2026-11-03.
   # Resumed 2026-11-23 (owner: "unpause all work, we can run anything now since

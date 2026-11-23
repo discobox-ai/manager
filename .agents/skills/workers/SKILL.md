@@ -942,6 +942,17 @@ queue as before, report it once on the table
 ("load <n>, launches held"), and start it as soon as the host recovers.
 `workers.max` counts boxes on every pool.
 
+**At most `workers.localMax` (12) worker boxes run on this host** (owner,
+2026-11-23: "can we just limit running workers to 12 on local? tell the loop
+to stop some to reduce load and then start them later when it's more idle").
+`scripts/launch` counts running local worker boxes and overflows past it.
+When load or the count is over, stop the newest-started local workers that
+aren't mid-push (stop, never archive), tag each `held`, and start them again,
+oldest first and one at a time, when fewer than `localMax` run here and load
+is under `disk.maxLoad`; remove `held` as you start each. `scripts/reconcile`
+doesn't report a `held` box as asleep. Space launches out: a box adds its load
+a minute or two after it starts, so check the load again before the next one.
+
 `--pool POOL` picks a pool outright. `--ignore-load` keeps a box on this host
 whatever the load (a box the owner asked for here by name, or
 validate-main-install, which must test this host). Running work carries on;
