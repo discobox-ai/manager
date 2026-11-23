@@ -954,6 +954,26 @@ discobox#1601) and reaches GitHub through its pool's proxy. A worker there
 that can't build or test in that size: note it on the table, and relaunch it
 locally when the host has room.
 
+## Reconcile (owner, 2026-11-23)
+
+"Do we have any way to sync up issues state with running boxes?" ...
+"yes, write a reconcile script too." `scripts/reconcile` reads every watched
+repository's open issues and PRs (GraphQL) and `discobox ls`, and lists what
+doesn't line up. Run it on every heartbeat (`watch`) and whenever the owner
+asks where work stands; act on each line, within `workers.max` and
+`workers.triageMax`:
+
+| Line | Means | Do |
+|---|---|---|
+| `closed-box` | a box not archived whose issue is closed | retire it (check `/tmp` first) |
+| `orphan` | `status/in-progress`, no box at all | relaunch its job, or put it back to `status/ready` and say why on the issue |
+| `asleep` | a worker box stopped or suspended mid-job: no open PR, not tagged `ready`, `blocked` or `needs-input` | start it and wake it on where it was |
+| `ready-idle` | `status/ready`, no live box | start its worker (tracking issues with owner steps, like the merge-queue one, aren't box jobs: leave them) |
+| `untriaged` | no `status/*` label, no live box | start triage |
+
+`--summary` gives the counts, `--json` one object per line. It reads only;
+the fixes are yours.
+
 ## Disk
 
 **Trim caches first: they are usually the biggest use of disk** (owner,
