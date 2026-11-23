@@ -30,6 +30,13 @@ Load at or below `disk.maxLoad`, disk **at or above** `disk.minFreeGiB` (60G fre
 the infra boxes (step 4), not workers, and say why. A server that isn't
 answering (`discobox ls` fails) is a different problem: tell the owner.
 
+**The manager box's CLI older than the server** (2026-11-23: a redeploy left
+`discobox ls` failing with "unexpected field startedFrom", which broke
+`scripts/launch`, `stuck-drafts` and `table slots`): install the matching
+main build with `curl -fsSL https://main.discobox.ai | sh`. It goes to
+`~/.local/bin`, which is first on PATH. Keep the old binary as a `.bak`, and
+check `discobox version --client` against the server's build.
+
 ## 3. The loop
 
 `manager-loop` not running: relaunch it (`start` §4, `claude --bg -n
