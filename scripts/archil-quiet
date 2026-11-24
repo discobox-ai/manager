@@ -11,7 +11,7 @@
 # discobox-monitor command monitor (every 1m). Remove when #1639 is fixed.
 set -euo pipefail
 api=https://api.discobox.internal/projects/default/sandboxes
-for id in $(discobox ls -o json 2>/dev/null | jq -r '.sandboxes[] | select(.meta.tags.pool == "archil" and .runtime.runtimeState == "running") | .id'); do
+for id in $(discobox ls -o json 2>/dev/null | jq -r '.sandboxes[] | select(((.pool.name // "") == "archil" or .meta.tags.pool == "archil") and .runtime.runtimeState == "running") | .id'); do
   state=$(curl -s -m 20 "$api/$id/agent/services" | jq -r '.services[]? | select(.id == "discobox-api") | .status' 2>/dev/null || true)
   case $state in
     running|starting)
