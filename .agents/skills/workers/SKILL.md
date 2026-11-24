@@ -968,6 +968,24 @@ discobox#1601) and reaches GitHub through its pool's proxy. A worker there
 that can't build or test in that size: note it on the table, and relaunch it
 locally when the host has room.
 
+## An archil box that fails to launch (owner, 2026-11-24)
+
+"if a archil box fails to launch, leave it be, create a new one for the
+task, that way we can diagnose the issues later." A box on the archil pool
+that ends in `error` before its job starts (a failed machine start, a
+data-disk mount that failed, a provision that never finished):
+
+- **Leave it alone.** Don't repair, restart, retire or archive it, and don't
+  exec into it.
+- Retag it so it no longer stands for the job: `discobox tag <id>
+  failed-launch=<repo>#<N> --rm job --rm issue`, which keeps it out of the
+  table, `finished-boxes` and `reconcile`. Note the box and its error in one
+  line on the issue.
+- **Launch a new box for the same job** (`scripts/launch` as before; it goes
+  to archil again).
+- Keep a list in `scripts/queue` (`failed-launch <id> <error's first line>`)
+  for the owner to diagnose. The owner decides when they're removed.
+
 ## Reconcile (owner, 2026-11-23)
 
 "Do we have any way to sync up issues state with running boxes?" ...
