@@ -32,6 +32,16 @@ description: How the manager handles incoming work — a new issue, an issue the
    send …" isn't one (owner, 2026-11-24). If the verdict didn't, post it
    before labelling. `scripts/waiting-external` lists any labelled issue
    without one as `unasked`: post it then.
+   When its `Next` is **duplicate of #M** (owner, 2026-11-24: "look for
+   duplicates and associate and close one of them"): keep the one the
+   verdict names, copy anything only the other has into a comment on the
+   kept one ("From #K: …"), then close the other as a duplicate with
+   `Duplicate of #M.` as its comment (GitHub links the two) and
+   `state_reason=duplicate`. If the closed one had a box, retire it; if
+   both had PRs, the kept one's PR goes on and the other is closed with a
+   line naming it. Cross-repository: name it as `owner/repo#M`. A reporter
+   on the closed one is @-mentioned in that comment, so they follow the
+   kept issue.
    `scripts/waiting-external` takes it off when they reply and closes the
    issue after 30 days without (owner, 2026-11-24). Retire the triage box.
 

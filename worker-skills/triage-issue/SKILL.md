@@ -39,6 +39,13 @@ gh api "search/issues?q=repo:$REPO+<key+terms>&per_page=20"
 - Check `git log --oneline -S '<symbol>'` and `--grep` for a fix already on
   `BASE`, the search above for duplicates, and the repository's ADRs (often
   `docs/adr/`) for a decision that already covers or rejects the request.
+- **Look for duplicates on purpose** (owner, 2026-11-24): search open and
+  closed issues and open PRs, in this repository and the related ones
+  (discobox and vm, when it touches the other), by the symptom, the error
+  text, the command and the code it concerns, not only the title:
+  `gh api "search/issues?q=repo:$REPO+<terms>+is:issue&per_page=30"` (no
+  `is:open`, so closed ones show), and the same with `is:pr is:open`. A
+  duplicate is the same defect or request, not just the same area.
 - Note the version the reporter ran, if they said.
 
 Status line: `investigating #N: <the code it concerns>`.
@@ -168,7 +175,14 @@ $ go test ./internal/pools -run TestSupersededReconcileDoesNotBackOff
   them in the third person (owner, 2026-11-24): the manager labels the issue `status/waiting-external`, and it
   closes after 30 days with no reply;
 - needs a macOS / Windows box;
-- duplicate of #M;
+- duplicate of #M: the same defect or request. Say which one to **keep**:
+  the one with a PR or box on it, else the one with the better reproduction
+  and discussion, else the older. Name anything only this issue has (a
+  reproduction, a platform, a log) for the manager to carry over. If #M is
+  already closed as fixed, say whether the fix covers this report (then
+  it's "fixed on `BASE`") or not (then it's a new defect, not a duplicate).
+  Related but different issues aren't duplicates: list them under
+  "Related" instead;
 - fixed on `BASE` by `<sha>`.
 
 When your proposal reverses a label someone else set, or moves the priority,
