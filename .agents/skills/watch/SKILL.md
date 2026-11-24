@@ -79,7 +79,11 @@ Monitor(
   changed.
   Also on each heartbeat, **run `scripts/stuck-drafts --wake`,
   `scripts/finished-boxes --retire`, `scripts/stale-in-progress`,
-  `scripts/reconcile` (act on every line: `workers`, Reconcile) and
+  `scripts/reconcile` (act on every line: `workers`, Reconcile),
+  a check that every long-lived box (merge-gate, merge-queue, both
+  merge-score, both pr-check, Norm) is running; one that isn't gets
+  started and typed a line to re-arm its watch (2026-11-24: all of them sat
+  stopped after a resume, and nothing reached in-review), and
   `scripts/pr-review-labels --apply`** (also run every 5 minutes by the `pr-labels` command monitor, so it no longer depends on this turn; fix
   each issue it lists: `docs/labels.md`, In progress means a box). The second archives every worker box
   whose PR has merged or closed, or whose issue closed with no PR (owner,

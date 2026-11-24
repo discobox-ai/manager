@@ -34,6 +34,13 @@ already stopped before `/stop` have no tag and stay as they were.
 A box's harness restarts with its conversation; the loop types it a
 nudge when it reads it idle (`workers`, Waking a box).
 
+**Long-lived boxes need re-arming at once** (2026-11-24): merge-gate,
+merge-queue, merge-score, pr-check and Norm lose their watches and Monitors
+with the stop. Started and left alone, they sit idle, the 30-minute idle
+rule stops them again, and no PR gets a Process check, a score or its
+approval handed to the queue. Right after starting each one, type it a line
+to re-arm its watch per its skill and rescan now, and check it answers.
+
 ## 3. Relaunch the loop
 
 `start` §4: `claude --bg -n manager-loop ... "/start-loop"`. It rebuilds
