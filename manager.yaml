@@ -127,7 +127,7 @@ workers:
   # Factory stop (owner, 2026-11-10; `stop` and `resume` skills): true means
   # every agent is idle on purpose: the loop isn't running, the manager's
   # boxes are stopped, and nothing starts. Only /resume clears it.
-  stopped: true   # owner, 2026-11-24T00:33Z: /stop
+  stopped: false  # owner, 2026-11-24: /resume
   # Workers running at once, triage and delivery together: a box counts only
   # while its power state is running or starting. Suspended (paused), stopped,
   # asleep and archived boxes don't count (owner, 2026-11-05). The owner set ten for this host (2026-11-05); lower it when
