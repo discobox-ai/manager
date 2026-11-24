@@ -108,7 +108,10 @@ workers:
   # low enough"). scripts/launch picks it; unset, a busy host launches nothing.
   # Only worker jobs go there; long-lived boxes (Norm, process checks, merge
   # boxes, validation) and live runs stay local (owner, 2026-11-23).
-  overflowPool: archil
+  # Paused 2026-11-24 (owner: "we need to pause spinning up new works in archil
+  # for now. we can switch to workers on local, max 12 running at a time on
+  # local"). Set back to archil to overflow again.
+  overflowPool:
   # Worker boxes (deliver, triage, adr, fix-ci, rebase, prototype) running on
   # this host at once; more go to overflowPool (owner, 2026-11-23: "can we just
   # limit running workers to 12 on local? tell the loop to stop some to reduce
@@ -117,7 +120,7 @@ workers:
   # true: every new worker box goes to overflowPool, not only past the limits
   # (owner, 2026-11-24: "can we process everything now and just put all new
   # boxes on archil from now on?"). Long-lived boxes and live runs stay local.
-  overflowFirst: true
+  overflowFirst: false  # paused with overflowPool (owner, 2026-11-24)
   # Intake pause (owner): true starts no new triage or delivery boxes but
   # those in pausedExcept; work in progress carries on. Resumed 2026-11-03.
   # Resumed 2026-11-23 (owner: "unpause all work, we can run anything now since
