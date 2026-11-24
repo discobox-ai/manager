@@ -35,11 +35,12 @@ A box's harness restarts with its conversation; the loop types it a
 nudge when it reads it idle (`workers`, Waking a box).
 
 **Long-lived boxes need re-arming at once** (2026-11-24): merge-gate,
-merge-queue, merge-score, pr-check and Norm lose their watches and Monitors
+merge-queue, merge-score and pr-check lose their watches and Monitors
 with the stop. Started and left alone, they sit idle, the 30-minute idle
 rule stops them again, and no PR gets a Process check, a score or its
 approval handed to the queue. Right after starting each one, type it a line
-to re-arm its watch per its skill and rescan now, and check it answers.
+to re-arm its watch per its skill and rescan now, and check it answers. Norm sleeps 01:00–16:00 UTC (paused): leave it paused
+then; it wakes itself.
 
 ## 3. Relaunch the loop
 
