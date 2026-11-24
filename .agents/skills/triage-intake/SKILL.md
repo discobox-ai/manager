@@ -24,7 +24,11 @@ description: How the manager handles incoming work — a new issue, an issue the
    `type/*`, `area/*` and `priority/*`, a rewritten body if it was thin, and
    whether it needs an ADR or a decision.
 3. Apply the verdict by `docs/gates.md`: `status/ready`, `status/triaged`
-   or `status/needs-decision`. Retire the triage box.
+   or `status/needs-decision`, or `status/waiting-external` when its `Next`
+   is "needs … from the reporter" (or another outside party: a vendor, an
+   upstream fix), never `status/needs-input` or `status/blocked` for that.
+   `scripts/waiting-external` takes it off when they reply and closes the
+   issue after 30 days without (owner, 2026-11-24). Retire the triage box.
 
 ## The owner asks for something in conversation
 

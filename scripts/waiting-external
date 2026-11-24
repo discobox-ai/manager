@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Issues waiting on someone outside the project (owner, 2026-11-24: "add a
+# label to indicate that we are waiting on an external party for an issue ...
+# And then for issues like that auto close after 30 days").
+#
+# For every open issue labelled status/waiting-external in the watched
+# repositories:
+#   - someone other than the bot and the owner has commented since the label
+#     went on: the wait is over. With --apply, the label comes off and the
+#     issue goes back to triage (no status label); prints "replied".
+#   - 30 days have passed since the label went on, with no such comment:
+#     with --apply, a closing comment and close as not planned; prints
+#     "closed". Anyone can reopen it with the details.
+#   - otherwise prints "waiting <days>d".
+#
+# Cost: one GraphQL query per repository. Run on the heartbeat (watch skill).
+#   scripts/waiting-external           # what it would do
+#   scripts/waiting-external --apply   # do it
+set -euo pipefail
+cd "$(dirname "$0")/.."
+eval "$(discobox-access env)" >/dev/null 2>&1
+apply=0; [ "${1:-}" = --apply ] && apply=1
+LABEL=status/waiting-external DAYS=30
+OWNER=$(sed -n 's/^owner: *//p' manager.yaml | head -1); OWNER=${OWNER:-ibuildthecloud}
+BOT=$(sed -n 's/^  forkOwner: *//p' manager.yaml | head -1); BOT=${BOT:-ibuildthecloud-bot}
+REPOS=$(awk '/^repos:/ {r=1; next} r && /^[^ #]/ {r=0} r && $1=="-" && $2=="name:" {print $3}' manager.yaml)
+Q='query($q:String!){search(query:$q,type:ISSUE,first:100){nodes{... on Issue{
+  number url repository{nameWithOwner}
+  timelineItems(last:50,itemTypes:[LABELED_EVENT]){nodes{... on LabeledEvent{createdAt label{name}}}}
+  comments(last:30){nodes{createdAt author{login}}}}}}}'
+now=$(date -u +%s)
+for repo in $REPOS; do
+  gh api graphql -f query="$Q" -f q="repo:$repo is:issue is:open label:$LABEL" 2>/dev/null |
+  jq -c --arg l "$LABEL" --arg owner "$OWNER" --arg bot "$BOT" '.data.search.nodes[] |
+    ([.timelineItems.nodes[] | select(.label.name == $l) | .createdAt] | max) as $since |
+    {repo: .repository.nameWithOwner, number, url, since: $since,
+     replied: ([.comments.nodes[] | select(.createdAt > $since and (.author.login // "") != $owner and (.author.login // "") != $bot)] | length > 0)}' |
+  while read -r it; do
+    r=$(jq -r .repo <<<"$it"); n=$(jq -r .number <<<"$it"); since=$(jq -r .since <<<"$it")
+    age=$(( (now - $(date -u -d "$since" +%s)) / 86400 ))
+    if [ "$(jq -r .replied <<<"$it")" = true ]; then
+      echo "replied  $r#$n (waited ${age}d)"
+      [ $apply = 1 ] && gh api -X DELETE "repos/$r/issues/$n/labels/status%2Fwaiting-external" --silent || true
+    elif [ "$age" -ge "$DAYS" ]; then
+      echo "closed   $r#$n (no reply in ${age}d)"
+      if [ $apply = 1 ]; then
+        gh api -X POST "repos/$r/issues/$n/comments" --silent -f body="Closing: this was waiting on details from outside the project and nothing has come in ${DAYS} days. Reopen it, or comment, with the details and it goes back to triage."
+        gh api -X PATCH "repos/$r/issues/$n" --silent -f state=closed -f state_reason=not_planned
+      fi
+    else
+      echo "waiting  $r#$n ${age}d"
+    fi
+  done
+done

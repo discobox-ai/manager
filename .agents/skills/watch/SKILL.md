@@ -80,6 +80,8 @@ Monitor(
   Also on each heartbeat, **run `scripts/stuck-drafts --wake`,
   `scripts/finished-boxes --retire`, `scripts/stale-in-progress`,
   `scripts/reconcile` (act on every line: `workers`, Reconcile),
+  `scripts/waiting-external --apply` (owner, 2026-11-24: an issue waiting
+  on an outside party closes after 30 days with no reply),
   a check that every long-lived box (merge-gate, merge-queue, both
   merge-score, both pr-check) is running (not Norm: it pauses itself
   overnight, 01:00–16:00 UTC, and that's normal); one that isn't gets

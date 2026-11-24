@@ -163,7 +163,9 @@ $ go test ./internal/pools -run TestSupersededReconcileDoesNotBackOff
 - ready to deliver, needs a design first (name the choice: it gets an ADR);
 - needs a decision between X and Y;
 - needs `<specific info>` from the reporter (version, exact command, output,
-  OS; never "more details please");
+  OS; never "more details please"). Ask them in the verdict comment, by
+  @-mention: the manager labels the issue `status/waiting-external`, and it
+  closes after 30 days with no reply;
 - needs a macOS / Windows box;
 - duplicate of #M;
 - fixed on `BASE` by `<sha>`.

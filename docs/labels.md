@@ -15,6 +15,7 @@ none, which means new). The other groups describe it.
 | `status/in-progress` | A box of ours is working on it: launched, tagged `issue=N`, and named on the issue ("**In progress:** … discobox:///<id>") | manager, only through `scripts/launch` |
 | `status/in-review` | Its PR is green, waiting for the owner. On a PR: ready for the owner's review now, the one label the owner looks for: out of draft, every check green, no merge conflict, and a Process check for its head, or, for an ADR PR, no Process check needed (owner, 2026-11-18). Kept by `scripts/pr-review-labels --apply` | manager |
 | `status/blocked` | Waiting on something specific that isn't done: another issue or PR (linked), an owner action, an outside fix. A comment says what | manager or worker |
+| `status/waiting-external` | Waiting on someone outside the project: a reporter's details, a vendor, an upstream fix. A comment names who and what. A reply from them takes it off and back to triage; 30 days with none closes the issue as not planned (owner, 2026-11-24). Kept by `scripts/waiting-external --apply` | manager, when triage's `Next` is "needs … from the reporter" or the owner says so |
 | `status/paused` | Parked on purpose: nothing wrong, just not now (its milestone isn't being worked, the owner deferred it). A comment says why and what resumes it | manager |
 
 **In progress means a box, always** (owner, 2026-11-16: "when we out assign
