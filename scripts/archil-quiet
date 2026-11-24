@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Stop the discobox repository's "Discobox API" service (.discobox/services/
+# 10-discobox-api.sh, `go tool task dev`) in every running archil box. That
+# service starts at each boot; its image watcher creates Docker containers,
+# and on archil a container create crashes the machine
+# (discobox-ai/discobox#1639): every discobox worker on archil went down
+# 5-10 minutes after each start (2026-11-24). Workers don't need the dev
+# server running.
+#
+# Prints one line per service it stopped, nothing otherwise, so it suits a
+# discobox-monitor command monitor (every 1m). Remove when #1639 is fixed.
+set -euo pipefail
+api=https://api.discobox.internal/projects/default/sandboxes
+for id in $(discobox ls -o json 2>/dev/null | jq -r '.sandboxes[] | select(.meta.tags.pool == "archil" and .runtime.runtimeState == "running") | .id'); do
+  state=$(curl -s -m 20 "$api/$id/agent/services" | jq -r '.services[]? | select(.id == "discobox-api") | .status' 2>/dev/null || true)
+  case $state in
+    running|starting)
+      if curl -s -m 30 -X POST "$api/$id/agent/services/discobox-api/stop" >/dev/null; then
+        echo "$(date -u +%H:%M:%SZ) stopped discobox-api in $id"
+      fi ;;
+  esac
+done
