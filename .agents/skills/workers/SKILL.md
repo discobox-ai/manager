@@ -987,6 +987,9 @@ data-disk mount that failed, a provision that never finished):
   retry fails too, launch the third with `--local` so the work isn't stuck,
   and leave both failed boxes. A box the server won't retag (409) is left
   untagged; the `scripts/queue` entry is what records it.
+- **Launch on archil one at a time** (2026-11-24): six launches fired
+  together all failed with `502 … pool-agent … meta … context deadline
+  exceeded`. Wait for each box to come up (or fail) before the next.
 - Keep a list in `scripts/queue` (`failed-launch <id> <error's first line>`)
   for the owner to diagnose. The owner decides when they're removed.
 
