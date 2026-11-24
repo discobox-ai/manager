@@ -28,7 +28,9 @@ Q='query($q:String!,$after:String){search(query:$q,type:ISSUE,first:100,after:$a
 items='[]'; after=""
 while :; do
   page=$(gh api graphql -f query="$Q" -F q="org:discobox-ai updated:>=$since" ${after:+-F after="$after"})
-  items=$(jq -c --argjson acc "$items" '$acc + .data.search.nodes' <<<"$page")
+  # Through a file, not an argument: a long window (Norm sleeps 15 h) passes
+  # the kernel's argument limit ("Argument list too long", 2026-11-24).
+  items=$(jq -c --slurpfile acc <(printf '%s' "$items") '$acc[0] + .data.search.nodes' <<<"$page")
   [ "$(jq -r .data.search.pageInfo.hasNextPage <<<"$page")" = true ] || break
   after=$(jq -r .data.search.pageInfo.endCursor <<<"$page")
 done
@@ -38,7 +40,8 @@ boxes=$(discobox ls -o json | jq -c '[.sandboxes[] | select((.runtime.runtimeSta
      state: (.runtime.runtimeState // ""), status: ([.meta.tags | to_entries[] | select(.key | IN("ready","blocked","needs-input","working")) | .key] | join(",")),
      name: (.meta.name // "")}]')
 
-jq -r --arg since "$since" --arg now "$now" --arg owner "$OWNER" --argjson boxes "$boxes" '
+jq -r --arg since "$since" --arg now "$now" --arg owner "$OWNER" --slurpfile boxesf <(printf '%s' "$boxes") '
+  $boxesf[0] as $boxes |
   def ref: "\(.repository.nameWithOwner | split("/") | last)#\(.number)";
   def inwin(t): t != null and t >= $since;
   def kind: ([.labels.nodes[].name | select(startswith("type/")) | ltrimstr("type/")] | if length > 0 then " [" + join(",") + "]" else "" end);
