@@ -81,7 +81,10 @@ Monitor(
   `scripts/finished-boxes --retire`, `scripts/stale-in-progress`,
   `scripts/reconcile` (act on every line: `workers`, Reconcile),
   `scripts/waiting-external --apply` (owner, 2026-11-24: an issue waiting
-  on an outside party closes after 30 days with no reply),
+  on an outside party closes after 30 days with no reply, and its label comes
+  off as soon as they answer; also run it on any comment event on an issue
+  carrying `status/waiting-external`, so a reply doesn't wait for the
+  heartbeat; then re-triage the issue, or wake its box if it has one),
   a check that every long-lived box (merge-gate, merge-queue, both
   merge-score, both pr-check) is running (not Norm: it pauses itself
   overnight, 01:00–16:00 UTC, and that's normal); one that isn't gets
