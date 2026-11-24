@@ -981,8 +981,12 @@ data-disk mount that failed, a provision that never finished):
   failed-launch=<repo>#<N> --rm job --rm issue`, which keeps it out of the
   table, `finished-boxes` and `reconcile`. Note the box and its error in one
   line on the issue.
-- **Launch a new box for the same job** (`scripts/launch` as before; it goes
-  to archil again).
+- **Launch a new box for the same job straight away** (owner, 2026-11-24:
+  "if something fails to launch on archil we should try again and leave the
+  failed box around"): `scripts/launch` as before, to archil again. If the
+  retry fails too, launch the third with `--local` so the work isn't stuck,
+  and leave both failed boxes. A box the server won't retag (409) is left
+  untagged; the `scripts/queue` entry is what records it.
 - Keep a list in `scripts/queue` (`failed-launch <id> <error's first line>`)
   for the owner to diagnose. The owner decides when they're removed.
 

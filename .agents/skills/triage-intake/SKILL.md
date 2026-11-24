@@ -27,6 +27,11 @@ description: How the manager handles incoming work — a new issue, an issue the
    or `status/needs-decision`, or `status/waiting-external` when its `Next`
    is "needs … from the reporter" (or another outside party: a vendor, an
    upstream fix), never `status/needs-input` or `status/blocked` for that.
+   The issue must carry a comment that **@-mentions that party and asks
+   them directly** ("@login, could you send …"); "the reporter needs to
+   send …" isn't one (owner, 2026-11-24). If the verdict didn't, post it
+   before labelling. `scripts/waiting-external` lists any labelled issue
+   without one as `unasked`: post it then.
    `scripts/waiting-external` takes it off when they reply and closes the
    issue after 30 days without (owner, 2026-11-24). Retire the triage box.
 

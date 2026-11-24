@@ -11,6 +11,11 @@
 #   - 30 days have passed since the label went on, with no such comment:
 #     with --apply, a closing comment and close as not planned; prints
 #     "closed". Anyone can reopen it with the details.
+#   - no comment by the bot or the owner since the label went on
+#     @-mentions the outside party: prints "unasked". The loop then posts one
+#     that asks them directly ("@login, could you ..."), never only about
+#     them in the third person (owner, 2026-11-24). The 30 days count from
+#     the label either way.
 #   - otherwise prints "waiting <days>d".
 #
 # Cost: one GraphQL query per repository. Run on the heartbeat (watch skill).
@@ -25,16 +30,21 @@ OWNER=$(sed -n 's/^owner: *//p' manager.yaml | head -1); OWNER=${OWNER:-ibuildth
 BOT=$(sed -n 's/^  forkOwner: *//p' manager.yaml | head -1); BOT=${BOT:-ibuildthecloud-bot}
 REPOS=$(awk '/^repos:/ {r=1; next} r && /^[^ #]/ {r=0} r && $1=="-" && $2=="name:" {print $3}' manager.yaml)
 Q='query($q:String!){search(query:$q,type:ISSUE,first:100){nodes{... on Issue{
-  number url repository{nameWithOwner}
+  number url repository{nameWithOwner} author{login}
   timelineItems(last:50,itemTypes:[LABELED_EVENT]){nodes{... on LabeledEvent{createdAt label{name}}}}
-  comments(last:30){nodes{createdAt author{login}}}}}}}'
+  comments(last:30){nodes{createdAt author{login} body}}}}}}'
 now=$(date -u +%s)
 for repo in $REPOS; do
   gh api graphql -f query="$Q" -f q="repo:$repo is:issue is:open label:$LABEL" 2>/dev/null |
   jq -c --arg l "$LABEL" --arg owner "$OWNER" --arg bot "$BOT" '.data.search.nodes[] |
     ([.timelineItems.nodes[] | select(.label.name == $l) | .createdAt] | max) as $since |
-    {repo: .repository.nameWithOwner, number, url, since: $since,
-     replied: ([.comments.nodes[] | select(.createdAt > $since and (.author.login // "") != $owner and (.author.login // "") != $bot)] | length > 0)}' |
+    {repo: .repository.nameWithOwner, number, url, since: $since, author: .author.login,
+     replied: ([.comments.nodes[] | select(.createdAt > $since and (.author.login // "") != $owner and (.author.login // "") != $bot)] | length > 0),
+     # The asking comment may come just before the label: count the day before.
+     asked: ([.comments.nodes[] | select((.createdAt | fromdate) >= (($since | fromdate) - 86400) and ((.author.login // "") == $bot or (.author.login // "") == $owner))
+              | .body | [scan("(?<![A-Za-z0-9`/])@([A-Za-z0-9-]+)")[0]] | map(select(. != $owner and . != $bot))[]] | unique)}
+    | .who = (if (.asked | length) > 0 then .asked else [(.author // "") | select(. != "" and . != $owner and . != $bot)] end)
+    | .asked = ((.asked | length) > 0)' |
   while read -r it; do
     r=$(jq -r .repo <<<"$it"); n=$(jq -r .number <<<"$it"); since=$(jq -r .since <<<"$it")
     age=$(( (now - $(date -u -d "$since" +%s)) / 86400 ))
@@ -44,9 +54,14 @@ for repo in $REPOS; do
     elif [ "$age" -ge "$DAYS" ]; then
       echo "closed   $r#$n (no reply in ${age}d)"
       if [ $apply = 1 ]; then
-        gh api -X POST "repos/$r/issues/$n/comments" --silent -f body="Closing: this was waiting on details from outside the project and nothing has come in ${DAYS} days. Reopen it, or comment, with the details and it goes back to triage."
+        who=$(jq -r '.who | map("@" + .) | join(" ")' <<<"$it")
+        gh api -X POST "repos/$r/issues/$n/comments" --silent -f body="${who:+$who, }closing this for now: it was waiting on details from you, and nothing has come in ${DAYS} days. Comment here with them (or reopen it) and it goes straight back to triage."
         gh api -X PATCH "repos/$r/issues/$n" --silent -f state=closed -f state_reason=not_planned
       fi
+    elif [ "$(jq -r .asked <<<"$it")" != true ]; then
+      # Waiting on someone who was never asked: a comment has to @-mention
+      # them with the questions (owner, 2026-11-24). The loop posts it.
+      echo "unasked  $r#$n ${age}d: no comment since the label @-mentions the outside party"
     else
       echo "waiting  $r#$n ${age}d"
     fi
