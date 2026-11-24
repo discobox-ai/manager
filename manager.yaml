@@ -117,6 +117,8 @@ workers:
   # limit running workers to 12 on local? tell the loop to stop some to reduce
   # load and then start them later when it's more idle").
   localMax: 12
+  # The pool name of this host's pool, which localMax counts (the project's default pool).
+  localPool: Default
   # true: every new worker box goes to overflowPool, not only past the limits
   # (owner, 2026-11-24: "can we process everything now and just put all new
   # boxes on archil from now on?"). Long-lived boxes and live runs stay local.
