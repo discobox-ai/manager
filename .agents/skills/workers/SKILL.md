@@ -946,6 +946,9 @@ queue as before, report it once on the table
 2026-11-23: "can we just limit running workers to 12 on local? tell the loop
 to stop some to reduce load and then start them later when it's more idle").
 `scripts/launch` counts running local worker boxes and overflows past it.
+With `workers.overflowFirst: true` (owner, 2026-11-24: "just put all new
+boxes on archil from now on") every new worker box goes to archil from the
+start; boxes already on this host stay here under `localMax`.
 When load or the count is over, stop the newest-started local workers that
 aren't mid-push (stop, never archive), tag each `held`, and start them again,
 oldest first and one at a time, when fewer than `localMax` run here and load

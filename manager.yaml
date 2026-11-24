@@ -114,6 +114,10 @@ workers:
   # limit running workers to 12 on local? tell the loop to stop some to reduce
   # load and then start them later when it's more idle").
   localMax: 12
+  # true: every new worker box goes to overflowPool, not only past the limits
+  # (owner, 2026-11-24: "can we process everything now and just put all new
+  # boxes on archil from now on?"). Long-lived boxes and live runs stay local.
+  overflowFirst: true
   # Intake pause (owner): true starts no new triage or delivery boxes but
   # those in pausedExcept; work in progress carries on. Resumed 2026-11-03.
   # Resumed 2026-11-23 (owner: "unpause all work, we can run anything now since

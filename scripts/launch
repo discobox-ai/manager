@@ -137,6 +137,12 @@ if [ -z "$POOL" ] && [ -z "$IGNORELOAD" ]; then
   # Long-lived and live-run boxes never overflow: only worker jobs do.
   case $SKILL in deliver-issue|triage-issue|propose-adr|fix-ci|rebase-pr|prototype) ;; *) LOCAL=1 ;; esac
   if [ -z "$LOCAL" ] && [ -n "$ISSUE" ] && gh api "repos/$REPO/issues/$ISSUE" --jq .body 2>/dev/null | grep -q '\*\*live\*\*'; then LOCAL=1; fi
+  # Every new worker box goes to the overflow pool, whatever the load (owner,
+  # 2026-11-24: "can we process everything now and just put all new boxes on
+  # archil from now on?"); workers.overflowFirst: false brings back
+  # local-first.
+  FIRST=$(sed -n 's/^  overflowFirst: *\([a-z]*\).*/\1/p' manager.yaml | head -1)
+  if [ -z "$WHY" ] && [ -z "$LOCAL" ] && [ "$FIRST" = true ] && [ -n "$OVERFLOW" ]; then WHY="workers.overflowFirst is true"; fi
   if [ -n "$WHY" ]; then
     [ -z "$LOCAL" ] || die "$WHY, and a $SKILL box${ISSUE:+ for a live run or #$ISSUE} stays on this host: no launch until it recovers (or --ignore-load)"
     [ -n "$OVERFLOW" ] || die "$WHY, and workers.overflowPool is unset: no new boxes until it recovers"
