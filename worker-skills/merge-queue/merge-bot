@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# The merge bot (owner, 2026-11-25: "if everything is green just merge or
+# label with needs rebase ... simple is good"). For every open PR in
+# discobox-ai/discobox and discobox-ai/vm that ibuildthecloud has approved:
+#
+#   approval doesn't hold (a later review, or new content since) -> comment once
+#   draft or checks not all green                                 -> wait
+#   conflicts with its base                                       -> label needs-rebase (once)
+#   otherwise                                                     -> merge it (rebase)
+#
+# The approval holds when the owner's latest review is APPROVED and either it
+# names the head commit, or the head carries the same change: the PR's whole
+# diff against its base has the same `git patch-id` as the approved commit's
+# had (a rebase that changed nothing). Anything else needs a new approval.
+#
+# One line per action; nothing when there's nothing to do. Run it from the
+# merge-queue box with the owner's credential in GH_TOKEN:
+#   merge-bot            # what it would do
+#   merge-bot --apply    # do it
+#   merge-bot -v         # also say why each approved PR is waiting
+set -euo pipefail
+apply=0 verbose=0
+for a in "$@"; do case $a in --apply) apply=1 ;; -v) verbose=1 ;; esac; done
+# This gh prints hints about `gh event listen` on stderr for every PR read.
+gh() { command gh "$@" 2> >(grep -v -e '^hint:' -e '^    gh event' -e '^  - ' >&2); }
+why() { [ $verbose = 0 ] || say "$repo#$pr: $*"; }
+OWNER=ibuildthecloud
+REPOS="discobox-ai/discobox discobox-ai/vm"
+work=${MERGE_BOT_DIR:-$HOME/merge-bot}
+mkdir -p "$work"
+
+say() { echo "$(date -u +%H:%M:%SZ) $*"; }
+act() { [ $apply = 1 ] || return 0; "$@" >/dev/null; }
+
+# patch-id of a commit's change against its merge base with the base branch.
+pid() { # repo-dir base-ref sha
+  git -C "$1" diff "$(git -C "$1" merge-base "$2" "$3")" "$3" | git -C "$1" patch-id --stable | cut -d' ' -f1
+}
+
+for repo in $REPOS; do
+  dir="$work/${repo#*/}.git"
+  [ -d "$dir" ] || git init -q --bare "$dir"
+  for pr in $(gh api "repos/$repo/pulls?state=open&per_page=100" --paginate --jq '.[].number'); do
+    j=$(gh api "repos/$repo/pulls/$pr")
+    head=$(jq -r .head.sha <<<"$j"); base=$(jq -r .base.ref <<<"$j")
+    review=$(gh api "repos/$repo/pulls/$pr/reviews?per_page=100" --paginate \
+      --jq "[.[] | select(.user.login == \"$OWNER\" and .state != \"COMMENTED\")] | last // empty | \"\(.state) \(.commit_id)\"")
+    [ -n "$review" ] || continue
+    state=${review% *}; approved=${review#* }
+    [ "$state" = APPROVED ] || continue
+    [ "$(jq -r .draft <<<"$j")" = false ] || { why "draft"; continue; }
+
+    if [ "$approved" != "$head" ]; then
+      url=$(jq -r .head.repo.clone_url <<<"$j")
+      git -C "$dir" fetch -q "https://github.com/$repo.git" "+refs/heads/$base:refs/base/$base" 2>/dev/null || true
+      git -C "$dir" fetch -q "$url" "$head" 2>/dev/null || true
+      git -C "$dir" fetch -q "$url" "$approved" 2>/dev/null || git -C "$dir" fetch -q "https://github.com/$repo.git" "$approved" 2>/dev/null || true
+      a=$(pid "$dir" "refs/base/$base" "$approved" 2>/dev/null || echo none)
+      h=$(pid "$dir" "refs/base/$base" "$head" 2>/dev/null || echo other)
+      if [ "$a" != "$h" ]; then
+        mark="Merge bot: re-approve at ${head:0:7}"
+        if ! gh api "repos/$repo/issues/$pr/comments?per_page=100" --jq '.[].body' | grep -qF "$mark"; then
+          say "$repo#$pr: approval is for ${approved:0:7}, head ${head:0:7} changes the patch: asking for re-approval"
+          act gh api -X POST "repos/$repo/issues/$pr/comments" -f body="**$mark.** @$OWNER approved \`${approved:0:7}\`; the head \`${head:0:7}\` changes what the PR does, not just its base. Approve again to merge it."
+        fi
+        continue
+      fi
+    fi
+
+    # Every check on the head completed green, at least one; every status success.
+    checks=$(gh api "repos/$repo/commits/$head/check-runs?per_page=100" --jq '[.check_runs[] | .conclusion // "pending"]')
+    statuses=$(gh api "repos/$repo/commits/$head/status" --jq '[.statuses[].state]')
+    green=$(jq -n --argjson c "$checks" --argjson s "$statuses" '($c|length) > 0 and all($c[]; . == "success" or . == "skipped" or . == "neutral") and all($s[]; . == "success")')
+    [ "$green" = true ] || { why "checks not all green"; continue; }
+
+    ms=$(jq -r .mergeable_state <<<"$j")
+    case $ms in
+      dirty)
+        why "conflicts"
+        if ! jq -e '[.labels[].name] | index("needs-rebase")' <<<"$j" >/dev/null; then
+          say "$repo#$pr: conflicts with $base: labelled needs-rebase"
+          act gh api -X POST "repos/$repo/issues/$pr/labels" -f 'labels[]=needs-rebase'
+        fi ;;
+      clean|unstable|has_hooks|behind)
+        say "$repo#$pr: approved, green, no conflict: merging ${head:0:7}"
+        if [ $apply = 1 ]; then
+          if gh api -X PUT "repos/$repo/pulls/$pr/merge" -f merge_method=rebase -f sha="$head" >/dev/null 2>"$work/err"; then
+            gh api -X DELETE "repos/$repo/issues/$pr/labels/needs-rebase" >/dev/null 2>&1 || true
+          else
+            say "$repo#$pr: merge refused: $(tr '\n' ' ' <"$work/err" | cut -c1-200)"
+          fi
+        fi
+        # One merge per repository per run: the others' mergeability changes.
+        break ;;
+      *) why "mergeable_state $ms: next run" ;;  # unknown (still computing) or blocked
+    esac
+  done
+done

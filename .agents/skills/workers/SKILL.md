@@ -560,25 +560,24 @@ publish to x."
   snapshots, and never approve its `x-norm` request (an `oauth` secret the
   owner created with `scripts/x-oauth-login`); the owner does.
 
-### The merge queue (owner, 2026-11-16; slimmed 2026-11-21)
+### The merge bot (owner, 2026-11-16; a plain merge bot since 2026-11-25)
 
 The owner: "a dedicated worker that have merge privileges and will only merge
-after ibuildthecloud github user has approved the PR." And, once `main` had
-GitHub's own merge queue (discobox#1443): "can I just have the merge queue
-just look for approval and then put it in the merge queue if it matches the
-condition?"
+after ibuildthecloud github user has approved the PR." And (2026-11-25): "if
+everything is green just merge or label with needs rebase ... I just want to
+turn [the merge queue] off ... simple is good." GitHub's merge queue and
+auto-merge are no longer used.
 
 - **One box, long-lived:** `scripts/launch merge-queue --repo
   discobox-ai/discobox --no-source -p '/merge-queue'`, tagged
   `job=merge-queue`. It asks the owner for their own credential, API only,
   and you never approve it. It has no git push. Never retire it; it never
   counts against `workers.max`.
-- **It does one thing:** when the owner's latest approval on a PR matches its
-  current commit or a rebase of it (a rebase keeps an approval; new content doesn't: owner, 2026-11-21), it turns on GitHub's
-  auto-merge (rebase) for the PR, so GitHub's merge queue tests it with the
-  PRs ahead and merges it. In a repository with no queue (vm, for now) it
-  merges the PR itself once it's green. It doesn't order merges, poll CI or
-  wait for each merge.
+- **It runs one script** (`worker-skills/merge-queue/merge-bot`) every two
+  minutes. An approved PR that is green, out of draft and conflict-free is
+  merged (rebase). A conflict is labelled `needs-rebase`. A head whose patch
+  differs from the approved commit's gets one "re-approve" comment.
+  Changing the policy means changing that script.
 - **An approved PR that isn't going in always says why on the PR** (owner,
   2026-11-21: "I don't get why it wasn't being merged": vm PR 202 sat held
   with the reason only in a chat between sessions). Whenever the queue box
@@ -592,8 +591,7 @@ condition?"
   `needs-rebase` (it conflicts with main): wake that PR's worker at once to
   rebase it (`rebase-pr`, comment first), even with every slot full; the
   approval survives a rebase with the same patch. A PR labelled
-  `status/blocked` by the queue (GitHub ejected it for a failed combined
-  check): wake its worker to fix it.
+  `status/blocked` (a failed check after approval): wake its worker to fix it.
 - Treat queue merges like owner merges (close the issue, retire the box,
   `scripts/table sync`). "Review and merge" rows stay as they are: approving
   on GitHub is how the owner merges.
