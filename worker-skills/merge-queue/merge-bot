@@ -21,6 +21,10 @@
 #   merge-bot            # what it would do
 #   merge-bot --apply    # do it
 #   merge-bot -v         # also say why each approved PR is waiting
+# The whole script is one function, read before any of it runs: refresh-skills
+# can replace this file while a run is in progress, and bash reads a plain
+# script as it goes (2026-11-25: a run read half an old and half a new file).
+main() {
 set -euo pipefail
 apply=0 verbose=0
 for a in "$@"; do case $a in --apply) apply=1 ;; -v) verbose=1 ;; esac; done
@@ -118,3 +122,5 @@ for repo in $REPOS; do
     esac
   done
 done
+}
+main "$@"
