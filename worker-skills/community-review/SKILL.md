@@ -115,8 +115,10 @@ answering, post the recommendation for the owner:
 - Compared with our #<our PR> for #<N>: <which is better and why> | no PR of ours
 ```
 
-- **Merge it:** the change is right, small and clean as it is. Its own
-  Process check and merge score follow, as for ours, and the owner merges.
+- **Merge it:** the change is right, small and clean as it is. This comment,
+  at the PR's head, stands in for its Process check (the pr-check box only
+  checks the bot's PRs), so write it only for the head you reviewed. The
+  merge score follows, and the owner merges.
 - **Take it over:** the idea is right but it needs work the contributor
   isn't doing. We finish it on our own branch and credit the author
   (`Co-authored-by:` with their login's noreply address). The manager starts

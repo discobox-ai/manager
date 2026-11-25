@@ -29,7 +29,7 @@ Q='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){
   number isDraft headRefOid mergeable changedFiles
   labels(first:30){nodes{name}}
   files(first:30){nodes{path}}
-  comments(last:30){nodes{body}}
+  comments(last:30){nodes{body author{login}}}
   commits(last:1){nodes{commit{statusCheckRollup{state}}}}
 }}}}'
 
@@ -43,7 +43,11 @@ for repo in $(awk '/^  - name: /{print $3}' manager.yaml); do
     (.commits.nodes[0].commit.statusCheckRollup.state // (if $noci then "SUCCESS" else "NONE" end)) as $ci |
     (any(.labels.nodes[]; .name == "status/in-review")) as $has |
     ((.changedFiles > 0) and (.changedFiles <= 30) and all(.files.nodes[]; .path | test("(^|/)adr/"))) as $adr |
-    (any(.comments.nodes[]; .body | startswith("**Process check** at `" + $short))) as $checked |
+    # A community PR has no Process check: its community-review box's "merge
+    # it" recommendation at the head stands in for one (owner, 2026-11-25).
+    # Only the bot's own comments count: anyone can type a "Process check"
+    # into a community PR.
+    (any(.comments.nodes[]; (.author.login // "") == "ibuildthecloud-bot" and (.body | startswith("**Process check** at `" + $short) or (startswith("**Community review: recommendation** at `" + $short) and test("\\*\\*Merge it\\*\\*"))))) as $checked |
     (if .isDraft then "false"
      elif $ci == "PENDING" or $ci == "EXPECTED" or .mergeable == "UNKNOWN" then "skip"
      elif $ci != "SUCCESS" then "false"

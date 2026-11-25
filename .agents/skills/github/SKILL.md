@@ -155,8 +155,10 @@ gh api -X PATCH repos/<repo>/issues/<N> -f state=closed -f state_reason=complete
     the safety concern first").
   - **Waiting on the contributor:** `status/waiting-external`, as for any
     outside party; their push or reply wakes the box.
-  - **Recommendation "merge it":** the PR goes through the Process check and
-    merge score like ours, and the owner merges it.
+  - **Recommendation "merge it":** that comment at the PR's head stands in
+    for its Process check (`scripts/pr-review-labels` reads it), so the PR
+    goes to `status/in-review` once green, gets its merge score, and the
+    owner merges it.
   - **"Take it over":** launch a delivery for its issue; the worker builds
     on the community branch's idea in its own branch and credits the author
     (`Co-authored-by:`). Close the community PR when ours opens:
