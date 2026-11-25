@@ -67,7 +67,7 @@ approved:
 | The approval doesn't hold: a later review, or the head changes the patch (its diff against its base, without context lines and without the ADR index, differs from the approved commit's, by `git patch-id`) | One comment asking the owner to re-approve at the head |
 | Draft, or a check not finished or not green | Nothing yet |
 | Conflicts with its base | Label `needs-rebase` (once); the manager wakes the PR's worker to rebase |
-| Approved, green, no conflict | Merge it (rebase, pinned to the head sha); remove `needs-rebase`. One merge per repository per run, since the rest's mergeability changes |
+| Approved, green, no conflict | Merge it (rebase, pinned to the head sha); remove `needs-rebase`. Every PR that qualifies merges in the same run: no waiting, no ordering, and main's own CI isn't waited on (owner, 2026-11-25: "I don't want it to serialize things") |
 
 A rebase that only moves the PR onto a newer base keeps the same patch, so
 the approval holds, and so does resolving an ADR index conflict. Conflict

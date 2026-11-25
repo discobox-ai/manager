@@ -94,8 +94,11 @@ for repo in $REPOS; do
             say "$repo#$pr: merge refused: $(tr '\n' ' ' <"$work/err" | cut -c1-200)"
           fi
         fi
-        # One merge per repository per run: the others' mergeability changes.
-        break ;;
+        # No waiting and no ordering: every PR that qualifies is merged in
+        # this run (owner, 2026-11-25: "I don't want it to serialize
+        # things"). One that a merge before it put into conflict is refused
+        # by GitHub, and the next run labels it needs-rebase.
+        ;;
       *) why "mergeable_state $ms: next run" ;;  # unknown (still computing) or blocked
     esac
   done
