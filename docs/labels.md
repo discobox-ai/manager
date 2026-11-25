@@ -39,6 +39,12 @@ the reason changes, comment again; when it clears, swap the label and say so.
 An issue or PR that waits on another one also links it in its body where the
 template has room (`Depends on #N`).
 
+## community
+
+| Label | Means | Who sets it |
+|---|---|---|
+| `community` | A PR (or the issue filed for it) from outside the team, in the community review lane (owner, 2026-11-25; `community-review` worker skill) | manager |
+
 ## type/*
 
 `type/bug`, `type/feature`, `type/adr` (the issue is the decision itself),

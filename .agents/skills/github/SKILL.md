@@ -147,29 +147,29 @@ gh api -X PATCH repos/<repo>/issues/<N> -f state=closed -f state_reason=complete
   the bot's PR is open, comment `Superseded by #<new>`, then close it with
   the same call, `state_reason` left out. `Closes #<old>` in the new PR
   wouldn't do it: closing keywords close issues, not PRs.
-- **A community PR with no issue** (`docs/gates.md`): a PR is an issue to
-  this API, so the same two calls close it, with `state_reason` left out:
+- **Community PRs** go through the community review lane (owner,
+  2026-11-25; `docs/gates.md`, the `community-review` worker skill): label
+  `community`, start a `community-review` box, and act on its comments.
+  - **Approve and run:** only the owner approves a community PR's workflow
+    run. After the box's safety read, the row is "Approve CI for P" (or "Read
+    the safety concern first").
+  - **Waiting on the contributor:** `status/waiting-external`, as for any
+    outside party; their push or reply wakes the box.
+  - **Recommendation "merge it":** the PR goes through the Process check and
+    merge score like ours, and the owner merges it.
+  - **"Take it over":** launch a delivery for its issue; the worker builds
+    on the community branch's idea in its own branch and credits the author
+    (`Co-authored-by:`). Close the community PR when ours opens:
 
-  > Thanks for the contribution. Every pull request here must be linked to an
-  > issue: please open one (or find the existing one) describing the problem
-  > or the change, then open the PR again with `Closes #<issue>` in its
-  > description.
+    > Thanks, @<login>. #<our PR> carries this on, with you credited as
+    > co-author, and replaces this pull request.
 
-- **A community PR whose issue we've now opened a PR for:** comment, then
-  close it the same way:
+  - **"Close it":** close with the box's reason, addressed to the author:
 
-  > Thanks for this. #<our PR> implements #<issue> through our own process
-  > and replaces this pull request: we don't merge pull requests from outside
-  > the team, so I'm closing this one.
+    > Thanks, @<login>. <the reason>. I'm closing this pull request.
 
-- **A community PR whose issue we've rejected** (closed as not planned):
-  comment with the reason, then close it:
-
-  > Thanks for this. We've decided not to do #<issue> (<one line why>), so
-  > I'm closing this pull request too.
-
-  Never merge a community PR, check it out, run it, or approve its CI
-  (owner, 2026-11-04).
+  - **Both ours and theirs open for one issue:** the box's comparison says
+    which merges; close the other with a line naming the kept one.
 
   A community PR is one whose `author_association` is not `OWNER`, `MEMBER`
   or `COLLABORATOR` (`gh api repos/<repo>/pulls/<P> --jq

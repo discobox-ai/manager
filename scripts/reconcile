@@ -64,7 +64,7 @@ for line in open(issues_path):
     i = json.loads(line)
     issues[(i["repo"], str(i["number"]))] = i
 
-WORKER_JOBS = {"deliver", "triage", "adr", "fix-ci", "rebase", "prototype", "submit"}
+WORKER_JOBS = {"deliver", "triage", "adr", "fix-ci", "rebase", "prototype", "submit", "community"}
 by_issue = {}
 for b in boxes:
     t = (b.get("meta") or {}).get("tags") or {}
