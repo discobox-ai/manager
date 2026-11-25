@@ -97,6 +97,11 @@ for repo in $REPOS; do
     [ "$green" = true ] || { why "checks not all green"; continue; }
 
     ms=$(jq -r .mergeable_state <<<"$j")
+    # GitHub's mergeable_state is about a merge commit; a rebase merge also
+    # needs every commit to replay cleanly (`rebaseable`). Clean but not
+    # rebaseable is a rebase too, not a merge to try every run (2026-11-25,
+    # PRs 1629 and 1684).
+    [ "$(jq -r .rebaseable <<<"$j")" != false ] || ms=dirty
     case $ms in
       dirty)
         why "conflicts"

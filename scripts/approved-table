@@ -19,7 +19,7 @@ write=0; [ "${1:-}" = --write ] && write=1
 OWNER=ibuildthecloud
 FILE=~/.local/state/discobox-manager/table.json
 Q='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){pullRequests(states:OPEN,first:100){nodes{
-  number title isDraft mergeable headRefOid
+  number title isDraft mergeable headRefOid canBeRebased
   labels(first:20){nodes{name}}
   closingIssuesReferences(first:3){nodes{number}}
   latestReviews(first:20){nodes{author{login} state commit{oid}}}
@@ -40,7 +40,7 @@ for repo in discobox-ai/discobox discobox-ai/vm discobox-ai/site discobox-ai/hoo
      | ($older and any(.comments.nodes[]; .body | startswith("**Merge bot: re-approve at " + $h))) as $reapprove
      | (if .isDraft then [5, "draft: its worker marks it ready"]
         elif $reapprove then [6, "changed code since your approval"]
-        elif .mergeable == "CONFLICTING" then [4, "needs a rebase (its worker)"]
+        elif .mergeable == "CONFLICTING" or (.canBeRebased == false) then [4, "needs a rebase (its worker)"]
         elif $ci == "FAILURE" or $ci == "ERROR" then [3, "checks failing (its worker)"]
         elif $ci == "PENDING" or $ci == "EXPECTED" then [2, "checks running"]
         elif $ci == "SUCCESS" then [1, "green: the merge bot merges it within 2 minutes"]
