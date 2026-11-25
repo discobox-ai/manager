@@ -44,6 +44,7 @@ template has room (`Depends on #N`).
 | Label | Means | Who sets it |
 |---|---|---|
 | `community` | A PR (or the issue filed for it) from outside the team, in the community review lane (owner, 2026-11-25; `community-review` worker skill) | manager |
+| `needs-ci-approval` | A community PR whose workflow run waits on the owner's "Approve and run". Set when its safety read is posted (a "safe" verdict, or a concern for the owner to read first), removed once its checks have started (owner, 2026-11-25: "I'd prefer a label I can search for on the PRs") | manager |
 
 ## type/*
 

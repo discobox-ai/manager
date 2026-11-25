@@ -70,6 +70,7 @@ contributor):
 ```
 
 Tag `needs-input` with "approve CI for <REPO>#<P>" and wait. The manager
+labels the PR `needs-ci-approval`, which is how the owner finds it. The manager
 wakes you when its checks have run.
 
 ## 2. Technical review (after CI ran)

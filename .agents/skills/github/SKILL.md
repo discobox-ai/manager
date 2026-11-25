@@ -151,8 +151,11 @@ gh api -X PATCH repos/<repo>/issues/<N> -f state=closed -f state_reason=complete
   2026-11-25; `docs/gates.md`, the `community-review` worker skill): label
   `community`, start a `community-review` box, and act on its comments.
   - **Approve and run:** only the owner approves a community PR's workflow
-    run. After the box's safety read, the row is "Approve CI for P" (or "Read
-    the safety concern first").
+    run. When the box posts its safety read, label the PR
+    `needs-ci-approval` (the owner searches for it, 2026-11-25) and tell
+    manager-chat; the row is "Approve CI for P" (or "Read the safety concern
+    first"). Remove the label as soon as the PR's checks have started, and
+    put it back on each new head's safety read.
   - **Waiting on the contributor:** `status/waiting-external`, as for any
     outside party; their push or reply wakes the box.
   - **Recommendation "merge it":** that comment at the PR's head stands in
