@@ -153,6 +153,22 @@ if [ -z "$POOL" ] && [ -z "$IGNORELOAD" ]; then
     echo "launch: $WHY: launching on the $POOL pool" >&2
   fi
 fi
+# Local launches at least workers.localGapSeconds apart (default 180): a box
+# adds its build load a minute or two after it starts, so ten launched in a
+# row all pass the load check and then take the host to load 600
+# (2026-11-25). Inside the gap a worker job overflows; anything else waits.
+LASTLOCAL=~/.local/state/discobox-manager/last-local-launch
+GAP=$(sed -n 's/^  localGapSeconds: *\([0-9]*\).*/\1/p' manager.yaml | head -1); GAP=${GAP:-180}
+if [ -z "$POOL" ] && [ -z "$IGNORELOAD" ] && [ -f "$LASTLOCAL" ]; then
+  AGO=$(( $(date +%s) - $(cat "$LASTLOCAL") ))
+  if [ "$AGO" -lt "$GAP" ]; then
+    if [ -z "$LOCAL" ] && [ -n "$OVERFLOW" ]; then
+      POOL=$OVERFLOW; echo "launch: last local launch ${AGO}s ago (gap ${GAP}s): launching on the $POOL pool" >&2
+    else
+      die "last local launch was ${AGO}s ago; local launches are ${GAP}s apart: try again later"
+    fi
+  fi
+fi
 if [ "$PAUSED" = true ]; then
   EXC=$(sed -n 's/^  pausedExcept: *\[\(.*\)\]/\1/p' manager.yaml | head -1 | tr -d ' ')
   case ",$EXC," in *",${ISSUE:-none},"*) ;; *) [ -n "$IGNOREPAUSE" ] || die "workers.paused is true in manager.yaml: no new boxes except issues in pausedExcept ($EXC)" ;; esac
@@ -242,6 +258,7 @@ fi
 OUT=$(discobox "${ARGS[@]}" 2>&1) || true
 echo "$OUT" | tail -3
 ID=$(echo "$OUT" | grep -o 'sbx_[a-z0-9]*' | head -1)
+[ -z "$ID" ] || [ -n "$POOL" ] || { mkdir -p "$(dirname "$LASTLOCAL")"; date +%s > "$LASTLOCAL"; }
 [ -n "$ID" ] || die "no box ID in the output. A launch that errors can still make a box: look in 'discobox ls' before launching again"
 
 # --- tag, label -------------------------------------------------------------

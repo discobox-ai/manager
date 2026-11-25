@@ -121,6 +121,8 @@ workers:
   localMax: 12
   # The pool name of this host's pool, which localMax counts (the project's default pool).
   localPool: Default
+  # Seconds between two local launches (2026-11-25: ten at once took load to 600).
+  localGapSeconds: 180
   # true: every new worker box goes to overflowPool, not only past the limits
   # (owner, 2026-11-24: "can we process everything now and just put all new
   # boxes on archil from now on?"). Long-lived boxes and live runs stay local.
