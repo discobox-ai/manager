@@ -36,6 +36,12 @@ answering (`discobox ls` fails) is a different problem: tell the owner.
 main build with `curl -fsSL https://main.discobox.ai | sh`. It goes to
 `~/.local/bin`, which is first on PATH. Keep the old binary as a `.bak`, and
 check `discobox version --client` against the server's build.
+When the server is a dev build ahead of every published one (2026-11-25:
+server `fe8a699+dirty`, "unexpected field powerDown", the newest main build
+still too old), build the client from the server's commit instead: clone
+discobox-ai/discobox at that sha, `go tool task build:cli` (about ten
+minutes under load), and install `build/discobox` over `~/.local/bin/discobox`,
+keeping a `.bak`.
 
 ## 3. The loop
 
