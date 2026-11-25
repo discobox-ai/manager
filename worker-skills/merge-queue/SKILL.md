@@ -25,11 +25,11 @@ no approval. Leave the PRs it is gating alone.
 
 ## 1. Ask for the credential, once
 
-For `discobox-ai/discobox` and `discobox-ai/vm`, 30 days, API only:
+For `discobox-ai/discobox`, `vm`, `site`, `hooks` and `review`, 30 days, API only (site, hooks and review added 2026-11-25: ask again when the granted credential lacks them, since a merge there comes back 403):
 
 ```sh
 args=""
-for repo in discobox-ai/discobox discobox-ai/vm; do
+for repo in discobox-ai/discobox discobox-ai/vm discobox-ai/site discobox-ai/hooks discobox-ai/review; do
   args="$args -route PUT api.github.com/repos/$repo/pulls/*/merge"
   args="$args -route POST api.github.com/repos/$repo/issues/*/comments"
   args="$args -route POST api.github.com/repos/$repo/issues/*/labels"

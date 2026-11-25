@@ -28,7 +28,9 @@ for a in "$@"; do case $a in --apply) apply=1 ;; -v) verbose=1 ;; esac; done
 gh() { command gh "$@" 2> >(grep -v -e '^hint:' -e '^    gh event' -e '^  - ' >&2); }
 why() { [ $verbose = 0 ] || say "$repo#$pr: $*"; }
 OWNER=ibuildthecloud
-REPOS="discobox-ai/discobox discobox-ai/vm"
+# Every repository the owner approves PRs in (2026-11-25: site and hooks added;
+# review too). Each must be in the box's credential (SKILL.md §1).
+REPOS=${MERGE_BOT_REPOS:-"discobox-ai/discobox discobox-ai/vm discobox-ai/site discobox-ai/hooks discobox-ai/review"}
 work=${MERGE_BOT_DIR:-$HOME/merge-bot}
 mkdir -p "$work"
 
@@ -84,7 +86,10 @@ for repo in $REPOS; do
     # Every check on the head completed green, at least one; every status success.
     checks=$(gh api "repos/$repo/commits/$head/check-runs?per_page=100" --jq '[.check_runs[] | .conclusion // "pending"]')
     statuses=$(gh api "repos/$repo/commits/$head/status" --jq '[.statuses[].state]')
-    green=$(jq -n --argjson c "$checks" --argjson s "$statuses" '($c|length) > 0 and all($c[]; . == "success" or . == "skipped" or . == "neutral") and all($s[]; . == "success")')
+    # A repository whose default branch has no checks at all (hooks) has no
+    # CI: its PRs count as green, as in pr-review-labels.
+    noci=$(gh api "repos/$repo/commits/$base/check-runs?per_page=1" --jq '.total_count == 0' 2>/dev/null || echo false)
+    green=$(jq -n --argjson c "$checks" --argjson s "$statuses" --argjson noci "$noci" '(($c|length) > 0 or $noci) and all($c[]; . == "success" or . == "skipped" or . == "neutral") and all($s[]; . == "success")')
     [ "$green" = true ] || { why "checks not all green"; continue; }
 
     ms=$(jq -r .mergeable_state <<<"$j")

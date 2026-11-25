@@ -27,7 +27,7 @@ Q='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){pullR
   commits(last:1){nodes{commit{statusCheckRollup{state}}}}}}}}'
 boxes=$(discobox ls -o json 2>/dev/null | jq -c '[.sandboxes[] | select((.runtime.runtimeState // "") != "archived") | {pr: (.meta.tags.pr // ""), repo: (.meta.tags.repo // ""), id}]' || echo '[]')
 rows='[]'
-for repo in discobox-ai/discobox discobox-ai/vm; do
+for repo in discobox-ai/discobox discobox-ai/vm discobox-ai/site discobox-ai/hooks discobox-ai/review; do
   short=${repo#*/}
   out=$(gh api graphql -f query="$Q" -F owner="${repo%%/*}" -F name="$short")
   r=$(jq -c --arg owner "$OWNER" --arg short "$short" --argjson boxes "$boxes" --arg repo "$repo" '
