@@ -111,6 +111,10 @@ gh api graphql -f query='mutation($id:ID!){enablePullRequestAutoMerge(input:{pul
 
 GitHub waits for the required checks, then puts the PR in its merge queue.
 Don't wait for CI, merge anything yourself, or order PRs: that's GitHub's.
+**Hand over every qualifying PR at once** (2026-11-25: 26 approved PRs sat
+labelled while the box fed the queue one at a time, a CI run each). Never
+wait for the PR ahead to merge before handing over the next: the queue groups
+and tests them together.
 A 4xx is a refusal: remove the labels you added, comment what GitHub said
 (for instance auto-merge isn't allowed on the repository), and tell the
 manager on your screen. Comment once when you hand a PR over: `Handed to the
