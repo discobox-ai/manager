@@ -578,6 +578,10 @@ auto-merge are no longer used.
   merged (rebase). A conflict is labelled `needs-rebase`. A head whose patch
   differs from the approved commit's gets one "re-approve" comment.
   Changing the policy means changing that script.
+- **"Merge bot: already on main"** on a PR: its commits landed but GitHub
+  left it open (a merge during an outage). Close it with the issues API
+  (`PATCH repos/<repo>/issues/<P> state=closed`) and a comment naming the
+  commits, then close its issue and retire its box as for any merge.
 - **An approved PR that isn't going in always says why on the PR** (owner,
   2026-11-21: "I don't get why it wasn't being merged": vm PR 202 sat held
   with the reason only in a chat between sessions). Whenever the queue box

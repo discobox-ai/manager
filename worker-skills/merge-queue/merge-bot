@@ -101,7 +101,23 @@ for repo in $REPOS; do
     # needs every commit to replay cleanly (`rebaseable`). Clean but not
     # rebaseable is a rebase too, not a merge to try every run (2026-11-25,
     # PRs 1629 and 1684).
-    [ "$(jq -r .rebaseable <<<"$j")" != false ] || ms=dirty
+    if [ "$(jq -r .rebaseable <<<"$j")" = false ]; then
+      ms=dirty
+      # Not rebaseable because every commit is already on the base (a merge
+      # that landed while GitHub answered 500 and left the PR open,
+      # 2026-11-25: PRs 1629, 1684). Say so once; the manager closes it.
+      url=$(jq -r .head.repo.clone_url <<<"$j")
+      git -C "$dir" fetch -q "https://github.com/$repo.git" "+refs/heads/$base:refs/base/$base" 2>/dev/null || true
+      git -C "$dir" fetch -q "$url" "$head" 2>/dev/null || true
+      if [ -n "$(git -C "$dir" cherry "refs/base/$base" "$head" 2>/dev/null)" ] && ! git -C "$dir" cherry "refs/base/$base" "$head" 2>/dev/null | grep -q '^+'; then
+        mark="Merge bot: already on $base"
+        if ! gh api "repos/$repo/issues/$pr/comments?per_page=100" --jq '.[].body' | grep -qF "$mark"; then
+          say "$repo#$pr: every commit is already on $base: asking for it to be closed"
+          act gh api -X POST "repos/$repo/issues/$pr/comments" -f body="**$mark.** Every commit of this PR is already on \`$base\` (a merge GitHub didn't register). It can be closed as landed."
+        fi
+        continue
+      fi
+    fi
     case $ms in
       dirty)
         why "conflicts"
