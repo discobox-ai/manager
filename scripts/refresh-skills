@@ -19,12 +19,16 @@ ids=("$@")
 if [ ${#ids[@]} -eq 0 ]; then
   mapfile -t ids < <(discobox ls -o json | jq -r '.sandboxes[] | select(.runtime.runtimeState == "running") | select((.meta.tags.job // "") | test("^(merge-gate|merge-queue|merge-score|pr-check|norm)$")) | .id')
 fi
-sum() { find worker-skills -name SKILL.md -exec md5sum {} + | sort | md5sum | cut -c1-8; }
-want=$(sum)
 for id in "${ids[@]}"; do
-  before=$(discobox exec "$id" -- sh -c 'cd ~/.claude/skills && find . -name SKILL.md -exec md5sum {} + | sed "s#\./#worker-skills/#" | sort | md5sum | cut -c1-8' 2>/dev/null || echo "?")
+  # Which of our SKILL.md files differ in the box, before the copy.
+  stale=0
+  for f in worker-skills/*/SKILL.md; do
+    rel=${f#worker-skills/}
+    there=$(discobox exec "$id" -- sh -c "md5sum < ~/.claude/skills/$rel 2>/dev/null | cut -c1-32" 2>/dev/null || true)
+    [ "$there" = "$(md5sum < "$f" | cut -c1-32)" ] || stale=$((stale+1))
+  done
   for d in .claude/skills .agents/skills; do
     discobox cp -r -q worker-skills/* "$id:$d/"
   done
-  if [ "$before" = "$want" ]; then echo "$id: current"; else echo "$id: updated"; fi
+  if [ "$stale" = 0 ]; then echo "$id: current"; else echo "$id: updated ($stale skills changed)"; fi
 done
