@@ -64,14 +64,15 @@ approved:
 
 | State | Action |
 |---|---|
-| The approval doesn't hold: a later review, or the head changes the patch (its whole diff against its base differs from the approved commit's, by `git patch-id`) | One comment asking the owner to re-approve at the head |
+| The approval doesn't hold: a later review, or the head changes the patch (its diff against its base, without context lines and without the ADR index, differs from the approved commit's, by `git patch-id`) | One comment asking the owner to re-approve at the head |
 | Draft, or a check not finished or not green | Nothing yet |
 | Conflicts with its base | Label `needs-rebase` (once); the manager wakes the PR's worker to rebase |
 | Approved, green, no conflict | Merge it (rebase, pinned to the head sha); remove `needs-rebase`. One merge per repository per run, since the rest's mergeability changes |
 
 A rebase that only moves the PR onto a newer base keeps the same patch, so
-the approval holds. Conflict resolution that changes lines doesn't, and asks
-for a re-approval (simple and safe).
+the approval holds, and so does resolving an ADR index conflict. Conflict
+resolution that changes the lines a PR adds or removes doesn't, and asks for
+a re-approval (simple and safe).
 
 ## 3. Report
 

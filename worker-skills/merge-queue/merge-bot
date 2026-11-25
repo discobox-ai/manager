@@ -9,9 +9,10 @@
 #   otherwise                                                     -> merge it (rebase)
 #
 # The approval holds when the owner's latest review is APPROVED and either it
-# names the head commit, or the head carries the same change: the PR's whole
-# diff against its base has the same `git patch-id` as the approved commit's
-# had (a rebase that changed nothing). Anything else needs a new approval.
+# names the head commit, or the head carries the same change: the PR's diff
+# against its base, without context lines and without the ADR index, has the
+# same `git patch-id` as the approved commit's had (a rebase that changed
+# nothing it adds or removes). Anything else needs a new approval.
 #
 # One line per action; nothing when there's nothing to do. Run it from the
 # merge-queue box with the owner's credential in GH_TOKEN:
@@ -34,7 +35,10 @@ act() { [ $apply = 1 ] || return 0; "$@" >/dev/null; }
 
 # patch-id of a commit's change against its merge base with the base branch.
 pid() { # repo-dir base-ref sha
-  git -C "$1" diff "$(git -C "$1" merge-base "$2" "$3")" "$3" | git -C "$1" patch-id --stable | cut -d' ' -f1
+  # No context lines (-U0), so a rebase that only moved what surrounds the
+  # change keeps its id; and not the ADR index, whose lines every ADR PR
+  # touches and every rebase reshuffles (2026-11-25, PR 1731).
+  git -C "$1" diff -U0 "$(git -C "$1" merge-base "$2" "$3")" "$3" -- . ':(exclude)docs/adr/README.md' | git -C "$1" patch-id --stable | cut -d' ' -f1
 }
 
 for repo in $REPOS; do
