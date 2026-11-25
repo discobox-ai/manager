@@ -4,6 +4,10 @@
 # ... "yes, write a reconcile script too"). Reads only; prints what doesn't
 # line up, one line each, for the loop to act on (workers skill, Reconcile):
 #
+#   unanswered      open issue whose newest comment is not the bot's (the owner
+#                   or a reporter spoke, nothing answered): act on it (an
+#                   owner decision: apply it; a reporter: re-triage or wake its
+#                   box), then comment so the issue says it was seen
 #   untriaged       open issue with no status/* label and no live box
 #   ready-idle      status/ready, no live box: start its worker
 #   orphan          status/in-progress, no box at all (not even stopped):
@@ -36,14 +40,14 @@ REPOS=$(awk '/^repos:/ {r=1; next} r && /^[^ #]/ {r=0} r && $1=="-" && $2=="name
 Q='query($owner:String!,$name:String!,$after:String){repository(owner:$owner,name:$name){
   pullRequests(states:OPEN,first:100){nodes{number}}
   issues(states:OPEN,first:100,after:$after){pageInfo{hasNextPage endCursor}
-    nodes{number title labels(first:30){nodes{name}}}}}}'
+    nodes{number title labels(first:30){nodes{name}} comments(last:10){nodes{createdAt author{login}}}}}}}'
 : > "$work/issues.jsonl"
 for repo in $REPOS; do
   after=""
   while :; do
     out=$(gh api graphql -f query="$Q" -F owner="${repo%%/*}" -F name="${repo#*/}" ${after:+-F after="$after"} 2>/dev/null) || break
     [ -n "$after" ] || echo "$out" | jq -c --arg r "$repo" '{repo:$r, openPRs:[.data.repository.pullRequests.nodes[].number]}' >> "$work/prs.jsonl"
-    echo "$out" | jq -c --arg r "$repo" '.data.repository.issues.nodes[] | {repo:$r, number, title, labels:[.labels.nodes[].name]}' >> "$work/issues.jsonl"
+    echo "$out" | jq -c --arg r "$repo" '.data.repository.issues.nodes[] | {repo:$r, number, title, labels:[.labels.nodes[].name], comments:[.comments.nodes[] | {at:.createdAt, by:(.author.login // "")}]}' >> "$work/issues.jsonl"
     [ "$(echo "$out" | jq -r .data.repository.issues.pageInfo.hasNextPage)" = true ] || break
     after=$(echo "$out" | jq -r .data.repository.issues.pageInfo.endCursor)
   done
@@ -64,6 +68,7 @@ for line in open(issues_path):
     i = json.loads(line)
     issues[(i["repo"], str(i["number"]))] = i
 
+BOT = "ibuildthecloud-bot"
 WORKER_JOBS = {"deliver", "triage", "adr", "fix-ci", "rebase", "prototype", "submit", "community"}
 by_issue = {}
 for b in boxes:
@@ -99,6 +104,14 @@ for key, i in sorted(issues.items(), key=lambda kv: (kv[0][0], -int(kv[0][1]))):
         add("ready-idle", repo, num, i["title"])
     elif "status/in-progress" in status and not lv and not ({"status/blocked", "status/needs-decision", "status/needs-input"} & set(status)):
         add("orphan", repo, num, i["title"], note="archived box only" if bs else "never had a box")
+    # A comment nobody has answered: the newest comment is by someone other
+    # than the bot (the owner, a reporter), so the factory has said nothing
+    # since (owner, 2026-11-25: "why hasn't 740 issue comment been handled").
+    # waiting-external issues are scripts/waiting-external's.
+    cs = i.get("comments") or []
+    if cs and cs[-1]["by"] != BOT and "status/waiting-external" not in status:
+        last = cs[-1]
+        add("unanswered", repo, num, i["title"], note=f"{last['by']} at {last['at'][:16]}Z" + (f"; box {lv[0]['id']}" if lv else ""))
 
 for key, bs in by_issue.items():
     repo, num = key
@@ -115,7 +128,7 @@ for key, bs in by_issue.items():
                 and not any(k in t for k in ("ready", "blocked", "needs-input", "held"))):
             add("asleep", repo, num, i["title"], box=b)
 
-order = ["closed-box", "orphan", "asleep", "ready-idle", "untriaged"]
+order = ["closed-box", "orphan", "unanswered", "asleep", "ready-idle", "untriaged"]
 found.sort(key=lambda f: order.index(f["kind"]))
 if mode == "--json":
     for f in found:

@@ -1021,6 +1021,7 @@ asks where work stands; act on each line, within `workers.max` and
 | `orphan` | `status/in-progress`, no box at all | relaunch its job, or put it back to `status/ready` and say why on the issue |
 | `asleep` | a worker box stopped or suspended mid-job: no open PR, not tagged `ready`, `blocked` or `needs-input` | start it and wake it on where it was |
 | `ready-idle` | `status/ready`, no live box | start its worker (tracking issues with owner steps, like the merge-queue one, aren't box jobs: leave them) |
+| `unanswered` | the newest comment on an open issue isn't the bot's: the owner or a reporter said something and nothing answered (owner, 2026-11-25: twenty such comments sat unhandled, some since 11-20) | read it and act: an owner's decision is applied (labels, a worker started or told), a reporter's reply re-triages it or goes to its box; then comment, so the issue shows it was seen |
 | `untriaged` | no `status/*` label, no live box | start triage |
 
 `--summary` gives the counts, `--json` one object per line. It reads only;
