@@ -39,6 +39,9 @@ status/in-progress	0e8a16	A worker is on it
 status/in-review	0e8a16	Its PR is green, waiting for the owner; on a PR: ready for the owner to review now
 status/blocked	0e8a16	Waiting on something specific; a comment says what, with a link
 status/paused	c5def5	Parked on purpose, not now; a comment says why and what resumes it
+status/waiting-external	c5def5	Waiting on someone outside the project. Closes after 30 days with no reply
+community	0e8a16	A PR from outside the team, in the community review lane
+needs-ci-approval	fbca04	Community PR: its workflow run waits on the owner's Approve and run
 type/bug	1d4ed8	Behaviour is wrong
 type/feature	1d4ed8	New behaviour
 type/adr	1d4ed8	The issue is a design decision
