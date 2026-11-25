@@ -37,7 +37,7 @@ for repo in discobox-ai/discobox discobox-ai/vm discobox-ai/site discobox-ai/hoo
      | (.commits.nodes[0].commit.statusCheckRollup.state // "NONE") as $ci
      | (.headRefOid[0:7]) as $h
      | ($rv.commit.oid != .headRefOid) as $older
-     | (any(.comments.nodes[]; .body | startswith("**Merge bot: re-approve at " + $h))) as $reapprove
+     | ($older and any(.comments.nodes[]; .body | startswith("**Merge bot: re-approve at " + $h))) as $reapprove
      | (if .isDraft then [5, "draft: its worker marks it ready"]
         elif $reapprove then [6, "changed code since your approval"]
         elif .mergeable == "CONFLICTING" then [4, "needs a rebase (its worker)"]
