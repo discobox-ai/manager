@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Copy this checkout's worker-skills/ into running boxes, so a long-lived box
+# (merge-gate, merge-queue, merge-score, pr-check, Norm) follows the skills as
+# pushed, not as they were at its launch (2026-11-25: the merge-queue box ran
+# a 4-day-old merge-queue skill and fed the queue one PR at a time).
+#
+# A box installs its skills once, at launch, into ~/.claude/skills (what
+# Claude Code reads) and ~/.agents/skills. This overwrites both with the
+# current files, then prints which boxes changed. It doesn't tell the box:
+# its session keeps what it already read, so type it "re-read your skills"
+# afterwards (workers skill, Keeping skills current).
+#
+#   scripts/refresh-skills              # every running long-lived box
+#   scripts/refresh-skills <box id>...  # those boxes
+set -euo pipefail
+cd "$(dirname "$0")/.."
+[ -z "$(git status --porcelain worker-skills)" ] || { echo "refresh-skills: worker-skills/ has uncommitted changes: push first" >&2; exit 1; }
+ids=("$@")
+if [ ${#ids[@]} -eq 0 ]; then
+  mapfile -t ids < <(discobox ls -o json | jq -r '.sandboxes[] | select(.runtime.runtimeState == "running") | select((.meta.tags.job // "") | test("^(merge-gate|merge-queue|merge-score|pr-check|norm)$")) | .id')
+fi
+sum() { find worker-skills -name SKILL.md -exec md5sum {} + | sort | md5sum | cut -c1-8; }
+want=$(sum)
+for id in "${ids[@]}"; do
+  before=$(discobox exec "$id" -- sh -c 'cd ~/.claude/skills && find . -name SKILL.md -exec md5sum {} + | sed "s#\./#worker-skills/#" | sort | md5sum | cut -c1-8' 2>/dev/null || echo "?")
+  for d in .claude/skills .agents/skills; do
+    discobox cp -r -q worker-skills/* "$id:$d/"
+  done
+  if [ "$before" = "$want" ]; then echo "$id: current"; else echo "$id: updated"; fi
+done

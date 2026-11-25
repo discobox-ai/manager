@@ -993,6 +993,19 @@ data-disk mount that failed, a provision that never finished):
 - Keep a list in `scripts/queue` (`failed-launch <id> <error's first line>`)
   for the owner to diagnose. The owner decides when they're removed.
 
+## Keeping skills current (2026-11-25)
+
+A box installs its skills once, at launch. A long-lived box (merge-gate,
+merge-queue, merge-score, pr-check, Norm) keeps running them for days, so a
+skill pushed since is not what it follows: on 2026-11-25 the merge-queue box
+ran a four-day-old skill. **Whenever a push changes `worker-skills/`**, run
+`scripts/refresh-skills` (it copies the current skills into every running
+long-lived box) and type each box it reports `updated` one line: "Your skills
+were updated: re-read ~/.claude/skills/<its skill>/SKILL.md and the worker
+skill, and follow them from now on." A worker on a short job keeps what it
+launched with, unless the change is about its job: then refresh that box too
+(`scripts/refresh-skills <id>`) and tell it.
+
 ## Reconcile (owner, 2026-11-23)
 
 "Do we have any way to sync up issues state with running boxes?" ...
