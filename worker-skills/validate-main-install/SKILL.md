@@ -38,8 +38,10 @@ test again." An install on a busy host measures the host, not the build
 ## 1. Install the way a user does
 
 Use a fresh local user with an empty `HOME`, no discobox on `PATH`, and no
-server running (`useradd -m mainchk && sudo -iu mainchk`, or a clean
-`HOME=$(mktemp -d)`). Then run the documented installer for the main
+server running (`useradd -m -G kvm,docker mainchk && sudo -iu mainchk`: the
+server needs both groups, and without them every run hits a group error
+first; or a clean `HOME=$(mktemp -d)`). `discobox ls` is what starts the
+server; `discobox status` only checks it. Then run the documented installer for the main
 channel, as ADR 26-11-16-249 §1 gives it:
 
 ```sh
