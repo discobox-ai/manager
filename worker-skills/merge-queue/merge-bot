@@ -9,10 +9,12 @@
 #   otherwise                                                     -> merge it (rebase)
 #
 # The approval holds when the owner's latest review is APPROVED and either it
-# names the head commit, or the head carries the same change: the PR's diff
-# against its base, without context lines and without the ADR index, has the
-# same `git patch-id` as the approved commit's had (a rebase that changed
-# nothing it adds or removes). Anything else needs a new approval.
+# names the head commit, or the head makes the same behavioural change: the
+# PR's diff against its base, without context lines and without tests, test
+# data, docs, Markdown or CI workflows, has the same `git patch-id` as the
+# approved commit's had. So a rebase, a conflict resolved in the ADR index,
+# or a CI or test fix keeps the approval; a change to code that runs needs a
+# new one (owner, 2026-11-25).
 #
 # One line per action; nothing when there's nothing to do. Run it from the
 # merge-queue box with the owner's credential in GH_TOKEN:
@@ -38,7 +40,15 @@ pid() { # repo-dir base-ref sha
   # No context lines (-U0), so a rebase that only moved what surrounds the
   # change keeps its id; and not the ADR index, whose lines every ADR PR
   # touches and every rebase reshuffles (2026-11-25, PR 1731).
-  git -C "$1" diff -U0 "$(git -C "$1" merge-base "$2" "$3")" "$3" -- . ':(exclude)docs/adr/README.md' | git -C "$1" patch-id --stable | cut -d' ' -f1
+  # Only what can change behaviour counts (owner, 2026-11-25: "that approval
+  # should stand unless behavioral change has been introduced since the
+  # approval. I simple rebase or CI fix should not invalidate the
+  # approval"): tests, test data, docs, Markdown and CI workflows are left
+  # out, so a CI or test fix keeps the approval.
+  git -C "$1" diff -U0 "$(git -C "$1" merge-base "$2" "$3")" "$3" -- . \
+    ':(exclude)docs/**' ':(exclude)**/*.md' ':(exclude)*.md' ':(exclude)**/*_test.go' \
+    ':(exclude)**/testdata/**' ':(exclude).github/**' \
+    | git -C "$1" patch-id --stable | cut -d' ' -f1
 }
 
 for repo in $REPOS; do
@@ -65,7 +75,7 @@ for repo in $REPOS; do
         mark="Merge bot: re-approve at ${head:0:7}"
         if ! gh api "repos/$repo/issues/$pr/comments?per_page=100" --jq '.[].body' | grep -qF "$mark"; then
           say "$repo#$pr: approval is for ${approved:0:7}, head ${head:0:7} changes the patch: asking for re-approval"
-          act gh api -X POST "repos/$repo/issues/$pr/comments" -f body="**$mark.** @$OWNER approved \`${approved:0:7}\`; the head \`${head:0:7}\` changes what the PR does, not just its base. Approve again to merge it."
+          act gh api -X POST "repos/$repo/issues/$pr/comments" -f body="**$mark.** @$OWNER approved \`${approved:0:7}\`; the head \`${head:0:7}\` changes code that runs (not only its base, tests, docs or CI). Approve again to merge it."
         fi
         continue
       fi

@@ -69,10 +69,13 @@ approved:
 | Conflicts with its base | Label `needs-rebase` (once); the manager wakes the PR's worker to rebase |
 | Approved, green, no conflict | Merge it (rebase, pinned to the head sha); remove `needs-rebase`. Every PR that qualifies merges in the same run: no waiting, no ordering, and main's own CI isn't waited on (owner, 2026-11-25: "I don't want it to serialize things") |
 
-A rebase that only moves the PR onto a newer base keeps the same patch, so
-the approval holds, and so does resolving an ADR index conflict. Conflict
-resolution that changes the lines a PR adds or removes doesn't, and asks for
-a re-approval (simple and safe).
+Your approval stands unless code that runs changed (owner, 2026-11-25:
+"that approval should stand unless behavioral change has been introduced
+since the approval. I simple rebase or CI fix should not invalidate the
+approval"). The script compares the PR's change at the approved commit and
+at the head without context lines and without tests, test data, docs,
+Markdown and CI workflows: a rebase, an ADR index conflict, or a CI or test
+fix keeps the approval; a change to code that runs asks for a re-approval.
 
 ## 3. Report
 

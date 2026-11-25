@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# The side pane's table as the queue of approved, unmerged PRs (owner,
+# 2026-11-25: "can we make the focus of the table-pane just the queue of
+# approved PRs that haven't been merged?"). Rewrites the rows of
+# ~/.local/state/discobox-manager/table.json (the manager-table mod's file)
+# with one row per open PR in discobox and vm whose latest review by the
+# owner is APPROVED, ranked by how close it is to merging, and says what
+# each waits on. Links and slots are kept.
+#
+#   scripts/approved-table          # print the rows
+#   scripts/approved-table --write  # and write them to the table
+#
+# Cost: one GraphQL query per repository. Run it on every heartbeat and
+# after each merge-bot event.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+eval "$(discobox-access env)" >/dev/null 2>&1
+write=0; [ "${1:-}" = --write ] && write=1
+OWNER=ibuildthecloud
+FILE=~/.local/state/discobox-manager/table.json
+Q='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){pullRequests(states:OPEN,first:100){nodes{
+  number title isDraft mergeable headRefOid
+  labels(first:20){nodes{name}}
+  closingIssuesReferences(first:3){nodes{number}}
+  latestReviews(first:20){nodes{author{login} state commit{oid}}}
+  comments(last:20){nodes{author{login} body}}
+  commits(last:1){nodes{commit{statusCheckRollup{state}}}}}}}}'
+boxes=$(discobox ls -o json 2>/dev/null | jq -c '[.sandboxes[] | select((.runtime.runtimeState // "") != "archived") | {pr: (.meta.tags.pr // ""), repo: (.meta.tags.repo // ""), id}]' || echo '[]')
+rows='[]'
+for repo in discobox-ai/discobox discobox-ai/vm; do
+  short=${repo#*/}
+  out=$(gh api graphql -f query="$Q" -F owner="${repo%%/*}" -F name="$short")
+  r=$(jq -c --arg owner "$OWNER" --arg short "$short" --argjson boxes "$boxes" --arg repo "$repo" '
+    [.data.repository.pullRequests.nodes[]
+     | ([.latestReviews.nodes[] | select(.author.login == $owner)] | first) as $rv
+     | select($rv != null and $rv.state == "APPROVED")
+     | (.commits.nodes[0].commit.statusCheckRollup.state // "NONE") as $ci
+     | (.headRefOid[0:7]) as $h
+     | ($rv.commit.oid != .headRefOid) as $older
+     | (any(.comments.nodes[]; (.author.login // "") == "ibuildthecloud-bot" and (.body | startswith("**Merge bot: re-approve at " + $h)))) as $reapprove
+     | (if .isDraft then [5, "draft: its worker marks it ready"]
+        elif $reapprove then [6, "changed code since your approval"]
+        elif .mergeable == "CONFLICTING" then [4, "needs a rebase (its worker)"]
+        elif $ci == "FAILURE" or $ci == "ERROR" then [3, "checks failing (its worker)"]
+        elif $ci == "PENDING" or $ci == "EXPECTED" then [2, "checks running"]
+        elif $ci == "SUCCESS" then [1, "green: the merge bot merges it within 2 minutes"]
+        else [3, "no checks reported"] end) as $st
+     | ((if $short == "discobox" then "" else $short + " " end)) as $pfx
+     | (.number | tostring) as $n
+     | {key: ("pr " + $pfx + $n), item: .title, pr: ($pfx + $n),
+        issue: ((.closingIssuesReferences.nodes[0].number // null) | if . == null then "-" else $pfx + tostring end),
+        agent: ([$boxes[] | select(.pr == $n and .repo == $repo) | .id] | first // "-"),
+        doing: ($st[1] + (if $older and ($reapprove | not) then " (approved at an older commit; a rebase or CI fix keeps it)" else "" end)),
+        yourMove: (if $reapprove then "Re-approve PR " + $pfx + $n else "–" end),
+        why: ("approved, unmerged: " + ($st[1] | split(":")[0])),
+        group: $st[0], prio: "high", blocker: (if $reapprove then "yes" else "no" end)}]' <<<"$out")
+  rows=$(jq -c --argjson a "$rows" --argjson b "$r" -n '$a + $b')
+done
+rows=$(jq -c 'sort_by(.group, .key)' <<<"$rows")
+jq -r '.[] | "\(.pr)\t\(.doing)\t\(.yourMove)"' <<<"$rows"
+if [ $write = 1 ]; then
+  tmp=$(mktemp "$FILE.XXXX")
+  jq --argjson rows "$rows" --argjson now "$(date +%s)" '.rows = $rows | .postedAt = ($now * 1000)' "$FILE" > "$tmp" && mv "$tmp" "$FILE"
+fi
