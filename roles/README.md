@@ -27,6 +27,12 @@ narrow is said in the skills and held by branch protection: a git push can
 name any branch, `PATCH …/pulls/*` can close a PR as well as edit it, and
 GraphQL queries read every repository the token can see.
 
+A request names at most 32 policies across its parts (2026-11-25). Since
+`github-deliver`'s routes include all of `github-triage`'s, and a delegation
+is checked route by route, `manager-request.json` delegates only
+`github-deliver` for tour and x; a triage worker there is still bound
+`github-triage`.
+
 ## Binding a worker at launch
 
 From this repository's root (policy paths are read from the working

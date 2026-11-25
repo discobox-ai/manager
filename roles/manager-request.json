@@ -233,25 +233,11 @@
         }
       },
       {
-        "file": "roles/github-triage.json",
-        "args": {
-          "owner": "discobox-ai",
-          "repo": "x"
-        }
-      },
-      {
         "file": "roles/github-deliver.json",
         "args": {
           "owner": "discobox-ai",
           "repo": "tour",
           "forkOwner": "ibuildthecloud-bot"
-        }
-      },
-      {
-        "file": "roles/github-triage.json",
-        "args": {
-          "owner": "discobox-ai",
-          "repo": "tour"
         }
       }
     ]
