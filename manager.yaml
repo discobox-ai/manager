@@ -135,8 +135,11 @@ workers:
   # for it are listed in ~/.local/state/discobox-manager/stopped-for-archil.json
   # and in scripts/queue; start them again when the owner says. 193 and 194 are
   # discobox-ai/vm issues (Archil driver systemd; Archil base image) for #1055.
-  paused: false
-  pausedExcept: []
+  # Paused 2026-11-26 (owner: "lets one by one work through the archil related
+  # PRs and cpu/mem. stop all other work"): only the Archil set starts, plus
+  # 1806 (the Windows flake failing their CI). vm#219 is 219.
+  paused: true
+  pausedExcept: [1601,1602,1754,1639,1751,1600,219,1806]
   # Factory stop (owner, 2026-11-10; `stop` and `resume` skills): true means
   # every agent is idle on purpose: the loop isn't running, the manager's
   # boxes are stopped, and nothing starts. Only /resume clears it.
