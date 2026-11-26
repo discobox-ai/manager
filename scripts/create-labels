@@ -42,6 +42,7 @@ status/paused	c5def5	Parked on purpose, not now; a comment says why and what res
 status/waiting-external	c5def5	Waiting on someone outside the project. Closes after 30 days with no reply
 community	0e8a16	A PR from outside the team, in the community review lane
 needs-ci-approval	fbca04	Community PR: its workflow run waits on the owner to Approve and run
+no-automerge	b60205	The merge gate leaves this PR alone: the owner reviews and merges it
 type/bug	1d4ed8	Behaviour is wrong
 type/feature	1d4ed8	New behaviour
 type/adr	1d4ed8	The issue is a design decision

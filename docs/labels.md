@@ -45,6 +45,7 @@ template has room (`Depends on #N`).
 |---|---|---|
 | `community` | A PR (or the issue filed for it) from outside the team, in the community review lane (owner, 2026-11-25; `community-review` worker skill) | manager |
 | `needs-ci-approval` | A community PR whose workflow run waits on the owner's "Approve and run". Set when its safety read is posted (a "safe" verdict, or a concern for the owner to read first), removed once its checks have started (owner, 2026-11-25: "I'd prefer a label I can search for on the PRs") | manager |
+| `no-automerge` | The merge gate (`worker-skills/merge-gate`) leaves the PR alone; the owner reviews and merges it. Set by the manager when a PR the gate could take shouldn't merge without the owner (e.g. a low merge score), removed only when the owner says | manager |
 
 ## type/*
 
