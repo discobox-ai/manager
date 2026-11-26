@@ -18,9 +18,12 @@ claude agents --json 2>/dev/null | jq -r '.[] | select(.name=="manager-loop" or 
 claude agents --json 2>/dev/null | jq -e '[.[]|select(.name=="manager-loop")]|length>0' >/dev/null || echo "manager-loop: NOT RUNNING: relaunch it (start §4)"
 
 echo "== infra boxes (should be running)"
-discobox ls -o json | jq -r --arg re "^($INFRA)$" '.sandboxes[] | select((.meta.tags.job//"")|test($re)) | select((.runtime.runtimeState//"")!="archived") | [.id,(.meta.tags.job),(.meta.tags.repo//""|split("/")|last),(.runtime.runtimeState//"")] | @tsv' |
+discobox ls -o json | jq -r --arg re "^($INFRA)$" '.sandboxes[] | select((.meta.tags.job//"")|test($re)) | select((.runtime.runtimeState//"")!="archived") | [.id,(.meta.tags.job),(.meta.tags.repo//""|split("/")|last),(if .meta.tags.held != null then "held" else (.runtime.runtimeState//"") end)] | @tsv' |
 while IFS=$'\t' read -r id job repo st; do
   case "$st" in running|starting) echo "ok     $id $job $repo $st" ;;
+    # Tagged held: kept off on purpose by the owner (2026-11-26: Norm off
+    # until Monday); never started here.
+    held) echo "held   $id $job $repo (off on purpose; start only when the owner says)" ;;
     *) echo "DOWN   $id $job $repo $st"
        if [ $start = 1 ]; then discobox start "$id" >/dev/null 2>&1 && echo "       started $id"; sleep 5; fi ;;
   esac
