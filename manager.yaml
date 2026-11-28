@@ -137,9 +137,9 @@ workers:
   # discobox-ai/vm issues (Archil driver systemd; Archil base image) for #1055.
   # Paused 2026-11-26 (owner: "lets one by one work through the archil related
   # PRs and cpu/mem. stop all other work"): only the Archil set starts, plus
-  # 1806 (the Windows flake failing their CI). 219, 231, 235, 237 and 238 are vm issues.
+  # 1806 (the Windows flake failing their CI). 219, 231, 235, 237, 238 and 239 are vm issues.
   paused: true
-  pausedExcept: [1118,1601,1602,1754,1818,1819,1828,1639,1751,1600,219,231,235,237,238,1806]
+  pausedExcept: [1118,1601,1602,1754,1818,1819,1828,1639,1751,1600,219,231,235,237,238,239,1806]
   # Factory stop (owner, 2026-11-10; `stop` and `resume` skills): true means
   # every agent is idle on purpose: the loop isn't running, the manager's
   # boxes are stopped, and nothing starts. Only /resume clears it.
